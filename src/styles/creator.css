@@ -69,6 +69,10 @@
   font-size: 14px;
   font-family: inherit;
   transition: border-color 0.2s;
+  background: white;
+  color: #333;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-input:focus {
@@ -290,55 +294,55 @@ select.form-input {
 
 /* Dark Theme Support */
 @media (prefers-color-scheme: dark) {
-  .nanopub-creator {
+  .nanopub-creator.dark-theme {
     color: #e0e0e0;
   }
 
-  .creator-header {
+  .nanopub-creator.dark-theme .creator-header {
     border-bottom-color: #424242;
   }
 
-  .creator-header h2,
-  .form-field label {
+  .nanopub-creator.dark-theme .creator-header h2,
+  .nanopub-creator.dark-theme .form-field label {
     color: #e0e0e0;
   }
 
-  .creator-description,
-  .field-help {
+  .nanopub-creator.dark-theme .creator-description,
+  .nanopub-creator.dark-theme .field-help {
     color: #b0b0b0;
   }
 
-  .form-input {
+  .nanopub-creator.dark-theme .form-input {
     background: #2c2c2c;
     border-color: #424242;
     color: #e0e0e0;
   }
 
-  .form-input:focus {
+  .nanopub-creator.dark-theme .form-input:focus {
     border-color: #64b5f6;
     box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.2);
   }
 
-  .repetition-row {
+  .nanopub-creator.dark-theme .repetition-row {
     background: #2c2c2c;
   }
 
-  .btn-remove-repetition,
-  .btn-add-repetition,
-  .btn-secondary {
+  .nanopub-creator.dark-theme .btn-remove-repetition,
+  .nanopub-creator.dark-theme .btn-add-repetition,
+  .nanopub-creator.dark-theme .btn-secondary {
     background: #2c2c2c;
     border-color: #424242;
     color: #90caf9;
   }
 
-  .btn-remove-repetition:hover {
+  .nanopub-creator.dark-theme .btn-remove-repetition:hover {
     background: #5f2120;
     border-color: #ef5350;
     color: #ef5350;
   }
 
-  .btn-add-repetition:hover,
-  .btn-secondary:hover {
+  .nanopub-creator.dark-theme .btn-add-repetition:hover,
+  .nanopub-creator.dark-theme .btn-secondary:hover {
     background: #1e3a5f;
   }
 }
