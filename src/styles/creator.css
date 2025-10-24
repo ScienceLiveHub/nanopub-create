@@ -1,518 +1,344 @@
 /**
  * Nanopub Creator Styles
- * Scoped with .nanopub-creator prefix to avoid conflicts
+ * 
+ * All styles are scoped with .nanopub-creator prefix
  */
 
-/* ============= VARIABLES ============= */
-:root {
-  --nc-primary: #3b82f6;
-  --nc-primary-hover: #2563eb;
-  --nc-primary-light: #dbeafe;
-  --nc-secondary: #6b7280;
-  --nc-success: #10b981;
-  --nc-error: #ef4444;
-  --nc-warning: #f59e0b;
-  
-  --nc-bg: #ffffff;
-  --nc-bg-light: #f9fafb;
-  --nc-bg-dark: #1f2937;
-  
-  --nc-text: #111827;
-  --nc-text-light: #6b7280;
-  --nc-text-muted: #9ca3af;
-  
-  --nc-border: #e5e7eb;
-  --nc-border-dark: #d1d5db;
-  
-  --nc-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --nc-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --nc-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  
-  --nc-radius: 8px;
-  --nc-radius-sm: 6px;
-  --nc-radius-lg: 12px;
-  
-  --nc-transition: all 0.2s ease;
-}
-
-/* ============= BASE CONTAINER ============= */
+/* Container */
 .nanopub-creator {
-  max-width: 900px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  max-width: 800px;
   margin: 0 auto;
-  padding: 2rem 1rem;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', 
-               'Arial', sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
-  color: var(--nc-text);
+  padding: 20px;
 }
 
-/* ============= HEADER ============= */
-.nanopub-creator .creator-header {
-  margin-bottom: 2.5rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 2px solid var(--nc-border);
+/* Header */
+.creator-header {
+  margin-bottom: 30px;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 20px;
 }
 
-.nanopub-creator .creator-header h2 {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--nc-text);
-  margin: 0 0 0.75rem 0;
-  line-height: 1.2;
+.creator-header h2 {
+  margin: 0 0 10px 0;
+  font-size: 24px;
+  color: #333;
 }
 
-.nanopub-creator .creator-header p {
-  font-size: 1.125rem;
-  color: var(--nc-text-light);
+.creator-description {
+  color: #666;
+  font-size: 14px;
   margin: 0;
-  line-height: 1.6;
 }
 
-/* ============= FORM CONTAINER ============= */
-.nanopub-creator .creator-form {
-  background: var(--nc-bg);
-  padding: 2rem;
-  border-radius: var(--nc-radius);
-  box-shadow: var(--nc-shadow-md);
-  border: 1px solid var(--nc-border);
-}
-
-@media (max-width: 768px) {
-  .nanopub-creator .creator-form {
-    padding: 1.5rem;
-  }
-}
-
-/* ============= FORM FIELDS ============= */
-.nanopub-creator .form-field {
-  margin-bottom: 1.75rem;
-}
-
-.nanopub-creator .form-field:last-of-type {
-  margin-bottom: 0;
-}
-
-.nanopub-creator .form-field label {
-  display: block;
-  font-weight: 600;
-  font-size: 0.9375rem;
-  color: var(--nc-text);
-  margin-bottom: 0.5rem;
-  line-height: 1.4;
-}
-
-.nanopub-creator .form-field label .required-indicator {
-  color: var(--nc-error);
-  font-weight: 700;
-}
-
-/* ============= INPUTS ============= */
-.nanopub-creator .form-field input[type="text"],
-.nanopub-creator .form-field input[type="url"],
-.nanopub-creator .form-field input[type="email"],
-.nanopub-creator .form-field input[type="number"],
-.nanopub-creator .form-field textarea,
-.nanopub-creator .form-field select {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1.5px solid var(--nc-border-dark);
-  border-radius: var(--nc-radius-sm);
-  font-size: 1rem;
-  font-family: inherit;
-  color: var(--nc-text);
-  background: var(--nc-bg);
-  transition: var(--nc-transition);
-  box-sizing: border-box;
-}
-
-.nanopub-creator .form-field input:focus,
-.nanopub-creator .form-field textarea:focus,
-.nanopub-creator .form-field select:focus {
-  outline: none;
-  border-color: var(--nc-primary);
-  box-shadow: 0 0 0 3px var(--nc-primary-light);
-}
-
-.nanopub-creator .form-field input::placeholder,
-.nanopub-creator .form-field textarea::placeholder {
-  color: var(--nc-text-muted);
-}
-
-/* Textarea specific */
-.nanopub-creator .form-field textarea {
-  resize: vertical;
-  min-height: 120px;
-  line-height: 1.6;
-}
-
-/* Select specific */
-.nanopub-creator .form-field select {
-  cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 1rem center;
-  padding-right: 2.5rem;
-  appearance: none;
-}
-
-/* ============= FIELD HELP TEXT ============= */
-.nanopub-creator .form-field .field-help {
-  display: block;
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--nc-text-light);
-  line-height: 1.5;
-}
-
-/* ============= ERROR STATES ============= */
-.nanopub-creator .form-field.error input,
-.nanopub-creator .form-field.error textarea,
-.nanopub-creator .form-field.error select {
-  border-color: var(--nc-error);
-  background: #fef2f2;
-}
-
-.nanopub-creator .form-field.error input:focus,
-.nanopub-creator .form-field.error textarea:focus,
-.nanopub-creator .form-field.error select:focus {
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-}
-
-.nanopub-creator .form-field .error-message {
-  display: block;
-  margin-top: 0.5rem;
-  color: var(--nc-error);
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-/* ============= REPEATABLE FIELDS ============= */
-.nanopub-creator .repeatable-field-group {
-  border: 1.5px solid var(--nc-border);
-  border-radius: var(--nc-radius);
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  background: var(--nc-bg-light);
-}
-
-.nanopub-creator .repeatable-field-group h3 {
-  margin: 0 0 1.5rem 0;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--nc-text);
-}
-
-.nanopub-creator .repeatable-fields {
-  margin-bottom: 1rem;
-}
-
-.nanopub-creator .repeatable-field {
-  position: relative;
-  padding: 1rem;
-  background: var(--nc-bg);
-  border: 1px solid var(--nc-border);
-  border-radius: var(--nc-radius-sm);
-  margin-bottom: 1rem;
-}
-
-.nanopub-creator .repeatable-field:last-child {
-  margin-bottom: 0;
-}
-
-.nanopub-creator .repeatable-field .form-field {
-  margin-bottom: 0;
-}
-
-/* Remove button for repeatable fields */
-.nanopub-creator .remove-field {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
-  background: var(--nc-error);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  font-size: 1.5rem;
-  line-height: 1;
-  cursor: pointer;
-  transition: var(--nc-transition);
+/* Form */
+.creator-form {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.nanopub-creator .remove-field:hover {
-  background: #dc2626;
-  transform: scale(1.1);
-}
-
-/* Add button for repeatable fields */
-.nanopub-creator .add-field {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: var(--nc-bg);
-  border: 2px dashed var(--nc-border-dark);
-  color: var(--nc-text-light);
-  border-radius: var(--nc-radius-sm);
-  font-size: 0.9375rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--nc-transition);
+/* Form Fields */
+.form-field {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.nanopub-creator .add-field:hover {
-  background: var(--nc-bg-light);
-  border-color: var(--nc-primary);
-  color: var(--nc-primary);
-}
-
-/* ============= FORM ACTIONS ============= */
-.nanopub-creator .form-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1.5px solid var(--nc-border);
-}
-
-@media (max-width: 640px) {
-  .nanopub-creator .form-actions {
-    flex-direction: column-reverse;
-  }
-}
-
-/* ============= BUTTONS ============= */
-.nanopub-creator .btn-primary,
-.nanopub-creator .btn-secondary {
-  padding: 0.875rem 2rem;
-  border-radius: var(--nc-radius-sm);
+.form-field label {
   font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: var(--nc-transition);
-  border: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  line-height: 1;
+  font-size: 14px;
+  color: #333;
 }
 
-.nanopub-creator .btn-primary {
-  background: var(--nc-primary);
-  color: white;
-  box-shadow: var(--nc-shadow-sm);
+.required-indicator {
+  color: #d32f2f;
 }
 
-.nanopub-creator .btn-primary:hover {
-  background: var(--nc-primary-hover);
-  box-shadow: var(--nc-shadow-md);
-  transform: translateY(-1px);
+.field-help {
+  color: #666;
+  font-size: 12px;
+  margin-top: -4px;
 }
 
-.nanopub-creator .btn-primary:active {
-  transform: translateY(0);
-}
-
-.nanopub-creator .btn-primary:disabled {
-  background: var(--nc-text-muted);
-  cursor: not-allowed;
-  transform: none;
-  opacity: 0.6;
-}
-
-.nanopub-creator .btn-secondary {
-  background: white;
-  color: var(--nc-text);
-  border: 1.5px solid var(--nc-border-dark);
-}
-
-.nanopub-creator .btn-secondary:hover {
-  background: var(--nc-bg-light);
-  border-color: var(--nc-text-light);
-}
-
-/* ============= PREVIEW PANEL ============= */
-.nanopub-creator .preview-panel {
-  margin-top: 2rem;
-  border: 1.5px solid var(--nc-border);
-  border-radius: var(--nc-radius);
-  overflow: hidden;
-  box-shadow: var(--nc-shadow-md);
-}
-
-.nanopub-creator .preview-panel h3 {
-  background: var(--nc-bg-light);
-  padding: 1rem 1.5rem;
-  margin: 0;
-  border-bottom: 1.5px solid var(--nc-border);
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--nc-text);
-}
-
-.nanopub-creator .preview-panel .trig-content {
-  padding: 1.5rem;
-  background: var(--nc-bg-dark);
-  color: #f9fafb;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'Courier New', monospace;
-  font-size: 0.875rem;
-  line-height: 1.6;
-  overflow-x: auto;
-  margin: 0;
-  white-space: pre;
-}
-
-.nanopub-creator .preview-panel .trig-content::-webkit-scrollbar {
-  height: 8px;
-}
-
-.nanopub-creator .preview-panel .trig-content::-webkit-scrollbar-track {
-  background: #374151;
-}
-
-.nanopub-creator .preview-panel .trig-content::-webkit-scrollbar-thumb {
-  background: #6b7280;
+.form-input {
+  padding: 10px;
+  border: 1px solid #ddd;
   border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s;
 }
 
-/* ============= LOADING STATE ============= */
-.nanopub-creator.loading {
+.form-input:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+}
+
+.form-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+textarea.form-input {
+  resize: vertical;
+  min-height: 100px;
+}
+
+select.form-input {
+  cursor: pointer;
+}
+
+/* Validation */
+.form-field.has-error .form-input {
+  border-color: #d32f2f;
+}
+
+.field-feedback {
+  color: #d32f2f;
+  font-size: 12px;
+  min-height: 18px;
+}
+
+/* Repeatable Fields */
+.repeatable-field-group {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 20px 0;
+}
+
+.repeatable-field-group legend {
+  font-weight: 600;
+  font-size: 16px;
+  padding: 0 8px;
+  color: #333;
+}
+
+.repetition-container {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.repetition-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 4px;
+  position: relative;
+}
+
+.repetition-row .form-field {
+  flex: 1;
+  margin: 0;
+}
+
+.predicate-field {
+  min-width: 200px;
+}
+
+.object-field {
+  flex: 2;
+}
+
+.btn-remove-repetition {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  color: #666;
+  transition: all 0.2s;
+  margin-top: 28px; /* Align with input fields */
+}
+
+.btn-remove-repetition:hover {
+  background: #ffebee;
+  border-color: #d32f2f;
+  color: #d32f2f;
+}
+
+.btn-add-repetition {
+  padding: 8px 16px;
+  border: 1px dashed #1976d2;
+  background: white;
+  color: #1976d2;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 8px;
+  transition: all 0.2s;
+}
+
+.btn-add-repetition:hover {
+  background: #e3f2fd;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.btn {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #1976d2;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #1565c0;
+}
+
+.btn-primary:disabled {
+  background: #bbb;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: white;
+  color: #1976d2;
+  border: 1px solid #1976d2;
+}
+
+.btn-secondary:hover {
+  background: #e3f2fd;
+}
+
+/* Loading State */
+.nanopub-creator-loading {
+  display: flex;
   justify-content: center;
-  min-height: 400px;
-  color: var(--nc-text-light);
-  font-size: 1.125rem;
+  align-items: center;
+  min-height: 200px;
+  color: #666;
 }
 
-.nanopub-creator.loading::before {
-  content: '';
-  width: 2rem;
-  height: 2rem;
-  margin-right: 1rem;
-  border: 3px solid var(--nc-border);
-  border-top-color: var(--nc-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+.loading-spinner {
+  padding: 20px;
+  font-size: 16px;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+/* Error State */
+.nanopub-creator-error {
+  padding: 20px;
+  background: #ffebee;
+  border: 1px solid #ef5350;
+  border-radius: 4px;
+  color: #c62828;
 }
 
-/* ============= ERROR STATE ============= */
-.nanopub-creator.error {
-  padding: 2rem;
-  text-align: center;
-  color: var(--nc-error);
-  background: #fef2f2;
-  border: 1.5px solid var(--nc-error);
-  border-radius: var(--nc-radius);
-  margin: 2rem auto;
+.error-message {
+  font-size: 14px;
 }
 
-.nanopub-creator.error::before {
-  content: '⚠';
+.error-message strong {
   display: block;
-  font-size: 3rem;
-  margin-bottom: 1rem;
+  margin-bottom: 8px;
+  font-size: 16px;
 }
 
-/* ============= RESPONSIVE ============= */
+/* Responsive */
 @media (max-width: 768px) {
   .nanopub-creator {
-    padding: 1rem 0.5rem;
+    padding: 12px;
   }
-  
-  .nanopub-creator .creator-header h2 {
-    font-size: 1.5rem;
+
+  .creator-header h2 {
+    font-size: 20px;
   }
-  
-  .nanopub-creator .creator-header p {
-    font-size: 1rem;
+
+  .repetition-row {
+    flex-direction: column;
   }
-  
-  .nanopub-creator .btn-primary,
-  .nanopub-creator .btn-secondary {
+
+  .btn-remove-repetition {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    margin-top: 0;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .btn {
     width: 100%;
   }
 }
 
-/* ============= ACCESSIBILITY ============= */
-.nanopub-creator *:focus-visible {
-  outline: 2px solid var(--nc-primary);
-  outline-offset: 2px;
-}
-
-.nanopub-creator button:focus-visible {
-  outline-offset: 4px;
-}
-
-/* High contrast mode support */
-@media (prefers-contrast: high) {
-  .nanopub-creator .form-field input,
-  .nanopub-creator .form-field textarea,
-  .nanopub-creator .form-field select {
-    border-width: 2px;
-  }
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  .nanopub-creator * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* ============= DARK MODE SUPPORT (OPTIONAL) ============= */
+/* Dark Theme Support */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --nc-bg: #1f2937;
-    --nc-bg-light: #374151;
-    --nc-bg-dark: #111827;
-    --nc-text: #f9fafb;
-    --nc-text-light: #d1d5db;
-    --nc-text-muted: #9ca3af;
-    --nc-border: #374151;
-    --nc-border-dark: #4b5563;
+  .nanopub-creator {
+    color: #e0e0e0;
   }
-  
-  .nanopub-creator .creator-form {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-  }
-  
-  .nanopub-creator .form-field input,
-  .nanopub-creator .form-field textarea,
-  .nanopub-creator .form-field select {
-    background: var(--nc-bg-light);
-  }
-  
-  .nanopub-creator .repeatable-field {
-    background: var(--nc-bg-dark);
-  }
-}
 
-/* ============= PRINT STYLES ============= */
-@media print {
-  .nanopub-creator .form-actions,
-  .nanopub-creator .add-field,
-  .nanopub-creator .remove-field {
-    display: none;
+  .creator-header {
+    border-bottom-color: #424242;
   }
-  
-  .nanopub-creator .creator-form {
-    box-shadow: none;
-    border: 1px solid #000;
+
+  .creator-header h2,
+  .form-field label {
+    color: #e0e0e0;
+  }
+
+  .creator-description,
+  .field-help {
+    color: #b0b0b0;
+  }
+
+  .form-input {
+    background: #2c2c2c;
+    border-color: #424242;
+    color: #e0e0e0;
+  }
+
+  .form-input:focus {
+    border-color: #64b5f6;
+    box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.2);
+  }
+
+  .repetition-row {
+    background: #2c2c2c;
+  }
+
+  .btn-remove-repetition,
+  .btn-add-repetition,
+  .btn-secondary {
+    background: #2c2c2c;
+    border-color: #424242;
+    color: #90caf9;
+  }
+
+  .btn-remove-repetition:hover {
+    background: #5f2120;
+    border-color: #ef5350;
+    color: #ef5350;
+  }
+
+  .btn-add-repetition:hover,
+  .btn-secondary:hover {
+    background: #1e3a5f;
   }
 }

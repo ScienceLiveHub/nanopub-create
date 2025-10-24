@@ -1,24 +1,20 @@
-// src/core/publisher.js
+// src/core/publisher.js (WASM-enabled)
+import { initWasm, publish_nanopub } from '../wasm/bridge.js';
+
 export class NanopubPublisher {
   constructor(options = {}) {
-    this.server = options.server || 'https://np.petapico.org/';
+    this.options = options;
+    this.wasmReady = initWasm();
   }
 
   async publish(trigContent) {
-    // TODO: Implement with nanopub-rs WASM
-    console.log('Publishing to:', this.server);
-    console.log('Content:', trigContent);
-
-    // For now, just validate format
-    if (!trigContent.includes('np:Nanopublication')) {
-      throw new Error('Invalid nanopublication format');
-    }
-
-    // Return mock result
-    return {
-      success: true,
-      uri: 'https://w3id.org/np/temp-' + Date.now(),
-      message: 'Publishing not yet implemented - WASM integration pending'
-    };
+    await this.wasmReady;
+    
+    const result = await publish_nanopub(
+      trigContent,
+      this.options.server || 'https://np.petapico.org/'
+    );
+    
+    return JSON.parse(result);
   }
 }

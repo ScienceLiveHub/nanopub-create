@@ -2,7 +2,7 @@
  * Form Generator for Nanopublication Templates
  * 
  * Generates user-friendly HTML forms from parsed nanopub templates.
- * Supports various field types, validation, and repeatable fields.
+ * Supports various field types, validation, and repeatable fields with variable predicates.
  */
 
 export class FormGenerator {
@@ -16,7 +16,30 @@ export class FormGenerator {
     };
     this.formData = {};
     this.errors = {};
-    this.changeListeners = [];
+    this.eventListeners = {
+      change: [],
+      submit: [],
+      preview: []
+    };
+    this.repetitionCounts = {}; // Track repetitions for each repeatable statement
+  }
+
+  /**
+   * Add event listener
+   */
+  on(event, callback) {
+    if (this.eventListeners[event]) {
+      this.eventListeners[event].push(callback);
+    }
+  }
+
+  /**
+   * Trigger event
+   */
+  trigger(event, data) {
+    if (this.eventListeners[event]) {
+      this.eventListeners[event].forEach(callback => callback(data));
+    }
   }
 
   /**
@@ -26,9 +49,19 @@ export class FormGenerator {
     return {
       title: this.template.label,
       description: this.template.description,
-      fields: this.template.placeholders.map(p => this.placeholderToField(p)),
+      fields: this.getNonRepeatablePlaceholders(),
       statements: this.template.statements
     };
+  }
+
+  /**
+   * Get placeholders that are not part of repeatable statements
+   */
+  getNonRepeatablePlaceholders() {
+    const repeatablePlaceholderIds = this.template.repeatablePlaceholderIds || [];
+    return this.template.placeholders
+      .filter(p => !repeatablePlaceholderIds.includes(p.id))
+      .map(p => this.placeholderToField(p));
   }
 
   /**
@@ -126,7 +159,7 @@ export class FormGenerator {
     const header = this.buildHeader(schema);
     formElement.appendChild(header);
 
-    // Add fields
+    // Add regular fields
     schema.fields.forEach(field => {
       const fieldElement = this.buildField(field);
       formElement.appendChild(fieldElement);
@@ -160,6 +193,7 @@ export class FormGenerator {
 
     if (schema.description) {
       const description = document.createElement('p');
+      description.className = 'creator-description';
       description.textContent = schema.description;
       header.appendChild(description);
     }
@@ -187,86 +221,67 @@ export class FormGenerator {
     }
     fieldWrapper.appendChild(label);
 
-    // Input element
-    const input = this.buildInput(field);
-    fieldWrapper.appendChild(input);
-
-    // Help text
-    if (field.description && this.options.showHelp) {
-      const help = document.createElement('span');
+    // Description/help text
+    if (field.description) {
+      const help = document.createElement('small');
       help.className = 'field-help';
       help.textContent = field.description;
       fieldWrapper.appendChild(help);
     }
 
-    // Error message placeholder
-    const errorMsg = document.createElement('span');
-    errorMsg.className = 'error-message';
-    errorMsg.style.display = 'none';
-    fieldWrapper.appendChild(errorMsg);
-
-    return fieldWrapper;
-  }
-
-  /**
-   * Build input element based on field type
-   */
-  buildInput(field) {
+    // Input element
     let input;
-
-    switch (field.type) {
-      case 'textarea':
-        input = document.createElement('textarea');
-        input.rows = field.rows || 4;
-        if (field.maxLength) {
-          input.maxLength = field.maxLength;
-        }
-        break;
-
-      case 'select':
-        input = document.createElement('select');
-        
-        // Add placeholder option
-        const placeholderOption = document.createElement('option');
-        placeholderOption.value = '';
-        placeholderOption.textContent = field.placeholder || 'Select...';
-        placeholderOption.disabled = true;
-        placeholderOption.selected = true;
-        input.appendChild(placeholderOption);
-
-        // Add options (will be loaded asynchronously if needed)
-        if (field.options) {
-          this.loadSelectOptions(input, field.options);
-        }
-        break;
-
-      default:
-        input = document.createElement('input');
-        input.type = field.inputType || 'text';
-        if (field.placeholder) {
-          input.placeholder = field.placeholder;
-        }
-        if (field.maxLength) {
-          input.maxLength = field.maxLength;
-        }
+    if (field.type === 'textarea') {
+      input = document.createElement('textarea');
+      input.rows = field.rows || 4;
+    } else if (field.type === 'select') {
+      input = document.createElement('select');
+      input.id = `field-${field.id}`;
+      input.name = field.name;
+      
+      // Add placeholder option
+      const placeholderOption = document.createElement('option');
+      placeholderOption.value = '';
+      placeholderOption.textContent = field.placeholder || 'Select...';
+      placeholderOption.disabled = true;
+      placeholderOption.selected = true;
+      input.appendChild(placeholderOption);
+      
+      // Options will be loaded asynchronously
+      if (field.options) {
+        this.populateSelectOptions(input, field.options);
+      }
+    } else {
+      input = document.createElement('input');
+      input.type = field.inputType || 'text';
+      if (field.placeholder) {
+        input.placeholder = field.placeholder;
+      }
     }
 
     input.id = `field-${field.id}`;
     input.name = field.name;
     input.required = field.required;
+    input.className = 'form-input';
 
-    // Add validation attributes
-    if (field.validation?.regex) {
-      input.pattern = field.validation.regex;
+    if (field.maxLength) {
+      input.maxLength = field.maxLength;
     }
 
-    return input;
+    fieldWrapper.appendChild(input);
+
+    // Validation feedback
+    const feedback = document.createElement('div');
+    feedback.className = 'field-feedback';
+    fieldWrapper.appendChild(feedback);
+
+    return fieldWrapper;
   }
 
   /**
-   * Load options for select fields
+   * Populate select dropdown options
    */
-  async loadSelectOptions(selectElement, optionsConfig) {
+  async populateSelectOptions(selectElement, optionsConfig) {
     if (optionsConfig.type === 'inline') {
       // Add inline options
       optionsConfig.values.forEach(value => {
@@ -295,24 +310,31 @@ export class FormGenerator {
    * Fetch options from external URI (nanopub)
    */
   async fetchOptionsFromUri(uri) {
-    // Fetch the nanopub containing options
-    const response = await fetch(uri);
-    const content = await response.text();
+    try {
+      // Fetch the nanopub containing options
+      const response = await fetch(uri);
+      const content = await response.text();
 
-    // Parse options from nanopub
-    // This is a simplified parser - in production, use proper RDF parsing
-    const options = [];
-    const optionRegex = /<([^>]+)>\s+rdfs:label\s+"([^"]+)"/g;
-    let match;
+      // Parse options from nanopub (simplified TriG parser)
+      const options = [];
+      
+      // Match patterns like:
+      // <http://purl.org/spar/cito/cites> rdfs:label "cites"
+      const optionRegex = /<([^>]+)>\s+rdfs:label\s+"([^"]+)"/g;
+      let match;
 
-    while ((match = optionRegex.exec(content)) !== null) {
-      options.push({
-        value: match[1],
-        label: match[2]
-      });
+      while ((match = optionRegex.exec(content)) !== null) {
+        options.push({
+          value: match[1],
+          label: match[2]
+        });
+      }
+
+      return options;
+    } catch (error) {
+      console.error('Failed to fetch options from', uri, error);
+      return [];
     }
-
-    return options;
   }
 
   /**
@@ -322,15 +344,15 @@ export class FormGenerator {
     const repeatableStatements = schema.statements.filter(s => s.repeatable);
 
     repeatableStatements.forEach(statement => {
-      const group = this.buildRepeatableGroup(statement, schema);
+      const group = this.buildRepeatableGroup(statement);
       formElement.insertBefore(group, formElement.lastChild);
     });
   }
 
   /**
-   * Build repeatable field group
+   * Build repeatable field group (FIXED for variable predicates)
    */
-  buildRepeatableGroup(statement, schema) {
+  buildRepeatableGroup(statement) {
     const group = document.createElement('div');
     group.className = 'repeatable-field-group';
     group.dataset.statementId = statement.id;
@@ -341,79 +363,134 @@ export class FormGenerator {
 
     // Container for repeated fields
     const container = document.createElement('div');
-    container.className = 'repeatable-fields';
+    container.className = 'repetitions-container';
     group.appendChild(container);
 
-    // Add first instance
-    const firstField = this.buildRepeatableField(statement, schema, 0);
-    container.appendChild(firstField);
+    // Initialize repetition count
+    this.repetitionCounts[statement.id] = 0;
+
+    // Add first repetition
+    const firstRepetition = this.buildRepetition(statement, 0);
+    container.appendChild(firstRepetition);
+    this.repetitionCounts[statement.id] = 1;
 
     // Add button
     const addButton = document.createElement('button');
     addButton.type = 'button';
-    addButton.className = 'add-field';
-    addButton.textContent = '+ Add Another';
-    addButton.onclick = () => {
-      const index = container.children.length;
-      const newField = this.buildRepeatableField(statement, schema, index);
-      container.appendChild(newField);
-    };
+    addButton.className = 'btn-add-repetition';
+    addButton.textContent = '+ Add Another Citation';
+    addButton.onclick = () => this.addRepetition(statement, container);
     group.appendChild(addButton);
 
     return group;
   }
 
   /**
-   * Build a single repeatable field instance
+   * Build single repetition row (FIXED for variable predicates)
    */
-  buildRepeatableField(statement, schema, index) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'repeatable-field';
+  buildRepetition(statement, index) {
+    const repetition = document.createElement('div');
+    repetition.className = 'repetition-row';
+    repetition.dataset.index = index;
 
-    // Find the placeholder for the object of this statement
-    const placeholder = schema.fields.find(f => f.id === statement.object.replace('sub:', ''));
-    
-    if (placeholder) {
-      const field = { ...placeholder };
-      field.id = `${field.id}-${index}`;
-      field.name = `${field.name}[]`;
-      
-      const fieldElement = this.buildField(field);
-      wrapper.appendChild(fieldElement);
-
-      // Remove button (for index > 0)
-      if (index > 0) {
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.className = 'remove-field';
-        removeBtn.textContent = '×';
-        removeBtn.onclick = () => wrapper.remove();
-        wrapper.appendChild(removeBtn);
-      }
+    // CRITICAL: Check if predicate is a placeholder
+    if (statement.predicateIsPlaceholder) {
+      // Build field for predicate (dropdown)
+      const predicateField = this.placeholderToField(statement.predicatePlaceholder);
+      predicateField.name = `${statement.id}_${index}_predicate`;
+      const predicateElement = this.buildField(predicateField);
+      predicateElement.classList.add('predicate-field');
+      repetition.appendChild(predicateElement);
     }
 
-    return wrapper;
+    // Build field for object
+    if (statement.objectIsPlaceholder) {
+      const objectField = this.placeholderToField(statement.objectPlaceholder);
+      objectField.name = `${statement.id}_${index}_object`;
+      const objectElement = this.buildField(objectField);
+      objectElement.classList.add('object-field');
+      repetition.appendChild(objectElement);
+    }
+
+    // Add remove button (except for first repetition)
+    if (index > 0) {
+      const removeButton = document.createElement('button');
+      removeButton.type = 'button';
+      removeButton.className = 'btn-remove-repetition';
+      removeButton.textContent = '✕';
+      removeButton.title = 'Remove this citation';
+      removeButton.onclick = () => this.removeRepetition(repetition, statement);
+      repetition.appendChild(removeButton);
+    }
+
+    return repetition;
   }
 
   /**
-   * Build form action buttons
+   * Add a new repetition
+   */
+  addRepetition(statement, container) {
+    const index = this.repetitionCounts[statement.id];
+    const newRepetition = this.buildRepetition(statement, index);
+    container.appendChild(newRepetition);
+    this.repetitionCounts[statement.id]++;
+
+    // Trigger change event
+    this.trigger('change', {
+      action: 'add-repetition',
+      statement: statement.id,
+      index
+    });
+  }
+
+  /**
+   * Remove a repetition
+   */
+  removeRepetition(repetitionElement, statement) {
+    const index = parseInt(repetitionElement.dataset.index);
+    repetitionElement.remove();
+    this.repetitionCounts[statement.id]--;
+
+    // Trigger change event
+    this.trigger('change', {
+      action: 'remove-repetition',
+      statement: statement.id,
+      index
+    });
+  }
+
+  /**
+   * Get label for statement
+   */
+  getStatementLabel(statement) {
+    if (statement.predicateIsPlaceholder && statement.objectIsPlaceholder) {
+      return 'Citations';
+    }
+    if (statement.objectIsPlaceholder) {
+      return statement.objectPlaceholder.label;
+    }
+    return 'Related items';
+  }
+
+  /**
+   * Build form actions (buttons)
    */
   buildActions() {
     const actions = document.createElement('div');
     actions.className = 'form-actions';
 
-    const previewBtn = document.createElement('button');
-    previewBtn.type = 'button';
-    previewBtn.className = 'btn-secondary';
-    previewBtn.textContent = 'Preview';
-    previewBtn.onclick = () => this.handlePreview();
-    actions.appendChild(previewBtn);
+    const previewButton = document.createElement('button');
+    previewButton.type = 'button';
+    previewButton.className = 'btn btn-secondary';
+    previewButton.textContent = 'Preview';
+    previewButton.onclick = () => this.handlePreview();
+    actions.appendChild(previewButton);
 
-    const submitBtn = document.createElement('button');
-    submitBtn.type = 'submit';
-    submitBtn.className = 'btn-primary';
-    submitBtn.textContent = 'Create Nanopublication';
-    actions.appendChild(submitBtn);
+    const submitButton = document.createElement('button');
+    submitButton.type = 'submit';
+    submitButton.className = 'btn btn-primary';
+    submitButton.textContent = 'Create Nanopublication';
+    actions.appendChild(submitButton);
 
     return actions;
   }
@@ -421,57 +498,23 @@ export class FormGenerator {
   /**
    * Attach event listeners to form
    */
-  attachEventListeners(formElement) {
+  attachEventListeners(form) {
     // Form submission
-    formElement.addEventListener('submit', (e) => {
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
-      this.handleSubmit(formElement);
+      this.handleSubmit();
     });
 
-    // Field validation on change
-    if (this.options.validateOnChange) {
-      formElement.querySelectorAll('input, textarea, select').forEach(input => {
-        input.addEventListener('blur', () => {
-          this.validateField(input);
-        });
-      });
-    }
-
-    // Track changes
-    formElement.addEventListener('change', (e) => {
-      this.handleChange(e.target);
+    // Field changes
+    form.addEventListener('input', (e) => {
+      if (e.target.classList.contains('form-input')) {
+        this.handleFieldChange(e.target);
+      }
     });
-  }
 
-  /**
-   * Handle form submission
-   */
-  handleSubmit(formElement) {
-    // Collect form data
-    const data = this.collectFormData(formElement);
-
-    // Validate all fields
-    const isValid = this.validateForm(formElement);
-
-    if (isValid) {
-      // Trigger submit callback
-      this.changeListeners.forEach(listener => {
-        if (listener.event === 'submit') {
-          listener.callback(data);
-        }
-      });
-    }
-  }
-
-  /**
-   * Handle preview
-   */
-  handlePreview() {
-    const data = this.collectFormData();
-    
-    this.changeListeners.forEach(listener => {
-      if (listener.event === 'preview') {
-        listener.callback(data);
+    form.addEventListener('change', (e) => {
+      if (e.target.classList.contains('form-input')) {
+        this.handleFieldChange(e.target);
       }
     });
   }
@@ -479,93 +522,45 @@ export class FormGenerator {
   /**
    * Handle field change
    */
-  handleChange(input) {
-    const fieldId = input.closest('.form-field')?.dataset.fieldId;
-    
-    if (fieldId) {
-      this.formData[fieldId] = input.value;
-      
-      this.changeListeners.forEach(listener => {
-        if (listener.event === 'change') {
-          listener.callback({ field: fieldId, value: input.value });
-        }
-      });
-    }
-  }
+  handleFieldChange(field) {
+    const fieldId = field.name;
+    const value = field.value;
 
-  /**
-   * Collect all form data
-   */
-  collectFormData(formElement = null) {
-    if (!formElement) {
-      return this.formData;
+    // Update form data
+    this.formData[fieldId] = value;
+
+    // Validate if enabled
+    if (this.options.validateOnChange) {
+      this.validateField(field);
     }
 
-    const data = {};
-    const formData = new FormData(formElement);
-
-    for (const [key, value] of formData.entries()) {
-      if (key.endsWith('[]')) {
-        // Handle array fields
-        const baseKey = key.slice(0, -2);
-        if (!data[baseKey]) {
-          data[baseKey] = [];
-        }
-        data[baseKey].push(value);
-      } else {
-        data[key] = value;
-      }
-    }
-
-    return data;
-  }
-
-  /**
-   * Validate entire form
-   */
-  validateForm(formElement) {
-    let isValid = true;
-    const inputs = formElement.querySelectorAll('input, textarea, select');
-
-    inputs.forEach(input => {
-      if (!this.validateField(input)) {
-        isValid = false;
-      }
+    // Trigger change event
+    this.trigger('change', {
+      field: fieldId,
+      value
     });
-
-    return isValid;
   }
 
   /**
-   * Validate a single field
+   * Validate individual field
    */
-  validateField(input) {
-    const fieldWrapper = input.closest('.form-field');
-    if (!fieldWrapper) return true;
-
-    const errorElement = fieldWrapper.querySelector('.error-message');
+  validateField(field) {
+    const fieldWrapper = field.closest('.form-field');
+    const feedback = fieldWrapper.querySelector('.field-feedback');
+    
     let isValid = true;
     let errorMessage = '';
 
     // Required validation
-    if (input.required && !input.value.trim()) {
+    if (field.required && !field.value.trim()) {
       isValid = false;
       errorMessage = 'This field is required';
     }
 
-    // Pattern validation
-    if (isValid && input.pattern && input.value) {
-      const regex = new RegExp(input.pattern);
-      if (!regex.test(input.value)) {
-        isValid = false;
-        errorMessage = 'Please enter a valid value';
-      }
-    }
-
-    // URL validation
-    if (isValid && input.type === 'url' && input.value) {
+    // Type-specific validation
+    if (field.type === 'url' && field.value) {
       try {
-        new URL(input.value);
+        new URL(field.value);
       } catch {
         isValid = false;
         errorMessage = 'Please enter a valid URL';
@@ -574,52 +569,106 @@ export class FormGenerator {
 
     // Update UI
     if (isValid) {
-      fieldWrapper.classList.remove('error');
-      errorElement.style.display = 'none';
-      errorElement.textContent = '';
+      fieldWrapper.classList.remove('has-error');
+      feedback.textContent = '';
     } else {
-      fieldWrapper.classList.add('error');
-      errorElement.style.display = 'block';
-      errorElement.textContent = errorMessage;
+      fieldWrapper.classList.add('has-error');
+      feedback.textContent = errorMessage;
     }
 
     return isValid;
   }
 
   /**
-   * Get friendly label for statement
+   * Handle preview
    */
-  getStatementLabel(statement) {
-    // Try to get label from template
-    const predicate = statement.predicate.replace('sub:', '');
-    return this.template.prefixes[predicate] || predicate;
+  handlePreview() {
+    const data = this.collectFormData();
+    this.trigger('preview', data);
   }
 
   /**
-   * Add event listener
+   * Handle form submission
    */
-  on(event, callback) {
-    this.changeListeners.push({ event, callback });
+  handleSubmit() {
+    const data = this.collectFormData();
+    
+    // Validate all fields
+    const form = document.querySelector('.creator-form');
+    const inputs = form.querySelectorAll('.form-input');
+    let isValid = true;
+
+    inputs.forEach(input => {
+      if (!this.validateField(input)) {
+        isValid = false;
+      }
+    });
+
+    if (isValid) {
+      this.trigger('submit', data);
+    }
   }
 
   /**
-   * Remove event listener
+   * Collect all form data (FIXED for variable predicates)
    */
-  off(event, callback) {
-    this.changeListeners = this.changeListeners.filter(
-      l => !(l.event === event && l.callback === callback)
-    );
+  collectFormData() {
+    const data = {
+      fields: {},
+      repetitions: {}
+    };
+
+    // Collect regular fields
+    const form = document.querySelector('.creator-form');
+    const regularFields = form.querySelectorAll('.form-field:not(.repetition-row .form-field)');
+    
+    regularFields.forEach(fieldWrapper => {
+      const input = fieldWrapper.querySelector('.form-input');
+      if (input && input.name) {
+        data.fields[input.name] = input.value;
+      }
+    });
+
+    // Collect repeatable fields
+    const repetitionGroups = form.querySelectorAll('.repeatable-field-group');
+    
+    repetitionGroups.forEach(group => {
+      const statementId = group.dataset.statementId;
+      const repetitions = group.querySelectorAll('.repetition-row');
+      
+      data.repetitions[statementId] = [];
+      
+      repetitions.forEach(rep => {
+        const repData = {};
+        
+        // Get predicate (if it's a placeholder)
+        const predicateInput = rep.querySelector('.predicate-field .form-input');
+        if (predicateInput) {
+          repData.predicate = predicateInput.value;
+        }
+        
+        // Get object
+        const objectInput = rep.querySelector('.object-field .form-input');
+        if (objectInput) {
+          repData.object = objectInput.value;
+        }
+        
+        data.repetitions[statementId].push(repData);
+      });
+    });
+
+    return data;
   }
 
   /**
    * Set field value programmatically
    */
   setFieldValue(fieldId, value) {
-    this.formData[fieldId] = value;
-    
-    const input = document.querySelector(`#field-${fieldId}`);
+    const input = document.querySelector(`[name="${fieldId}"]`);
     if (input) {
       input.value = value;
+      this.formData[fieldId] = value;
+      this.trigger('change', { field: fieldId, value });
     }
   }
 
@@ -627,16 +676,82 @@ export class FormGenerator {
    * Get field value
    */
   getFieldValue(fieldId) {
-    return this.formData[fieldId];
+    return this.formData[fieldId] || '';
   }
 
   /**
    * Reset form
    */
   reset() {
+    const form = document.querySelector('.creator-form');
+    if (form) {
+      form.reset();
+      this.formData = {};
+      this.errors = {};
+      this.repetitionCounts = {};
+    }
+  }
+
+  /**
+   * Convenience method for onChange event
+   */
+  onChange(callback) {
+    this.on('change', callback);
+  }
+
+  /**
+   * Set form data programmatically
+   */
+  setFormData(data) {
+    this.formData = { ...this.formData, ...data };
+    
+    // Update form fields
+    Object.entries(data).forEach(([fieldId, value]) => {
+      const input = document.querySelector(`[name="${fieldId}"]`);
+      if (input) {
+        input.value = value;
+      }
+    });
+  }
+
+  /**
+   * Validate all form fields
+   */
+  validate() {
+    const form = document.querySelector('.creator-form');
+    if (!form) {
+      return { valid: false, errors: ['Form not found'] };
+    }
+
+    const inputs = form.querySelectorAll('.form-input');
+    const errors = [];
+    let isValid = true;
+
+    inputs.forEach(input => {
+      if (!this.validateField(input)) {
+        isValid = false;
+        const fieldWrapper = input.closest('.form-field');
+        const label = fieldWrapper?.querySelector('label')?.textContent || input.name;
+        const feedback = fieldWrapper?.querySelector('.field-feedback')?.textContent;
+        if (feedback) {
+          errors.push(`${label}: ${feedback}`);
+        }
+      }
+    });
+
+    return { valid: isValid, errors };
+  }
+
+  /**
+   * Destroy form generator and clean up
+   */
+  destroy() {
+    const container = document.querySelector('.nanopub-creator');
+    if (container) {
+      container.innerHTML = '';
+    }
     this.formData = {};
     this.errors = {};
+    this.eventListeners = { change: [], submit: [], preview: [] };
   }
 }
-
-export default FormGenerator;

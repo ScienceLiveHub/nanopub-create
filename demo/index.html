@@ -3,283 +3,271 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nanopub Creator Demo - Citation Template</title>
-  <link rel="stylesheet" href="../src/styles/creator.css">
+  <title>Nanopub Creator Demo</title>
   <style>
     body {
       margin: 0;
       padding: 20px;
-      background: #f3f4f6;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+      background: #f5f5f5;
     }
+
+    .demo-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
     .demo-header {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-    .demo-header h1 {
-      color: #111827;
-      margin: 0;
-    }
-    .demo-header p {
-      color: #6b7280;
-    }
-    .nanopub-preview {
-      margin-top: 2rem;
       background: white;
+      padding: 30px;
       border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      overflow: hidden;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    .nanopub-preview h3 {
-      background: #f9fafb;
+
+    .demo-header h1 {
+      margin: 0 0 10px 0;
+      color: #333;
+    }
+
+    .demo-header p {
       margin: 0;
-      padding: 1rem 1.5rem;
-      border-bottom: 1px solid #e5e7eb;
-      font-size: 1rem;
-      color: #111827;
+      color: #666;
     }
-    .nanopub-preview pre {
-      margin: 0;
-      padding: 1.5rem;
-      background: #1f2937;
-      color: #f9fafb;
-      font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
-      font-size: 0.875rem;
-      line-height: 1.6;
-      overflow-x: auto;
+
+    .demo-content {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
     }
-    .preview-actions {
-      padding: 1rem 1.5rem;
-      background: #f9fafb;
-      border-top: 1px solid #e5e7eb;
-      display: flex;
-      gap: 1rem;
+
+    @media (min-width: 1024px) {
+      .demo-content {
+        grid-template-columns: 2fr 1fr;
+      }
     }
-    .preview-actions button {
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      border: 1px solid #d1d5db;
+
+    .demo-creator {
       background: white;
-      cursor: pointer;
-      font-size: 0.875rem;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    .preview-actions button:hover {
-      background: #f3f4f6;
+
+    .demo-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
+
+    .demo-info {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .demo-info h3 {
+      margin: 0 0 15px 0;
+      color: #333;
+      font-size: 18px;
+    }
+
+    .demo-output {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .demo-output h3 {
+      margin: 0 0 15px 0;
+      color: #333;
+      font-size: 18px;
+    }
+
+    .output-content {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 12px;
+      overflow-x: auto;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .template-select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
+
+    .event-log {
+      background: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 11px;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+
+    .event-log-item {
+      padding: 5px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .event-log-item:last-child {
+      border-bottom: none;
+    }
+
+    .event-log-time {
+      color: #666;
+      margin-right: 10px;
+    }
+
+    .event-log-type {
+      font-weight: 600;
+      margin-right: 10px;
+    }
+
+    .event-log-type.change { color: #2196f3; }
+    .event-log-type.submit { color: #4caf50; }
+    .event-log-type.error { color: #f44336; }
   </style>
 </head>
 <body>
-  <div class="demo-header">
-    <h1>🚀 Nanopub Creator Demo</h1>
-    <p>Testing with Citation Template (for Zotero integration)</p>
+  <div class="demo-container">
+    <div class="demo-header">
+      <h1>🧬 Nanopub Creator Demo</h1>
+      <p>Create nanopublications from templates using the nanopub-create library</p>
+    </div>
+
+    <div class="demo-content">
+      <div class="demo-creator" id="creator-container"></div>
+      
+      <div class="demo-sidebar">
+        <div class="demo-info">
+          <h3>📋 Template Selection</h3>
+          <select class="template-select" id="template-select">
+            <option value="https://w3id.org/np/RA24onqmqTMsraJ7ypYFOuckmNWpo4Zv5gsLqhXt7xYPU">
+              Declare Citation with Comment
+            </option>
+            <option value="https://w3id.org/np/RAi3p74nRQdXBYWCzZnb9T0KqWNNj-kbp7j5N1ovZ1UqI">
+              PICO Template
+            </option>
+            <option value="https://w3id.org/np/RAmk-gxK8aN6Jf6vcnxuJcNv3vMj-7iwRlZYmrLmPNNnI">
+              Scholarly Work Metadata
+            </option>
+          </select>
+          
+          <h4>About This Demo</h4>
+          <p style="font-size: 14px; color: #666;">
+            This demo shows the nanopub-create library in action. Select a template above, 
+            fill in the form, and click "Create Nanopublication" to see the generated TriG output.
+          </p>
+        </div>
+
+        <div class="demo-output">
+          <h3>📤 Output</h3>
+          <div class="output-content" id="output-content">
+            <em>Submit the form to see the generated nanopublication here...</em>
+          </div>
+        </div>
+
+        <div class="demo-info">
+          <h3>🔔 Event Log</h3>
+          <div class="event-log" id="event-log"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div id="app"></div>
-
   <script type="module">
-    import { TemplateParser } from '../src/core/templateParser.js';
-    import { FormGenerator } from '../src/core/formGenerator.js';
-    import { NanopubBuilder } from '../src/core/nanopubBuilder.js';
+    import NanopubCreator from '../src/index.js';
+    import '../src/styles/creator.css';
 
-    // Citation template (good for Zotero)
-    const templateContent = `
-@prefix this: <https://w3id.org/np/RAX_4tWTyjFpO6nz63s14ucuejd64t2mK3IBlkwZ7jjLo> .
-@prefix sub: <https://w3id.org/np/RAX_4tWTyjFpO6nz63s14ucuejd64t2mK3IBlkwZ7jjLo#> .
-@prefix np: <http://www.nanopub.org/nschema#> .
-@prefix dct: <http://purl.org/dc/terms/> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix nt: <https://w3id.org/np/o/ntemplate/> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix prov: <http://www.w3.org/ns/prov#> .
-@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+    const container = document.getElementById('creator-container');
+    const outputContent = document.getElementById('output-content');
+    const eventLog = document.getElementById('event-log');
+    const templateSelect = document.getElementById('template-select');
 
-sub:assertion {
-  sub:assertion a nt:AssertionTemplate;
-    rdfs:label "Declare citations with CiTO";
-    dct:description "Create a citation nanopublication for a scholarly article. Perfect for use from Zotero when you want to declare which papers cite which.";
-    nt:hasNanopubLabelPattern "Citations for: \${article}";
-    nt:hasStatement sub:st01, sub:st02;
-    nt:hasTag "Citations", "Journals" .
-  
-  sub:article a nt:ExternalUriPlaceholder;
-    rdfs:label "DOI or URL of the citing article (e.g., https://doi.org/10.1234/example)" .
-  
-  sub:cited a nt:ExternalUriPlaceholder;
-    rdfs:label "DOI or URL of the cited article (repeatable - add multiple)" .
-  
-  sub:st01 rdf:object <http://purl.org/spar/fabio/ScholarlyWork>;
-    rdf:predicate rdf:type;
-    rdf:subject sub:article .
-  
-  sub:st02 a nt:RepeatableStatement;
-    rdf:object sub:cited;
-    rdf:predicate <http://purl.org/spar/cito/cites>;
-    rdf:subject sub:article .
-}
-`;
+    let creator = null;
 
-    console.log('🚀 Initializing Citation Demo...');
-
-    try {
-      // Parse template
-      const parser = new TemplateParser(templateContent);
-      const template = parser.parse();
-      console.log('✅ Template parsed:', template);
-
-      // Create builder
-      const builder = new NanopubBuilder(template);
-      console.log('✅ Builder created');
-
-      // Generate form
-      const generator = new FormGenerator(template);
-      generator.renderForm('#app');
-      console.log('✅ Form generated');
-
-      // Pre-fill with example data (like from Zotero)
-      generator.setFieldValue('article', 'https://doi.org/10.1234/example-paper');
-      console.log('✅ Pre-filled with example data');
-
-      // Handle preview
-      generator.on('preview', (data) => {
-        console.log('👁️ Preview requested', data);
-        
-        // Build the nanopub
-        const metadata = {
-          creatorOrcid: 'https://orcid.org/0000-0001-2345-6789',
-          creatorName: 'Demo User',
-          createdAt: new Date().toISOString()
-        };
-        
-        const trigContent = builder.buildFromFormData(data, metadata);
-        console.log('Generated TriG:', trigContent);
-        
-        // Show preview
-        showNanopubPreview(trigContent);
-      });
-
-      // Handle submit
-      generator.on('submit', (data) => {
-        console.log('📤 Form submitted:', data);
-        
-        // Build the nanopub
-        const metadata = {
-          creatorOrcid: 'https://orcid.org/0000-0001-2345-6789',
-          creatorName: 'Demo User',
-          createdAt: new Date().toISOString()
-        };
-        
-        const trigContent = builder.buildFromFormData(data, metadata);
-        
-        // Validate
-        const validation = builder.validate(trigContent);
-        console.log('Validation:', validation);
-        
-        if (!validation.valid) {
-          alert('Warning: Generated nanopub has issues:\\n' + validation.errors.join('\\n'));
-        }
-        
-        // Show the result
-        showNanopubPreview(trigContent);
-        alert('✅ Nanopublication created successfully! Scroll down to see the TriG output.');
-      });
-
-      // Handle changes
-      generator.on('change', ({ field, value }) => {
-        console.log(`🔄 Field "${field}" changed to:`, value);
-      });
-
-      console.log('✨ Demo ready!');
-      console.log('📝 Instructions:');
-      console.log('   1. Fill in the article DOI (pre-filled with example)');
-      console.log('   2. Add one or more cited articles');
-      console.log('   3. Click "Preview" to see the generated nanopub');
-      console.log('   4. Click "Create Nanopublication" to finalize');
-
-    } catch (error) {
-      console.error('❌ Error:', error);
-      document.getElementById('app').innerHTML = `
-        <div style="padding: 2rem; background: #fee; border: 1px solid #fcc; border-radius: 8px; color: #c00;">
-          <h2>Error</h2>
-          <p>${error.message}</p>
-          <pre style="background: white; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.75rem;">${error.stack}</pre>
-        </div>
+    function logEvent(type, message) {
+      const timestamp = new Date().toLocaleTimeString();
+      const logItem = document.createElement('div');
+      logItem.className = 'event-log-item';
+      logItem.innerHTML = `
+        <span class="event-log-time">${timestamp}</span>
+        <span class="event-log-type ${type}">${type.toUpperCase()}</span>
+        ${message}
       `;
+      eventLog.insertBefore(logItem, eventLog.firstChild);
+      
+      // Keep only last 20 items
+      while (eventLog.children.length > 20) {
+        eventLog.removeChild(eventLog.lastChild);
+      }
     }
 
-    function showNanopubPreview(trigContent) {
-      // Remove old preview if exists
-      const oldPreview = document.querySelector('.nanopub-preview');
-      if (oldPreview) {
-        oldPreview.remove();
+    async function loadTemplate(templateUri) {
+      logEvent('change', `Loading template: ${templateUri}`);
+      
+      if (creator) {
+        creator.destroy();
       }
 
-      // Create preview element
-      const preview = document.createElement('div');
-      preview.className = 'nanopub-preview';
-      preview.innerHTML = `
-        <h3>🎉 Generated Nanopublication (TriG Format)</h3>
-        <pre id="trig-content">${escapeHtml(trigContent)}</pre>
-        <div class="preview-actions">
-          <button onclick="copyToClipboard()">📋 Copy to Clipboard</button>
-          <button onclick="downloadTriG()">💾 Download as .trig</button>
-          <button onclick="validateNanopub()">✓ Validate</button>
-        </div>
-      `;
-      
-      document.querySelector('#app').appendChild(preview);
-      preview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      creator = new NanopubCreator({
+        publishServer: 'https://np.petapico.org/',
+        theme: 'default',
+        validateOnChange: true,
+        showHelp: true
+      });
+
+      creator.on('change', (data) => {
+        logEvent('change', `Form updated: ${Object.keys(data).join(', ')}`);
+      });
+
+      creator.on('submit', async ({ trigContent, formData }) => {
+        logEvent('submit', 'Form submitted successfully');
+        outputContent.textContent = trigContent;
+      });
+
+      creator.on('error', ({ type, error, errors }) => {
+        logEvent('error', `Error (${type}): ${error?.message || errors?.join(', ')}`);
+      });
+
+      try {
+        await creator.renderFromTemplateUri(templateUri, container);
+        logEvent('change', 'Template loaded and form rendered');
+      } catch (error) {
+        logEvent('error', `Failed to load template: ${error.message}`);
+        container.innerHTML = `
+          <div style="padding: 20px; background: #ffebee; border-radius: 4px; color: #c62828;">
+            <strong>Error loading template:</strong><br>
+            ${error.message}
+          </div>
+        `;
+      }
     }
 
-    // Make functions globally accessible
-    window.copyToClipboard = function() {
-      const content = document.getElementById('trig-content').textContent;
-      navigator.clipboard.writeText(content).then(() => {
-        alert('✅ Copied to clipboard!');
-      });
-    };
+    // Load initial template
+    loadTemplate(templateSelect.value);
 
-    window.downloadTriG = function() {
-      const content = document.getElementById('trig-content').textContent;
-      const blob = new Blob([content], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `nanopub-${Date.now()}.trig`;
-      a.click();
-      URL.revokeObjectURL(url);
-    };
+    // Handle template changes
+    templateSelect.addEventListener('change', (e) => {
+      loadTemplate(e.target.value);
+    });
 
-    window.validateNanopub = function() {
-      const content = document.getElementById('trig-content').textContent;
-      const checks = [
-        { test: content.includes('np:Nanopublication'), name: 'Has Nanopublication declaration' },
-        { test: content.includes('np:hasAssertion'), name: 'Has assertion graph' },
-        { test: content.includes('np:hasProvenance'), name: 'Has provenance graph' },
-        { test: content.includes('np:hasPublicationInfo'), name: 'Has publication info graph' },
-        { test: content.includes('#assertion'), name: 'Assertion graph defined' },
-        { test: content.includes('#provenance'), name: 'Provenance graph defined' },
-        { test: content.includes('#pubinfo'), name: 'Publication info graph defined' },
-        { test: content.includes('dct:created'), name: 'Has creation date' },
-        { test: content.includes('dct:creator'), name: 'Has creator' }
-      ];
-      
-      const passed = checks.filter(c => c.test).length;
-      const total = checks.length;
-      
-      let message = `Validation Results: ${passed}/${total} checks passed\\n\\n`;
-      checks.forEach(check => {
-        message += `${check.test ? '✅' : '❌'} ${check.name}\\n`;
-      });
-      
-      alert(message);
-    };
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
+    // Log initial event
+    logEvent('change', 'Demo initialized');
   </script>
 </body>
 </html>
