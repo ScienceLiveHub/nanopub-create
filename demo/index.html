@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nanopub Creator Demo - Citation Template</title>
+  <link rel="stylesheet" href="../src/styles/creator.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #f3f4f6;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    .demo-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .demo-header h1 {
+      color: #111827;
+      margin: 0;
+    }
+    .demo-header p {
+      color: #6b7280;
+    }
+    .nanopub-preview {
+      margin-top: 2rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .nanopub-preview h3 {
+      background: #f9fafb;
+      margin: 0;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 1rem;
+      color: #111827;
+    }
+    .nanopub-preview pre {
+      margin: 0;
+      padding: 1.5rem;
+      background: #1f2937;
+      color: #f9fafb;
+      font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      overflow-x: auto;
+    }
+    .preview-actions {
+      padding: 1rem 1.5rem;
+      background: #f9fafb;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      gap: 1rem;
+    }
+    .preview-actions button {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      background: white;
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .preview-actions button:hover {
+      background: #f3f4f6;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-header">
+    <h1>🚀 Nanopub Creator Demo</h1>
+    <p>Testing with Citation Template (for Zotero integration)</p>
+  </div>
+
+  <div id="app"></div>
+
+  <script type="module">
+    import { TemplateParser } from '../src/core/templateParser.js';
+    import { FormGenerator } from '../src/core/formGenerator.js';
+    import { NanopubBuilder } from '../src/core/nanopubBuilder.js';
+
+    // Citation template (good for Zotero)
+    const templateContent = `
+@prefix this: <https://w3id.org/np/RAX_4tWTyjFpO6nz63s14ucuejd64t2mK3IBlkwZ7jjLo> .
+@prefix sub: <https://w3id.org/np/RAX_4tWTyjFpO6nz63s14ucuejd64t2mK3IBlkwZ7jjLo#> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix nt: <https://w3id.org/np/o/ntemplate/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+sub:assertion {
+  sub:assertion a nt:AssertionTemplate;
+    rdfs:label "Declare citations with CiTO";
+    dct:description "Create a citation nanopublication for a scholarly article. Perfect for use from Zotero when you want to declare which papers cite which.";
+    nt:hasNanopubLabelPattern "Citations for: \${article}";
+    nt:hasStatement sub:st01, sub:st02;
+    nt:hasTag "Citations", "Journals" .
+  
+  sub:article a nt:ExternalUriPlaceholder;
+    rdfs:label "DOI or URL of the citing article (e.g., https://doi.org/10.1234/example)" .
+  
+  sub:cited a nt:ExternalUriPlaceholder;
+    rdfs:label "DOI or URL of the cited article (repeatable - add multiple)" .
+  
+  sub:st01 rdf:object <http://purl.org/spar/fabio/ScholarlyWork>;
+    rdf:predicate rdf:type;
+    rdf:subject sub:article .
+  
+  sub:st02 a nt:RepeatableStatement;
+    rdf:object sub:cited;
+    rdf:predicate <http://purl.org/spar/cito/cites>;
+    rdf:subject sub:article .
+}
+`;
+
+    console.log('🚀 Initializing Citation Demo...');
+
+    try {
+      // Parse template
+      const parser = new TemplateParser(templateContent);
+      const template = parser.parse();
+      console.log('✅ Template parsed:', template);
+
+      // Create builder
+      const builder = new NanopubBuilder(template);
+      console.log('✅ Builder created');
+
+      // Generate form
+      const generator = new FormGenerator(template);
+      generator.renderForm('#app');
+      console.log('✅ Form generated');
+
+      // Pre-fill with example data (like from Zotero)
+      generator.setFieldValue('article', 'https://doi.org/10.1234/example-paper');
+      console.log('✅ Pre-filled with example data');
+
+      // Handle preview
+      generator.on('preview', (data) => {
+        console.log('👁️ Preview requested', data);
+        
+        // Build the nanopub
+        const metadata = {
+          creatorOrcid: 'https://orcid.org/0000-0001-2345-6789',
+          creatorName: 'Demo User',
+          createdAt: new Date().toISOString()
+        };
+        
+        const trigContent = builder.buildFromFormData(data, metadata);
+        console.log('Generated TriG:', trigContent);
+        
+        // Show preview
+        showNanopubPreview(trigContent);
+      });
+
+      // Handle submit
+      generator.on('submit', (data) => {
+        console.log('📤 Form submitted:', data);
+        
+        // Build the nanopub
+        const metadata = {
+          creatorOrcid: 'https://orcid.org/0000-0001-2345-6789',
+          creatorName: 'Demo User',
+          createdAt: new Date().toISOString()
+        };
+        
+        const trigContent = builder.buildFromFormData(data, metadata);
+        
+        // Validate
+        const validation = builder.validate(trigContent);
+        console.log('Validation:', validation);
+        
+        if (!validation.valid) {
+          alert('Warning: Generated nanopub has issues:\\n' + validation.errors.join('\\n'));
+        }
+        
+        // Show the result
+        showNanopubPreview(trigContent);
+        alert('✅ Nanopublication created successfully! Scroll down to see the TriG output.');
+      });
+
+      // Handle changes
+      generator.on('change', ({ field, value }) => {
+        console.log(`🔄 Field "${field}" changed to:`, value);
+      });
+
+      console.log('✨ Demo ready!');
+      console.log('📝 Instructions:');
+      console.log('   1. Fill in the article DOI (pre-filled with example)');
+      console.log('   2. Add one or more cited articles');
+      console.log('   3. Click "Preview" to see the generated nanopub');
+      console.log('   4. Click "Create Nanopublication" to finalize');
+
+    } catch (error) {
+      console.error('❌ Error:', error);
+      document.getElementById('app').innerHTML = `
+        <div style="padding: 2rem; background: #fee; border: 1px solid #fcc; border-radius: 8px; color: #c00;">
+          <h2>Error</h2>
+          <p>${error.message}</p>
+          <pre style="background: white; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.75rem;">${error.stack}</pre>
+        </div>
+      `;
+    }
+
+    function showNanopubPreview(trigContent) {
+      // Remove old preview if exists
+      const oldPreview = document.querySelector('.nanopub-preview');
+      if (oldPreview) {
+        oldPreview.remove();
+      }
+
+      // Create preview element
+      const preview = document.createElement('div');
+      preview.className = 'nanopub-preview';
+      preview.innerHTML = `
+        <h3>🎉 Generated Nanopublication (TriG Format)</h3>
+        <pre id="trig-content">${escapeHtml(trigContent)}</pre>
+        <div class="preview-actions">
+          <button onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+          <button onclick="downloadTriG()">💾 Download as .trig</button>
+          <button onclick="validateNanopub()">✓ Validate</button>
+        </div>
+      `;
+      
+      document.querySelector('#app').appendChild(preview);
+      preview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // Make functions globally accessible
+    window.copyToClipboard = function() {
+      const content = document.getElementById('trig-content').textContent;
+      navigator.clipboard.writeText(content).then(() => {
+        alert('✅ Copied to clipboard!');
+      });
+    };
+
+    window.downloadTriG = function() {
+      const content = document.getElementById('trig-content').textContent;
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `nanopub-${Date.now()}.trig`;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    window.validateNanopub = function() {
+      const content = document.getElementById('trig-content').textContent;
+      const checks = [
+        { test: content.includes('np:Nanopublication'), name: 'Has Nanopublication declaration' },
+        { test: content.includes('np:hasAssertion'), name: 'Has assertion graph' },
+        { test: content.includes('np:hasProvenance'), name: 'Has provenance graph' },
+        { test: content.includes('np:hasPublicationInfo'), name: 'Has publication info graph' },
+        { test: content.includes('#assertion'), name: 'Assertion graph defined' },
+        { test: content.includes('#provenance'), name: 'Provenance graph defined' },
+        { test: content.includes('#pubinfo'), name: 'Publication info graph defined' },
+        { test: content.includes('dct:created'), name: 'Has creation date' },
+        { test: content.includes('dct:creator'), name: 'Has creator' }
+      ];
+      
+      const passed = checks.filter(c => c.test).length;
+      const total = checks.length;
+      
+      let message = `Validation Results: ${passed}/${total} checks passed\\n\\n`;
+      checks.forEach(check => {
+        message += `${check.test ? '✅' : '❌'} ${check.name}\\n`;
+      });
+      
+      alert(message);
+    };
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

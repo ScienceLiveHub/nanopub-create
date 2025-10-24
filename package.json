@@ -1,0 +1,69 @@
+{
+  "name": "@sciencelivehub/nanopub-create",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Create and publish nanopublications with user-friendly forms generated from templates",
+  "main": "dist/nanopub-creator.js",
+  "module": "dist/nanopub-creator.esm.js",
+  "style": "dist/nanopub-creator.css",
+  "types": "src/react/NanopubCreator.tsx",
+  "exports": {
+    ".": {
+      "types": "./src/index.js",
+      "import": "./dist/nanopub-creator.esm.js",
+      "require": "./dist/nanopub-creator.js"
+    },
+    "./react": {
+      "types": "./src/react/NanopubCreator.tsx",
+      "import": "./src/react.js"
+    },
+    "./dist/nanopub-creator.css": "./dist/nanopub-creator.css",
+    "./src/styles/creator.css": "./src/styles/creator.css"
+  },
+  "files": [
+    "dist",
+    "src",
+    "wasm"
+  ],
+  "homepage": "https://sciencelive4all.org/nanopub-create",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:demo": "vite build --mode demo",
+    "preview": "vite preview",
+    "deploy": "npm run build && npm run build:demo && gh-pages -d demo-dist",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx"
+  },
+  "keywords": [
+    "nanopublication",
+    "rdf",
+    "semantic-web",
+    "creator",
+    "form-generator",
+    "react",
+    "wasm"
+  ],
+  "author": "ScienceLiveHub",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ScienceLiveHub/nanopub-create.git"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "react": "^18.0.0",
+    "vite": "^7.1.11",
+    "vitest": "^1.0.0",
+    "eslint": "^8.0.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "gh-pages": "^6.0.0"
+  },
+  "dependencies": {
+    "@sciencelivehub/nanopub-view": "git+https://github.com/ScienceLiveHub/nanopub-view.git"
+  }
+}
