@@ -49,6 +49,59 @@ export class TemplateParser {
     }
   }
 
+/**
+ * Parse template with label fetching
+ */
+async parseWithLabels() {
+    // 1. Parse template structure
+    this.parse();
+    
+    // 2. Collect all URIs that need labels
+    const urisToFetch = new Set();
+    
+    // Collect from placeholders
+    this.template.placeholders.forEach(placeholder => {
+        if (placeholder.id && !placeholder.id.startsWith('sub:')) {
+            urisToFetch.add(placeholder.id);
+        }
+    });
+    
+    // Collect from statements
+    this.template.statements.forEach(statement => {
+        if (statement.predicate && statement.predicate.startsWith('http')) {
+            urisToFetch.add(statement.predicate);
+        }
+        if (statement.subject && statement.subject.startsWith('http')) {
+            urisToFetch.add(statement.subject);
+        }
+        if (statement.object && statement.object.startsWith('http')) {
+            urisToFetch.add(statement.object);
+        }
+    });
+    
+    // 3. Fetch labels for all URIs
+    if (!this.template.labels) {
+        this.template.labels = {};
+    }
+    
+    const labelFetcher = new LabelFetcher();
+    const fetchedLabels = await labelFetcher.batchGetLabels(
+        Array.from(urisToFetch),
+        this.template.labels  // Use any labels already in template
+    );
+    
+    // 4. Store fetched labels
+    fetchedLabels.forEach((label, uri) => {
+        if (!this.template.labels[uri]) {
+            this.template.labels[uri] = label;
+        }
+    });
+    
+    console.log('✅ Fetched labels for', Object.keys(this.template.labels).length, 'URIs');
+    
+    return this.template;
+}
+
   /**
    * Parse template-level metadata
    */
@@ -354,7 +407,7 @@ export async function parseTemplateFromUri(templateUri) {
   const content = await response.text();
   const parser = new TemplateParser(content);
   
-  return parser.parse();
+  return await parser.parseWithLabels();
 }
 
 /**
@@ -401,6 +454,87 @@ export function validateTemplate(template) {
     errors
   };
 }
+
+/**
+ * Label Fetcher for fetching rdfs:label values from URIs
+ */
+class LabelFetcher {
+  constructor() {
+    this.cache = new Map();
+  }
+
+  async batchGetLabels(uris, localLabels = {}) {
+    const results = new Map();
+    
+    const promises = uris.map(async uri => {
+      // Check local labels first
+      if (localLabels[uri]) {
+        results.set(uri, localLabels[uri]);
+        return;
+      }
+      
+      // Check cache
+      if (this.cache.has(uri)) {
+        results.set(uri, this.cache.get(uri));
+        return;
+      }
+      
+      // Fetch label
+      const label = await this.fetchLabel(uri);
+      this.cache.set(uri, label);
+      results.set(uri, label);
+    });
+    
+    await Promise.all(promises);
+    return results;
+  }
+
+  async fetchLabel(uri) {
+    try {
+      // Try to fetch the URI and look for rdfs:label
+      const response = await fetch(uri, {
+        headers: { 'Accept': 'text/turtle, application/rdf+xml, application/ld+json' }
+      });
+      
+      if (!response.ok) {
+        return this.parseUriLabel(uri);
+      }
+      
+      const content = await response.text();
+      
+      // Simple pattern matching for rdfs:label
+      const labelMatch = content.match(/rdfs:label\s+"([^"]+)"/);
+      if (labelMatch) {
+        return labelMatch[1];
+      }
+      
+      // Fallback to parsing URI
+      return this.parseUriLabel(uri);
+    } catch (error) {
+      // On error, parse URI
+      return this.parseUriLabel(uri);
+    }
+  }
+
+  parseUriLabel(uri) {
+    const parts = uri.split(/[#\/]/);
+    let label = parts[parts.length - 1];
+    
+    if (!label && parts.length > 1) {
+      label = parts[parts.length - 2];
+    }
+    
+    // Convert camelCase to Title Case
+    label = label.replace(/([a-z])([A-Z])/g, '$1 $2');
+    label = label.replace(/[_-]/g, ' ');
+    label = label.trim();
+    
+    // Capitalize
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+}
+
+export { LabelFetcher };
 
 // Default export
 export default TemplateParser;

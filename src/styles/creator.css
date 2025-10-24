@@ -1,286 +1,336 @@
 /**
- * Nanopub Creator Styles
+ * Nanopub Creator Form Styles
  * 
- * All styles are scoped with .nanopub-creator prefix
+ * Styles for forms with proper label display, tooltips, and visual feedback
  */
 
 /* Container */
-.nanopub-creator {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+.nanopub-creator.enhanced {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
 /* Header */
 .creator-header {
   margin-bottom: 30px;
-  border-bottom: 2px solid #e0e0e0;
   padding-bottom: 20px;
+  border-bottom: 2px solid #e0e0e0;
 }
 
 .creator-header h2 {
   margin: 0 0 10px 0;
-  font-size: 24px;
   color: #333;
+  font-size: 24px;
+  font-weight: 600;
 }
 
 .creator-description {
-  color: #666;
-  font-size: 14px;
   margin: 0;
-}
-
-/* Form */
-.creator-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-/* Form Fields */
-.form-field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-field label {
-  font-weight: 600;
-  font-size: 14px;
-  color: #333;
-}
-
-.required-indicator {
-  color: #d32f2f;
-}
-
-.field-help {
   color: #666;
-  font-size: 12px;
-  margin-top: -4px;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
+/* Form sections */
+.form-fields,
+.statements-section {
+  margin-bottom: 30px;
+}
+
+.statements-section > h3 {
+  margin: 0 0 20px 0;
+  color: #444;
+  font-size: 18px;
+  font-weight: 600;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 10px;
+}
+
+/* Form field */
+.form-field,
+.statement-field {
+  margin-bottom: 20px;
+}
+
+.form-field.required label::after {
+  content: ' *';
+  color: #e74c3c;
+}
+
+/* Labels with URI tooltips */
+.form-field label,
+.statement-field label {
+  display: block;
+  margin-bottom: 6px;
+  color: #333;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: help;
+}
+
+.has-tooltip {
+  position: relative;
+  border-bottom: 1px dotted #999;
+}
+
+.uri-info-icon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  background: #f0f0f0;
+  border-radius: 50%;
+  margin-left: 4px;
+  cursor: help;
+}
+
+.uri-info-icon:hover {
+  background: #3498db;
+  color: white;
+}
+
+/* Inputs */
 .form-input {
-  padding: 10px;
-  border: 1px solid #ddd;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d0d0d0;
   border-radius: 4px;
   font-size: 14px;
   font-family: inherit;
-  transition: border-color 0.2s;
-  background: white;
-  color: #333;
-  width: 100%;
-  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: #1976d2;
-  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
-.form-input:disabled {
-  background-color: #f5f5f5;
-  cursor: not-allowed;
+.form-input.invalid {
+  border-color: #e74c3c;
+}
+
+.form-input.invalid:focus {
+  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
 }
 
 textarea.form-input {
   resize: vertical;
-  min-height: 100px;
+  min-height: 80px;
+  line-height: 1.5;
 }
 
 select.form-input {
   cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
 
-/* Validation */
-.form-field.has-error .form-input {
-  border-color: #d32f2f;
+select.form-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
-.field-feedback {
-  color: #d32f2f;
-  font-size: 12px;
-  min-height: 18px;
-}
-
-/* Repeatable Fields */
-.repeatable-field-group {
+/* Fixed object display */
+.fixed-object {
+  display: inline-block;
+  padding: 8px 12px;
+  background: #f8f9fa;
   border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 16px;
-  margin: 20px 0;
+  border-radius: 4px;
+  color: #555;
+  font-size: 14px;
+  cursor: help;
 }
 
-.repeatable-field-group legend {
-  font-weight: 600;
+/* Help text */
+.field-help {
+  display: block;
+  margin-top: 6px;
+  color: #777;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* Error message */
+.field-error {
+  display: none;
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: #fee;
+  border-left: 3px solid #e74c3c;
+  color: #c0392b;
+  font-size: 13px;
+  border-radius: 3px;
+}
+
+/* Repeatable fields */
+.repeatable-group {
+  margin: 30px 0;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.repeatable-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #d0d0d0;
+}
+
+.repeatable-header h4 {
+  margin: 0;
+  color: #444;
   font-size: 16px;
-  padding: 0 8px;
-  color: #333;
+  font-weight: 600;
+  cursor: help;
 }
 
-.repetition-container {
+.btn-add-field {
+  padding: 6px 14px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-add-field:hover {
+  background: #2980b9;
+}
+
+.btn-add-field:active {
+  transform: translateY(1px);
+}
+
+/* Repeatable field items */
+.repeatable-fields {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.repetition-row {
+.repeatable-field-item {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: flex-start;
   padding: 12px;
-  background: #f9f9f9;
+  background: white;
+  border: 1px solid #e0e0e0;
   border-radius: 4px;
-  position: relative;
 }
 
-.repetition-row .form-field {
+.repeatable-input {
   flex: 1;
-  margin: 0;
 }
 
-.predicate-field {
-  min-width: 200px;
-}
-
-.object-field {
-  flex: 2;
-}
-
-.btn-remove-repetition {
+.btn-remove-field {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border: 1px solid #ddd;
-  background: white;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: #e74c3c;
+  color: white;
+  border: none;
   border-radius: 4px;
-  cursor: pointer;
   font-size: 16px;
-  color: #666;
-  transition: all 0.2s;
-  margin-top: 28px; /* Align with input fields */
-}
-
-.btn-remove-repetition:hover {
-  background: #ffebee;
-  border-color: #d32f2f;
-  color: #d32f2f;
-}
-
-.btn-add-repetition {
-  padding: 8px 16px;
-  border: 1px dashed #1976d2;
-  background: white;
-  color: #1976d2;
-  border-radius: 4px;
+  line-height: 28px;
   cursor: pointer;
-  font-size: 14px;
-  margin-top: 8px;
-  transition: all 0.2s;
+  transition: background 0.2s;
+  margin-top: 4px;
 }
 
-.btn-add-repetition:hover {
-  background: #e3f2fd;
+.btn-remove-field:hover {
+  background: #c0392b;
 }
 
-/* Form Actions */
+/* Form actions */
 .form-actions {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+  margin-top: 30px;
   padding-top: 20px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 2px solid #e0e0e0;
 }
 
 .btn {
-  padding: 10px 24px;
+  padding: 12px 24px;
   border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 600;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-primary {
-  background: #1976d2;
+  background: #27ae60;
   color: white;
 }
 
 .btn-primary:hover {
-  background: #1565c0;
-}
-
-.btn-primary:disabled {
-  background: #bbb;
-  cursor: not-allowed;
+  background: #229954;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3);
 }
 
 .btn-secondary {
-  background: white;
-  color: #1976d2;
-  border: 1px solid #1976d2;
+  background: #95a5a6;
+  color: white;
 }
 
 .btn-secondary:hover {
-  background: #e3f2fd;
+  background: #7f8c8d;
 }
 
-/* Loading State */
-.nanopub-creator-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 200px;
-  color: #666;
+.btn:active {
+  transform: translateY(0);
 }
 
-.loading-spinner {
-  padding: 20px;
-  font-size: 16px;
+/* Loading state */
+.form-input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
-/* Error State */
-.nanopub-creator-error {
-  padding: 20px;
-  background: #ffebee;
-  border: 1px solid #ef5350;
-  border-radius: 4px;
-  color: #c62828;
-}
-
-.error-message {
-  font-size: 14px;
-}
-
-.error-message strong {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 16px;
-}
-
-/* Responsive */
+/* Responsive design */
 @media (max-width: 768px) {
-  .nanopub-creator {
-    padding: 12px;
+  .nanopub-creator.enhanced {
+    padding: 15px;
   }
 
   .creator-header h2 {
     font-size: 20px;
   }
 
-  .repetition-row {
+  .repeatable-header {
     flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
 
-  .btn-remove-repetition {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    margin-top: 0;
+  .btn-add-field {
+    width: 100%;
   }
 
   .form-actions {
@@ -292,57 +342,109 @@ select.form-input {
   }
 }
 
-/* Dark Theme Support */
-@media (prefers-color-scheme: dark) {
-  .nanopub-creator.dark-theme {
-    color: #e0e0e0;
+/* Animation for adding/removing fields */
+.repeatable-field-item {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Tooltip styles */
+[title] {
+  position: relative;
+}
+
+/* Preview modal (if used) */
+.preview-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.preview-content {
+  background: white;
+  border-radius: 8px;
+  padding: 30px;
+  max-width: 800px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.preview-content h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 20px;
+}
+
+.preview-statement {
+  padding: 12px;
+  margin-bottom: 10px;
+  background: #f8f9fa;
+  border-left: 3px solid #3498db;
+  border-radius: 4px;
+}
+
+.preview-statement-part {
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+.preview-statement-part strong {
+  display: inline-block;
+  width: 100px;
+  color: #666;
+}
+
+.preview-uri {
+  color: #95a5a6;
+  font-size: 12px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  margin-left: 4px;
+}
+
+.preview-close {
+  margin-top: 20px;
+  text-align: right;
+}
+
+/* Focus visible for accessibility */
+*:focus-visible {
+  outline: 2px solid #3498db;
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+.btn:focus-visible {
+  outline-color: #2980b9;
+}
+
+/* Print styles */
+@media print {
+  .form-actions,
+  .btn-add-field,
+  .btn-remove-field {
+    display: none;
   }
 
-  .nanopub-creator.dark-theme .creator-header {
-    border-bottom-color: #424242;
-  }
-
-  .nanopub-creator.dark-theme .creator-header h2,
-  .nanopub-creator.dark-theme .form-field label {
-    color: #e0e0e0;
-  }
-
-  .nanopub-creator.dark-theme .creator-description,
-  .nanopub-creator.dark-theme .field-help {
-    color: #b0b0b0;
-  }
-
-  .nanopub-creator.dark-theme .form-input {
-    background: #2c2c2c;
-    border-color: #424242;
-    color: #e0e0e0;
-  }
-
-  .nanopub-creator.dark-theme .form-input:focus {
-    border-color: #64b5f6;
-    box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.2);
-  }
-
-  .nanopub-creator.dark-theme .repetition-row {
-    background: #2c2c2c;
-  }
-
-  .nanopub-creator.dark-theme .btn-remove-repetition,
-  .nanopub-creator.dark-theme .btn-add-repetition,
-  .nanopub-creator.dark-theme .btn-secondary {
-    background: #2c2c2c;
-    border-color: #424242;
-    color: #90caf9;
-  }
-
-  .nanopub-creator.dark-theme .btn-remove-repetition:hover {
-    background: #5f2120;
-    border-color: #ef5350;
-    color: #ef5350;
-  }
-
-  .nanopub-creator.dark-theme .btn-add-repetition:hover,
-  .nanopub-creator.dark-theme .btn-secondary:hover {
-    background: #1e3a5f;
+  .form-input {
+    border-color: #000;
   }
 }
