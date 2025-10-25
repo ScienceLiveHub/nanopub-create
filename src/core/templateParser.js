@@ -206,49 +206,83 @@ export class TemplateParser {
           const content = await optionsNp.text();
           console.log(`  → Fetched ${content.length} chars`);
           
-          // Look for labels in assertion block - try multiple patterns
-          let assertionBlock = null;
+          // Search the entire content for options
+          // Options can be in two formats:
+          // 1. Full URI: <http://example.org/intent> rdfs:label "Label"
+          // 2. Prefixed URI: sub:intent rdfs:label "Label"
           
-          // Pattern 1: Standard assertion block
-          let match = content.match(/sub:assertion\s*\{([\s\S]*?)\n\}/);
-          if (match) {
-            assertionBlock = match[1];
-            console.log(`  → Found assertion block (pattern 1): ${assertionBlock.length} chars`);
+          // First, extract the base URI for this nanopub to expand sub: prefixes
+          let baseUri = '';
+          const subPrefixMatch = content.match(/@prefix sub:\s+<([^>]+)>/);
+          if (subPrefixMatch) {
+            baseUri = subPrefixMatch[1];
           }
           
-          // Pattern 2: Try without the newline requirement
-          if (!assertionBlock) {
-            match = content.match(/sub:assertion\s*\{([\s\S]*?)\}/);
-            if (match) {
-              assertionBlock = match[1];
-              console.log(`  → Found assertion block (pattern 2): ${assertionBlock.length} chars`);
-            }
-          }
+          // Match both formats
+          const fullUriPattern = /<([^>]+)>\s+rdfs:label\s+"([^"]+)"/g;
+          const prefixedPattern = /(sub:[\w-]+)\s+rdfs:label\s+"([^"]+)"/g;
           
-          // Pattern 3: Look anywhere in the file for URI + label pairs
-          if (!assertionBlock) {
-            console.log(`  → No assertion block found, searching entire file`);
-            assertionBlock = content;
-          }
+          placeholder.options = [];
+          let totalMatches = 0;
           
-          if (assertionBlock) {
-            // Match URI + label patterns
-            const optionMatches = assertionBlock.matchAll(/<([^>]+)>\s+rdfs:label\s+"([^"]+)"/g);
+          // Match full URIs
+          for (const match of content.matchAll(fullUriPattern)) {
+            totalMatches++;
+            const uri = match[1];
+            const label = match[2];
             
-            placeholder.options = [];
-            for (const match of optionMatches) {
+            console.log(`  → Match ${totalMatches} (full URI): URI=${uri}, Label="${label}"`);
+            
+            // Filter out non-option URIs (template metadata, common predicates, etc)
+            // Keep URIs that look like actual options (typically domain-specific URIs)
+            const isMetadata = 
+              uri.includes('#assertion') || 
+              uri.includes('#Head') ||
+              uri.includes('#provenance') ||
+              uri.includes('#pubinfo') ||
+              uri.includes('ntemplate') ||
+              uri.includes('rdf-syntax') || 
+              uri.includes('XMLSchema') ||
+              uri.includes('rdfs#') ||
+              uri.includes('dc/terms') ||
+              uri.includes('foaf/0.1') ||
+              uri.includes('nanopub/x/') ||
+              uri.includes('nanopub.org/nschema') ||
+              label.includes('Template:') ||
+              label.includes('Making a statement') ||
+              label.includes('is a') ||
+              label.includes('has type');
+            
+            if (!isMetadata) {
               placeholder.options.push({
-                value: match[1],
-                label: match[2]
+                value: uri,
+                label: label
               });
             }
+          }
+          
+          // Match prefixed URIs (sub:something)
+          for (const match of content.matchAll(prefixedPattern)) {
+            totalMatches++;
+            const prefixedUri = match[1]; // e.g., "sub:announcement-intent"
+            const label = match[2];
             
-            console.log(`  → Loaded ${placeholder.options.length} options for ${placeholder.id}`);
-            if (placeholder.options.length > 0) {
-              console.log(`  → First option: ${placeholder.options[0].label}`);
-            }
-          } else {
-            console.warn(`  → Could not extract any content for ${placeholder.id}`);
+            // Expand to full URI
+            const localPart = prefixedUri.replace('sub:', '');
+            const fullUri = baseUri + localPart;
+            
+            console.log(`  → Match ${totalMatches} (prefixed): ${prefixedUri} -> ${fullUri}, Label="${label}"`);
+            
+            // Don't filter these - they're all valid options from the sub: namespace
+            placeholder.options.push({
+              value: fullUri,
+              label: label
+            });
+          }
+          
+          console.log(`  → Loaded ${placeholder.options.length} options for ${placeholder.id}`);
+          if (placeholder.options.length > 0) {
+            console.log(`  → First 3 options:`, placeholder.options.slice(0, 3).map(o => o.label));
           }
         } catch (e) {
           console.warn('Failed to fetch options for', placeholder.id, e);

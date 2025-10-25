@@ -312,7 +312,7 @@ export class FormGenerator {
         return;
       }
       
-      if (stmt.optional || stmt.repeatable) {
+      if (stmt.optional) {
         optionalStatements.push(stmt);
       } else {
         requiredStatements.push(stmt);
@@ -385,19 +385,151 @@ export class FormGenerator {
 
   /**
    * Build field for a statement
-   * Key: Use predicate as label, object placeholder for input type
+   * Creates fields for ALL placeholders (subject, predicate, object)
+   * Handles grouped statements
    */
   buildStatementField(statement) {
+    // Check if this is a grouped statement
+    const groupedStatement = this.template.groupedStatements?.find(g => g.id === statement.id);
+    
+    if (groupedStatement) {
+      // Render all statements in the group together
+      return this.buildGroupedStatementField(groupedStatement, statement);
+    }
+    
+    // Check which positions have placeholders
+    const subjectPlaceholder = this.findPlaceholder(statement.subject);
+    const predicatePlaceholder = this.findPlaceholder(statement.predicate);
+    const objectPlaceholder = this.findPlaceholder(statement.object);
+    
+    // If no placeholders, skip this statement (it's all literals)
+    if (!subjectPlaceholder && !predicatePlaceholder && !objectPlaceholder) {
+      console.log(`Skipping statement ${statement.id} - no placeholders found (all literals)`);
+      return null;
+    }
+    
+    const container = document.createElement('div');
+    container.className = 'form-field-group';
+    container.dataset.statementId = statement.id;
+    
+    // Add statement label/context if needed (when multiple placeholders)
+    if ((subjectPlaceholder ? 1 : 0) + (predicatePlaceholder ? 1 : 0) + (objectPlaceholder ? 1 : 0) > 1) {
+      const contextLabel = document.createElement('div');
+      contextLabel.className = 'statement-context';
+      
+      // Use predicate as context label if it's not a placeholder
+      if (!predicatePlaceholder && statement.predicate) {
+        const predicateLabel = this.getLabel(statement.predicate);
+        contextLabel.textContent = predicateLabel;
+      } else {
+        // Don't show a label - let the individual field labels speak for themselves
+        // Just add spacing
+        contextLabel.style.display = 'none';
+      }
+      
+      container.appendChild(contextLabel);
+    }
+    
+    // Create field for SUBJECT if it's a placeholder
+    if (subjectPlaceholder) {
+      const field = this.buildSingleField(statement.id, 'subject', subjectPlaceholder, statement.optional);
+      if (field) container.appendChild(field);
+    }
+    
+    // Create field for PREDICATE if it's a placeholder
+    if (predicatePlaceholder) {
+      const field = this.buildSingleField(statement.id, 'predicate', predicatePlaceholder, statement.optional);
+      if (field) container.appendChild(field);
+    }
+    
+    // Create field for OBJECT if it's a placeholder
+    if (objectPlaceholder) {
+      const field = this.buildSingleField(statement.id, 'object', objectPlaceholder, statement.optional);
+      if (field) container.appendChild(field);
+    }
+    
+    // Repeatable controls for the entire statement group
+    if (statement.repeatable && (subjectPlaceholder || predicatePlaceholder || objectPlaceholder)) {
+      const firstPlaceholder = subjectPlaceholder || predicatePlaceholder || objectPlaceholder;
+      container.appendChild(this.buildRepeatableControls(statement, firstPlaceholder));
+    }
+    
+    return container;
+  }
+
+  /**
+   * Build field for a grouped statement
+   */
+  buildGroupedStatementField(groupedStatement, statement) {
+    const container = document.createElement('div');
+    container.className = 'form-field-group grouped';
+    container.dataset.statementId = groupedStatement.id;
+    
+    console.log(`Building grouped statement ${groupedStatement.id} with statements:`, groupedStatement.statements);
+    
+    // Collect all placeholders from all statements in the group
+    const allPlaceholders = [];
+    
+    groupedStatement.statements.forEach(stmtId => {
+      const stmt = this.template.statements.find(s => s.id === stmtId);
+      if (!stmt) {
+        console.warn(`Statement ${stmtId} not found in grouped statement ${groupedStatement.id}`);
+        return;
+      }
+      
+      const subjectPlaceholder = this.findPlaceholder(stmt.subject);
+      const predicatePlaceholder = this.findPlaceholder(stmt.predicate);
+      const objectPlaceholder = this.findPlaceholder(stmt.object);
+      
+      // Add unique placeholders
+      if (subjectPlaceholder && !allPlaceholders.find(p => p.id === subjectPlaceholder.id)) {
+        allPlaceholders.push({ ...subjectPlaceholder, position: 'subject', stmtId: stmt.id });
+      }
+      if (predicatePlaceholder && !allPlaceholders.find(p => p.id === predicatePlaceholder.id)) {
+        allPlaceholders.push({ ...predicatePlaceholder, position: 'predicate', stmtId: stmt.id });
+      }
+      if (objectPlaceholder && !allPlaceholders.find(p => p.id === objectPlaceholder.id)) {
+        allPlaceholders.push({ ...objectPlaceholder, position: 'object', stmtId: stmt.id });
+      }
+    });
+    
+    if (allPlaceholders.length === 0) {
+      console.log(`Skipping grouped statement ${groupedStatement.id} - no placeholders found`);
+      return null;
+    }
+    
+    // Render each unique placeholder
+    allPlaceholders.forEach(placeholder => {
+      const field = this.buildSingleField(
+        placeholder.stmtId,
+        placeholder.position,
+        placeholder,
+        statement.optional
+      );
+      if (field) container.appendChild(field);
+    });
+    
+    // Repeatable controls
+    if (statement.repeatable && allPlaceholders.length > 0) {
+      container.appendChild(this.buildRepeatableControls(statement, allPlaceholders[0]));
+    }
+    
+    return container;
+  }
+
+  /**
+   * Build a single field for one position (subject/predicate/object)
+   */
+  buildSingleField(statementId, position, placeholder, isOptional) {
     const fieldDiv = document.createElement('div');
     fieldDiv.className = 'form-field';
-    fieldDiv.dataset.statementId = statement.id;
+    fieldDiv.dataset.position = position;
     
-    // Label from predicate
-    const predicateLabel = this.getLabel(statement.predicate);
+    // Label from placeholder
     const label = document.createElement('label');
-    label.textContent = predicateLabel;
+    label.textContent = placeholder.label || placeholder.id;
     
-    if (!statement.optional) {
+    if (!isOptional) {
       const required = document.createElement('span');
       required.className = 'required-mark';
       required.textContent = ' *';
@@ -411,34 +543,18 @@ export class FormGenerator {
     
     fieldDiv.appendChild(label);
     
-    // Find placeholder for object
-    const placeholder = this.findPlaceholder(statement.object);
-    
-    if (!placeholder) {
-      console.warn(`Skipping statement ${statement.id} - no placeholder found for ${statement.object}`);
-      return null;
-    }
-    
-    console.log(`Building field for statement ${statement.id}:`, {
-      predicate: statement.predicate,
-      predicateLabel,
-      object: statement.object,
+    console.log(`Building field for statement ${statementId} ${position}:`, {
       placeholderType: placeholder.type,
       placeholderLabel: placeholder.label
     });
     
     // Render input using component registry
     const input = this.renderInput(placeholder);
-    input.name = `${statement.id}_0`;
-    input.id = `field_${statement.id}_0`;
-    if (!statement.optional) input.required = true;
+    input.name = `${statementId}_${position}_0`;
+    input.id = `field_${statementId}_${position}_0`;
+    if (!isOptional) input.required = true;
     
     fieldDiv.appendChild(input);
-    
-    // Repeatable controls
-    if (statement.repeatable) {
-      fieldDiv.appendChild(this.buildRepeatableControls(statement, placeholder));
-    }
     
     return fieldDiv;
   }
@@ -496,20 +612,52 @@ export class FormGenerator {
 
   /**
    * Build repeatable field instance
+   * Now handles multiple placeholders (subject, predicate, object)
    */
   buildRepeatableField(statement, placeholder, index) {
     const wrapper = document.createElement('div');
-    wrapper.className = 'repeatable-field';
+    wrapper.className = 'repeatable-field-group';
     
-    const input = this.renderInput(placeholder);
-    input.name = `${statement.id}_${index}`;
-    input.id = `field_${statement.id}_${index}`;
-    wrapper.appendChild(input);
+    // Check which positions have placeholders
+    const subjectPlaceholder = this.findPlaceholder(statement.subject);
+    const predicatePlaceholder = this.findPlaceholder(statement.predicate);
+    const objectPlaceholder = this.findPlaceholder(statement.object);
+    
+    // Build field for each placeholder position
+    if (subjectPlaceholder) {
+      const field = document.createElement('div');
+      field.className = 'repeatable-field';
+      const input = this.renderInput(subjectPlaceholder);
+      input.name = `${statement.id}_subject_${index}`;
+      input.id = `field_${statement.id}_subject_${index}`;
+      field.appendChild(input);
+      wrapper.appendChild(field);
+    }
+    
+    if (predicatePlaceholder) {
+      const field = document.createElement('div');
+      field.className = 'repeatable-field';
+      const input = this.renderInput(predicatePlaceholder);
+      input.name = `${statement.id}_predicate_${index}`;
+      input.id = `field_${statement.id}_predicate_${index}`;
+      field.appendChild(input);
+      wrapper.appendChild(field);
+    }
+    
+    if (objectPlaceholder) {
+      const field = document.createElement('div');
+      field.className = 'repeatable-field';
+      const input = this.renderInput(objectPlaceholder);
+      input.name = `${statement.id}_object_${index}`;
+      input.id = `field_${statement.id}_object_${index}`;
+      field.appendChild(input);
+      wrapper.appendChild(field);
+    }
     
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
     removeBtn.className = 'btn-remove-field';
-    removeBtn.textContent = '×';
+    removeBtn.textContent = '× Remove';
     removeBtn.onclick = () => wrapper.remove();
     wrapper.appendChild(removeBtn);
     
