@@ -1,5 +1,5 @@
 /**
- * Enhanced Form Generator with Nanodash-style Rendering
+ * Enhanced Form Generator with user-friendly style Rendering
  * Properly displays placeholders with human-readable labels and appropriate field types
  */
 

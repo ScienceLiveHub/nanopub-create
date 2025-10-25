@@ -1,7 +1,7 @@
 /**
  * Enhanced CSS for nanopub-create with Grouped Statement Support
  * 
- * Follows nanodash visual patterns for grouped statements
+ * Follows visual patterns for grouped statements
  * Includes: group styling, separators, button controls, optional marks
  */
 
@@ -128,7 +128,7 @@
   border-bottom: 1px solid #e0e0e0;
 }
 
-/* ========== Grouped Statements (following nanodash) ========== */
+/* ========== Grouped Statements ========== */
 
 .nanopub-group,
 .grouped-statement {
@@ -138,7 +138,7 @@
   margin: 15px 0;
 }
 
-/* Optional statement styling (nanodash pattern) */
+/* Optional statement styling */
 .nanopub-optional {
   border-left: 3px solid #ff9800;
 }
@@ -207,7 +207,7 @@
   cursor: help;
 }
 
-/* ========== Group Separator (nanodash pattern) ========== */
+/* ========== Group Separator ========== */
 
 .group-separator {
   border: none;
@@ -215,7 +215,7 @@
   margin: 20px 0;
 }
 
-/* ========== Repetition Controls (nanodash pattern) ========== */
+/* ========== Repetition Controls ========== */
 
 .repetition-controls {
   display: flex;
@@ -226,7 +226,7 @@
   border-top: 1px solid #e8e8e8;
 }
 
-/* Add button (nanodash: only on last group) */
+/* Add button */
 .btn-add-group {
   padding: 7px 14px;
   background: #4CAF50;
@@ -247,7 +247,7 @@
   transform: translateY(1px);
 }
 
-/* Remove button (nanodash: visible except when only one) */
+/* Remove button (visible except when only one) */
 .btn-remove-group {
   padding: 7px 14px;
   background: #f44336;
@@ -268,7 +268,7 @@
   transform: translateY(1px);
 }
 
-/* Optional mark (nanodash: only on single instance) */
+/* Optional mark (only on single instance) */
 .optional-mark {
   color: #666;
   font-size: 13px;
