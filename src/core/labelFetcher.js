@@ -1,198 +1,263 @@
 /**
- * Label Fetcher for RDF URIs
- * Fetches rdfs:label from external sources
+ * Label Fetcher for Nanopublication URIs
+ * 
+ * Fetches human-readable labels for URIs from various sources:
+ * 1. Content negotiation (requesting RDF/Turtle)
+ * 2. SPARQL endpoints
+ * 3. URI parsing as fallback
+ * 
+ * Used by TemplateParser to get labels for predicates and objects
  */
 
 export class LabelFetcher {
   constructor(options = {}) {
     this.options = {
-      timeout: 5000,
-      maxRetries: 2,
+      timeout: options.timeout || 10000,
+      cache: options.cache !== false,
       ...options
     };
+    this.cache = new Map();
+    this.pendingRequests = new Map();
   }
 
   /**
-   * Batch fetch labels for multiple URIs
+   * Fetch a single label
    */
-  async batchGetLabels(uris, existingLabels = {}) {
-    const results = new Map();
+  async getLabel(uri, localLabels = {}) {
+    if (!uri || typeof uri !== 'string') return null;
     
-    // Return existing labels immediately
-    uris.forEach(uri => {
-      if (existingLabels[uri]) {
-        results.set(uri, existingLabels[uri]);
+    // Check local labels first
+    if (localLabels[uri]) {
+      return this.normalizeLabel(localLabels[uri]);
+    }
+    
+    // Check cache
+    if (this.cache.has(uri)) {
+      return this.cache.get(uri);
+    }
+    
+    // Check if request is pending
+    if (this.pendingRequests.has(uri)) {
+      return this.pendingRequests.get(uri);
+    }
+    
+    // Create new request
+    const promise = this.fetchLabel(uri);
+    this.pendingRequests.set(uri, promise);
+    
+    try {
+      const label = await promise;
+      this.cache.set(uri, label);
+      return label;
+    } finally {
+      this.pendingRequests.delete(uri);
+    }
+  }
+
+  /**
+   * Fetch multiple labels in batch
+   */
+  async fetchBatch(uris, localLabels = {}) {
+    const results = {};
+    const promises = uris.map(async uri => {
+      try {
+        const label = await this.getLabel(uri, localLabels);
+        if (label) {
+          results[uri] = label;
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch label for ${uri}:`, error.message);
       }
     });
     
-    // For URIs without existing labels, try to fetch
-    const urisToFetch = uris.filter(uri => !existingLabels[uri]);
-    
-    if (urisToFetch.length === 0) {
-      return results;
-    }
-    
-    // Fetch in parallel with timeout
-    const fetchPromises = urisToFetch.map(uri => 
-      this.fetchLabel(uri).catch(err => {
-        console.warn(`Failed to fetch label for ${uri}:`, err.message);
-        return this.generateFallbackLabel(uri);
-      })
-    );
-    
-    try {
-      const labels = await Promise.race([
-        Promise.all(fetchPromises),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Batch fetch timeout')), this.options.timeout)
-        )
-      ]);
-      
-      urisToFetch.forEach((uri, index) => {
-        if (labels[index]) {
-          results.set(uri, labels[index]);
-        }
-      });
-    } catch (error) {
-      console.warn('Batch label fetch failed:', error.message);
-      // Return fallback labels for all unfetched URIs
-      urisToFetch.forEach(uri => {
-        results.set(uri, this.generateFallbackLabel(uri));
-      });
-    }
-    
+    await Promise.all(promises);
     return results;
   }
 
   /**
-   * Fetch label for a single URI
+   * Fetch label from URI using content negotiation
    */
   async fetchLabel(uri) {
-    // Try common label endpoints
-    const endpoints = [
-      `https://www.wikidata.org/wiki/Special:EntityData/${this.extractWikidataId(uri)}.json`,
-      uri // Try dereferencing the URI directly
-    ];
-    
-    for (const endpoint of endpoints) {
-      try {
-        const response = await fetch(endpoint, {
-          headers: { 'Accept': 'application/rdf+xml, application/ld+json, text/turtle' },
-          signal: AbortSignal.timeout(this.options.timeout)
-        });
+    try {
+      // Try content negotiation first
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.options.timeout);
+      
+      const response = await fetch(uri, {
+        headers: {
+          'Accept': 'application/rdf+xml, text/turtle, application/ld+json, text/plain'
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        const contentType = response.headers.get('content-type') || '';
+        const text = await response.text();
         
-        if (response.ok) {
-          const contentType = response.headers.get('content-type');
-          
-          if (contentType && contentType.includes('json')) {
-            const data = await response.json();
-            const label = this.extractLabelFromJson(data, uri);
-            if (label) return label;
+        // Try to extract rdfs:label from response
+        const label = this.extractLabelFromRdf(text, uri, contentType);
+        if (label) {
+          return label;
+        }
+      }
+    } catch (error) {
+      // Silently fail - will use fallback
+      if (error.name !== 'AbortError') {
+        console.debug(`Label fetch failed for ${uri}:`, error.message);
+      }
+    }
+    
+    // Fallback: parse label from URI
+    return this.parseUriLabel(uri);
+  }
+
+  /**
+   * Extract rdfs:label from RDF content
+   * This is a simple extraction - a full RDF parser would be better
+   */
+  extractLabelFromRdf(content, uri, contentType) {
+    if (!content) return null;
+    
+    try {
+      // For JSON-LD
+      if (contentType.includes('json')) {
+        const data = JSON.parse(content);
+        
+        // Simple JSON-LD label extraction
+        if (data['rdfs:label']) {
+          return this.normalizeLabel(data['rdfs:label']);
+        }
+        if (data['@graph']) {
+          for (const node of data['@graph']) {
+            if (node['@id'] === uri && node['rdfs:label']) {
+              return this.normalizeLabel(node['rdfs:label']);
+            }
           }
         }
-      } catch (error) {
-        // Try next endpoint
-        continue;
       }
-    }
-    
-    // Fallback to generating label from URI
-    return this.generateFallbackLabel(uri);
-  }
-
-  /**
-   * Extract Wikidata ID from URI
-   */
-  extractWikidataId(uri) {
-    const match = uri.match(/wikidata\.org\/(?:wiki|entity)\/(Q\d+)/);
-    return match ? match[1] : null;
-  }
-
-  /**
-   * Extract label from JSON-LD or Wikidata JSON
-   */
-  extractLabelFromJson(data, uri) {
-    // Wikidata format
-    if (data.entities) {
-      const entity = Object.values(data.entities)[0];
-      if (entity && entity.labels && entity.labels.en) {
-        return entity.labels.en.value;
+      
+      // For Turtle/RDF-XML - simple regex extraction
+      // Match: <URI> rdfs:label "Label" or rdfs:label "Label"@en
+      const labelRegex = new RegExp(
+        `(?:<${uri.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}>|rdfs:label)\\s+rdfs:label\\s+"([^"]+)"`,
+        'i'
+      );
+      const match = content.match(labelRegex);
+      if (match && match[1]) {
+        return match[1];
       }
-    }
-    
-    // JSON-LD format
-    if (data['@graph']) {
-      const node = data['@graph'].find(n => n['@id'] === uri);
-      if (node && node['rdfs:label']) {
-        return typeof node['rdfs:label'] === 'string' 
-          ? node['rdfs:label']
-          : node['rdfs:label']['@value'];
+      
+      // Also try to match just rdfs:label near the end of file
+      const simpleLabelRegex = /rdfs:label\s+"([^"]+)"/i;
+      const simpleMatch = content.match(simpleLabelRegex);
+      if (simpleMatch && simpleMatch[1]) {
+        return simpleMatch[1];
       }
-    }
-    
-    // Simple format
-    if (data['rdfs:label']) {
-      return typeof data['rdfs:label'] === 'string'
-        ? data['rdfs:label']
-        : data['rdfs:label']['@value'] || data['rdfs:label'][0];
+      
+    } catch (error) {
+      console.debug('Failed to extract label from RDF:', error);
     }
     
     return null;
   }
 
   /**
-   * Generate a human-readable label from URI
+   * Parse a human-readable label from a URI as fallback
    */
-  generateFallbackLabel(uri) {
-    if (!uri) return '';
+  parseUriLabel(uri) {
+    if (!uri || typeof uri !== 'string') return '';
     
-    // Remove angle brackets if present
-    uri = uri.replace(/[<>]/g, '');
-    
-    // Common known predicates
-    const knownLabels = {
-      'http://www.w3.org/1999/02/22-rdf-syntax-ns#type': 'type',
-      'http://www.w3.org/2000/01/rdf-schema#label': 'label',
-      'http://purl.org/dc/terms/created': 'created',
-      'http://purl.org/dc/terms/creator': 'creator',
-      'http://purl.org/dc/terms/description': 'description',
-      'http://schema.org/about': 'about',
-      'http://www.w3.org/ns/prov#wasAttributedTo': 'was attributed to'
+    // Special common cases
+    const specialCases = {
+      'http://www.w3.org/1999/02/22-rdf-syntax-ns#type': 'Type',
+      'http://www.w3.org/2000/01/rdf-schema#label': 'Label',
+      'http://www.w3.org/2000/01/rdf-schema#comment': 'Comment',
+      'http://purl.org/dc/terms/title': 'Title',
+      'http://purl.org/dc/terms/description': 'Description',
+      'http://xmlns.com/foaf/0.1/name': 'Name',
+      'http://schema.org/name': 'Name',
+      'http://schema.org/description': 'Description',
     };
     
-    if (knownLabels[uri]) {
-      return knownLabels[uri];
+    if (specialCases[uri]) {
+      return specialCases[uri];
     }
     
-    // Extract last part after # or /
+    // Extract the fragment or last path segment
     const parts = uri.split(/[#\/]/);
     let label = parts[parts.length - 1];
     
+    // If empty, try the second-to-last part
     if (!label && parts.length > 1) {
       label = parts[parts.length - 2];
     }
     
     if (!label) return uri;
     
-    // Convert camelCase and snake_case to readable format
+    // Clean up the label
     label = label
-      .replace(/([a-z])([A-Z])/g, '$1 $2') // camelCase
-      .replace(/_/g, ' ')                   // snake_case
-      .replace(/-/g, ' ')                   // kebab-case
+      // Split camelCase: "hasValue" -> "has Value"
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      // Replace common prefixes
+      .replace(/^has/, 'Has')
+      .replace(/^is/, 'Is')
+      // Replace underscores and hyphens with spaces
+      .replace(/[_-]/g, ' ')
+      // Clean up whitespace
       .trim()
-      .replace(/\s+/g, ' ');                // normalize spaces
+      .replace(/\s+/g, ' ');
     
-    // Remove common prefixes
-    label = label
-      .replace(/^has\s*/i, '')
-      .replace(/^is\s*/i, '');
-    
-    // Capitalize first letter of each word
-    label = label
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
+    // Capitalize first letter
+    label = label.charAt(0).toUpperCase() + label.slice(1);
     
     return label;
   }
+
+  /**
+   * Normalize label from various formats
+   */
+  normalizeLabel(label) {
+    if (!label) return null;
+    
+    if (typeof label === 'string') {
+      return label;
+    }
+    
+    if (typeof label === 'object') {
+      // Handle JSON-LD style labels
+      if (label['@value']) {
+        return label['@value'];
+      }
+      if (label.value) {
+        return label.value;
+      }
+      if (label.label) {
+        return label.label;
+      }
+    }
+    
+    return String(label);
+  }
+
+  /**
+   * Clear the cache
+   */
+  clearCache() {
+    this.cache.clear();
+    this.pendingRequests.clear();
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats() {
+    return {
+      size: this.cache.size,
+      pending: this.pendingRequests.size
+    };
+  }
 }
+
+export default LabelFetcher;
