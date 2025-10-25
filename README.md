@@ -1,426 +1,336 @@
-# nanopub-create
+# Nanopub Creator
 
-A JavaScript library for creating nanopublications from templates with intuitive GUI forms.
+A JavaScript library for creating nanopublications from templates with an intuitive form interface.
 
-## Features
+## 🚀 Features
 
-- ✅ **Template-driven forms**: Automatically generate forms from nanopublication templates
-- ✅ **Human-readable labels**: Fetches and displays rdfs:label for URIs
-- ✅ **Smart field types**: Supports text, textarea, select, URL, and more
-- ✅ **Repeatable fields**: Support for grouped and repeatable statements
-- ✅ **Validation**: Built-in validation with regex support
-- ✅ **React component**: Optional React wrapper for easy integration
-- ✅ **WASM integration**: Optional Rust WASM backend for performance
+- **Template Parsing**: Automatically parse nanopublication templates in TriG/Turtle format
+- **Dynamic Form Generation**: Generate user-friendly forms from template definitions
+- **Visual Grouping**: Intelligently groups related statements by subject
+- **Science Live Branding**: Beautiful UI with purple/magenta color palette
+- **Multiple Input Types**: Support for text, textarea, dropdowns, URIs, dates, and more
+- **Validation**: Built-in validation for required fields and data types
+- **Auto-generated Resources**: Smart handling of LocalResource and IntroducedResource placeholders
 
-## Installation
+## 📦 Installation
 
 ```bash
 npm install nanopub-create
 ```
 
-## Quick Start
+Or include directly in your HTML:
 
-### Vanilla JavaScript
+```html
+<link rel="stylesheet" href="path/to/creator.css">
+<script type="module" src="path/to/index.js"></script>
+```
+
+## 🎯 Quick Start
+
+### Basic Usage
+
+```javascript
+import NanopubCreator from 'nanopub-create';
+
+// Create a creator instance
+const creator = new NanopubCreator({
+  publishServer: 'https://np.petapico.org/',
+  validateOnChange: true,
+  showHelp: true
+});
+
+// Render form from template URI
+const container = document.getElementById('form-container');
+await creator.renderFromTemplateUri(
+  'https://w3id.org/np/RA...',
+  container
+);
+
+// Listen for form submission
+creator.on('submit', ({ trigContent, formData }) => {
+  console.log('Generated nanopublication:', trigContent);
+  console.log('Form data:', formData);
+});
+```
+
+### Complete Example
 
 ```html
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <link rel="stylesheet" href="node_modules/nanopub-create/src/styles/creator.css">
+  <meta charset="UTF-8">
+  <title>Nanopub Creator Demo</title>
+  <link rel="stylesheet" href="./creator.css">
 </head>
 <body>
-  <div id="form-container"></div>
+  <div id="app"></div>
 
   <script type="module">
-    import { NanopubCreator } from 'nanopub-create';
-
+    import NanopubCreator from './index.js';
+    
     const creator = new NanopubCreator({
-      container: '#form-container',
-      validateOnChange: true,
-      showHelp: true
+      publishServer: 'https://np.petapico.org/',
+      validateOnChange: true
     });
 
-    // Load template and render form
+    // Handle events
+    creator.on('change', (data) => {
+      console.log('Form changed:', data);
+    });
+
+    creator.on('submit', ({ trigContent }) => {
+      console.log('Nanopublication created!');
+      downloadFile(trigContent, 'nanopub.trig');
+    });
+
+    creator.on('error', ({ type, error }) => {
+      console.error(`${type}:`, error);
+    });
+
+    // Load template
     await creator.renderFromTemplateUri(
-      'https://w3id.org/np/RA24onqmqTMsraJ7ypYFOuckmNWpo4Zv5gsLqhXt7xYPU'
+      'https://w3id.org/np/RAX_4tWTyjFpO6nz63s14ucuejd64t2mK3IBlkwZ7jjLo',
+      document.getElementById('app')
     );
 
-    // Listen to events
-    creator.on('submit', async ({ trigContent, formData }) => {
-      console.log('Nanopub created:', trigContent);
-      
-      // Optionally publish
-      const result = await creator.publish(trigContent);
-      console.log('Published:', result);
-    });
+    function downloadFile(content, filename) {
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
   </script>
 </body>
 </html>
 ```
 
-### React
+## 🎨 Styling
 
-```jsx
-import React from 'react';
-import { NanopubCreator } from 'nanopub-create/react';
-import 'nanopub-create/styles';
+The library uses Science Live color palette. You can customize by overriding CSS variables:
 
-function App() {
-  const handleSubmit = ({ trigContent, formData }) => {
-    console.log('Nanopub created:', trigContent);
-  };
-
-  return (
-    <NanopubCreator
-      templateUri="https://w3id.org/np/RA24onqmqTMsraJ7ypYFOuckmNWpo4Zv5gsLqhXt7xYPU"
-      onSubmit={handleSubmit}
-      publishServer="https://np.petapico.org/"
-      autoPublish={false}
-      validateOnChange={true}
-      showHelp={true}
-    />
-  );
+```css
+:root {
+  --primary: #BE2E78;          /* Magenta */
+  --primary-hover: #9e1e5e;    /* Darker magenta */
+  --secondary: #2b3456;         /* Navy blue */
+  --secondary-dark: #131d43;    /* Deep navy */
+  --pink-light: #f6d7e8;        /* Light pink background */
+  --pink-border: #be2e78;       /* Pink border */
 }
 ```
 
-## API Reference
+## 📚 API Reference
 
-### NanopubCreator
-
-#### Constructor Options
+### Constructor Options
 
 ```javascript
-const creator = new NanopubCreator({
-  container: '#form-container',    // Container selector or element
-  publishServer: 'https://np.petapico.org/', // Nanopub server
-  validateOnChange: true,           // Validate fields on change
-  showHelp: true,                   // Show help text
-  autoPublish: false,               // Auto-publish on submit
-  theme: 'default',                 // Theme name
-  creator: 'https://orcid.org/...', // Creator ORCID
-  creatorName: 'Your Name'          // Creator name
-});
+new NanopubCreator(options)
 ```
 
-#### Methods
+**Options:**
+- `publishServer` (string): Nanopublication server URL. Default: `'https://np.petapico.org/'`
+- `validateOnChange` (boolean): Validate form on every change. Default: `false`
+- `showHelp` (boolean): Show help text for fields. Default: `true`
 
-##### `renderFromTemplateUri(templateUri: string, container?: HTMLElement): Promise<HTMLFormElement>`
+### Methods
 
-Loads a template from a URI and renders the form.
+#### `renderFromTemplateUri(uri, container)`
+Fetch and render a template from a URI.
+
+**Parameters:**
+- `uri` (string): Template nanopublication URI
+- `container` (HTMLElement): DOM element to render form into
+
+**Returns:** Promise<void>
 
 ```javascript
 await creator.renderFromTemplateUri(
-  'https://w3id.org/np/RA24onqmqTMsraJ7ypYFOuckmNWpo4Zv5gsLqhXt7xYPU'
+  'https://w3id.org/np/RA...',
+  document.getElementById('form-container')
 );
 ```
 
-##### `renderFromTemplate(template: object, container?: HTMLElement): HTMLFormElement`
+#### `renderFromTemplate(template, container)`
+Render a form from a parsed template object.
 
-Renders a form from a parsed template object.
+**Parameters:**
+- `template` (object): Parsed template object
+- `container` (HTMLElement): DOM element to render form into
 
 ```javascript
-const template = await parseTemplateFromUri(templateUri);
-creator.renderFromTemplate(template);
+const template = await parser.parse(trigContent);
+creator.renderFromTemplate(template, container);
 ```
 
-##### `getFormData(): object`
+#### `on(event, callback)`
+Subscribe to events.
 
-Gets current form data.
-
-```javascript
-const formData = creator.getFormData();
-console.log(formData);
-```
-
-##### `setFormData(data: object): void`
-
-Sets form data programmatically.
+**Events:**
+- `'change'`: Form data changed - `(data) => {}`
+- `'submit'`: Form submitted - `({ trigContent, formData }) => {}`
+- `'error'`: Error occurred - `({ type, error }) => {}`
 
 ```javascript
-creator.setFormData({
-  title: 'My Nanopublication',
-  description: 'This is a test'
-});
-```
-
-##### `generateTriG(metadata?: object): Promise<string>`
-
-Generates TriG content without publishing.
-
-```javascript
-const trigContent = await creator.generateTriG({
-  creator: 'https://orcid.org/0000-0001-2345-6789',
-  creatorName: 'John Doe'
-});
-```
-
-##### `publish(trigContent: string): Promise<object>`
-
-Publishes a nanopublication to the server.
-
-```javascript
-const result = await creator.publish(trigContent);
-console.log('Published URI:', result.uri);
-```
-
-#### Events
-
-##### `on(event: string, callback: Function): void`
-
-Registers event listeners.
-
-**Available events:**
-
-- `change`: Form data changed
-- `submit`: Form submitted
-- `error`: Error occurred
-- `published`: Nanopublication published
-
-```javascript
-creator.on('change', (formData) => {
-  console.log('Form changed:', formData);
-});
-
 creator.on('submit', ({ trigContent, formData }) => {
-  console.log('Submitted:', trigContent);
-});
-
-creator.on('error', ({ type, error, errors }) => {
-  console.error('Error:', type, error, errors);
-});
-
-creator.on('published', (result) => {
-  console.log('Published:', result.uri);
+  console.log('Generated:', trigContent);
 });
 ```
 
-## Template Structure
-
-Templates are TriG-formatted nanopublications that define:
-
-1. **Placeholders**: Form fields (text, textarea, select, URL, etc.)
-2. **Statements**: RDF triple patterns with placeholders
-3. **Metadata**: Labels, descriptions, validation rules
-
-### Example Template Structure
-
-```turtle
-@prefix this: <http://example.org/template#> .
-@prefix sub: <http://example.org/template#> .
-@prefix nt: <https://w3id.org/np/o/ntemplate/> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix dct: <http://purl.org/dc/terms/> .
-
-this: a nt:AssertionTemplate ;
-  rdfs:label "Example Template" ;
-  dct:description "A template for creating example nanopublications" ;
-  nt:hasNanopubLabelPattern "Example: ${title}" .
-
-# Placeholder definition
-sub:title a nt:LiteralPlaceholder ;
-  rdfs:label "Title" ;
-  dct:description "The title of this nanopublication" ;
-  nt:hasRegex "^.{3,200}$" .
-
-sub:description a nt:LongLiteralPlaceholder ;
-  rdfs:label "Description" ;
-  dct:description "A detailed description" .
-
-# Statement pattern
-sub:statement1 rdf:subject sub:assertion ;
-  rdf:predicate dct:title ;
-  rdf:object sub:title .
-```
-
-## Advanced Usage
-
-### Custom Label Fetching
-
-The library automatically fetches labels for URIs, but you can provide custom labels:
+#### `destroy()`
+Clean up and remove form.
 
 ```javascript
-const creator = new NanopubCreator({
-  container: '#form-container',
-  labels: {
-    'http://purl.org/dc/terms/title': 'Document Title',
-    'http://purl.org/dc/terms/description': 'Document Description'
+creator.destroy();
+```
+
+## 🧩 Template Parser
+
+For advanced usage, you can use the template parser directly:
+
+```javascript
+import { TemplateParser } from './core/templateParser.js';
+
+const trigContent = `
+  @prefix this: <https://w3id.org/np/RA...> .
+  @prefix sub: <https://w3id.org/np/RA...#> .
+  @prefix nt: <https://w3id.org/np/o/ntemplate/> .
+  
+  sub:assertion {
+    # Your template definition
   }
-});
+`;
+
+const parser = new TemplateParser(trigContent);
+const template = await parser.parse();
+
+console.log('Placeholders:', template.placeholders);
+console.log('Statements:', template.statements);
+console.log('Grouped statements:', template.groupedStatements);
 ```
 
-### Repeatable Fields
+## 📋 Supported Placeholder Types
 
-Templates can define repeatable statements for lists:
+The library supports all standard nanopublication template placeholder types:
+
+| Type | Description | Input Type |
+|------|-------------|------------|
+| `LiteralPlaceholder` | Short text | Text input |
+| `LongLiteralPlaceholder` | Long text | Textarea |
+| `RestrictedChoicePlaceholder` | Predefined options | Dropdown |
+| `UriPlaceholder` | URI/URL | URL input |
+| `ExternalUriPlaceholder` | External URI | URL input |
+| `TrustyUriPlaceholder` | Trusty URI | URL input with validation |
+| `IntroducedResource` | Auto-generated resource | Read-only |
+| `LocalResource` | Auto-generated local resource | Read-only |
+| `ValuePlaceholder` | Generic value | Text input |
+| `AgentPlaceholder` | Agent (ORCID) | URL input |
+| `DatePlaceholder` | Date | Date input |
+
+## 🎯 Template Examples
+
+### Simple Citation Template
 
 ```turtle
-sub:statement1 a nt:RepeatableStatement ;
-  rdf:subject sub:assertion ;
-  rdf:predicate dct:subject ;
-  rdf:object sub:keyword .
+sub:article a nt:ExternalUriPlaceholder;
+  rdfs:label "DOI or URL of the citing article" .
+
+sub:cites a nt:RestrictedChoicePlaceholder;
+  rdfs:label "Citation type";
+  nt:possibleValue cito:cites, cito:citesAsAuthority .
+
+sub:cited a nt:ExternalUriPlaceholder;
+  rdfs:label "DOI or URL of the cited article" .
+
+sub:st01 rdf:object sub:cites;
+  rdf:predicate sub:article;
+  rdf:subject sub:cited .
 ```
 
-This creates a "+" button to add multiple values.
-
-### Validation
-
-Custom validation with regex:
+### With External Options
 
 ```turtle
-sub:email a nt:LiteralPlaceholder ;
-  rdfs:label "Email" ;
-  nt:hasRegex "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$" .
+sub:relation a nt:RestrictedChoicePlaceholder;
+  rdfs:label "choose relation";
+  nt:possibleValuesFrom <https://w3id.org/np/RAJb...> .
 ```
 
-### Select Fields (RestrictedChoicePlaceholder)
+The parser will automatically fetch and populate the dropdown options.
 
-Load options from a nanopublication:
+## 🔧 Advanced Features
+
+### Visual Grouping
+
+Statements with the same subject are automatically grouped together visually with a colored box:
 
 ```turtle
-sub:category a nt:RestrictedChoicePlaceholder ;
-  rdfs:label "Category" ;
-  nt:possibleValuesFrom <https://w3id.org/np/RA_categories> .
+# These will be grouped together
+sub:st1 rdf:subject sub:annotation;
+  rdf:predicate rdf:type;
+  rdf:object oa:Annotation .
+
+sub:st2 rdf:subject sub:annotation;
+  rdf:predicate oa:hasBody;
+  rdf:object sub:body .
 ```
 
-## Development
+### Auto-generated Resources
 
-### Setup
+LocalResource and IntroducedResource placeholders are automatically handled and shown as "(auto-generated)":
 
-```bash
-git clone https://github.com/ScienceLiveHub/nanopub-create
-cd nanopub-create
-npm install
+```turtle
+sub:annotation a nt:IntroducedResource, nt:LocalResource;
+  rdfs:label "this annotation" .
 ```
 
-### Run Demo
+### Hidden Metadata Statements
 
-```bash
-npm run dev
+Statements that only describe URI types are automatically hidden from the form:
+
+```turtle
+# This is hidden (metadata only)
+sub:SamplePreparation rdf:type prov:Activity .
 ```
 
-Then open `http://localhost:5173/demo.html`
-
-### Build
-
-```bash
-npm run build
-```
-
-### Test
-
-```bash
-npm test
-```
-
-## Architecture
-
-```
-nanopub-create/
-├── src/
-│   ├── core/
-│   │   ├── templateParser.js    # Parses TriG templates
-│   │   ├── formGenerator.js     # Generates HTML forms
-│   │   ├── nanopubBuilder.js    # Builds TriG from form data
-│   │   └── publisher.js         # Publishes to nanopub server
-│   ├── react/
-│   │   └── NanopubCreator.tsx   # React wrapper
-│   ├── wasm/
-│   │   └── bridge.js            # WASM integration (optional)
-│   ├── styles/
-│   │   └── creator.css          # Form styles
-│   ├── index.js                 # Main entry point
-│   └── react.js                 # React entry point
-├── demo.html                    # Demo page
-├── package.json
-└── README.md
-```
-
-## Key Classes
-
-### TemplateParser
-
-Parses nanopublication templates and extracts:
-- Placeholders (form fields)
-- Statements (RDF patterns)
-- Labels and metadata
-- Validation rules
-
-### FormGenerator
-
-Generates HTML forms from templates with:
-- Human-readable labels
-- Field validation
-- Repeatable fields
-- Custom themes
-
-### NanopubBuilder
-
-Builds TriG content from form data:
-- Substitutes placeholders
-- Generates trusty URIs
-- Adds provenance
-- Signs nanopublications (with WASM)
-
-### NanopubPublisher
-
-Publishes nanopublications:
-- HTTP POST to nanopub server
-- Gets published URI
-- Returns trusty URI
-
-## Troubleshooting
+## 🐛 Troubleshooting
 
 ### Form not rendering
+- Check console for errors
+- Verify template URI is accessible
+- Ensure CSS file is loaded
 
-Check the console for errors. Common issues:
-- Template URI not accessible
-- Missing CORS headers
-- Invalid template structure
+### Dropdown showing URIs instead of labels
+- Check that labels are defined in template
+- Verify `nt:possibleValuesFrom` URL is accessible
 
-### Labels showing as URIs
+### Buttons have wrong colors
+- Ensure `creator.css` is loaded after other stylesheets
+- Check CSS variable values in browser dev tools
 
-If labels appear as full URIs instead of human-readable text:
-1. Check that `parseWithLabels()` is called in templateParser
-2. Verify labels are passed to FormGenerator
-3. Check network tab for failed label fetches
+## 📄 License
 
-### WASM errors
+MIT
 
-The library works without WASM using JavaScript fallback. If you need WASM:
-1. Build the Rust WASM module separately
-2. Place in `src/wasm/nanopub_rs.js`
-3. The bridge will auto-detect and use it
+## 🤝 Contributing
 
-## Integration with Zotero Plugin
+Contributions welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-This library is used by the Zotero Nanopub Plugin. Key integration points:
+## 📞 Support
 
-1. **PDF Selection**: Extract text from PDF and pre-fill forms
-2. **Metadata**: Auto-populate DOI, title, authors from Zotero items
-3. **Templates**: Use template URIs from plugin configuration
-4. **Publishing**: Post to nanopub server and add result as note
+- Issues: [GitHub Issues](https://github.com/your-repo/nanopub-create/issues)
+- Discussions: [GitHub Discussions](https://github.com/your-repo/nanopub-create/discussions)
+- Email: support@sciencelive4all.org
 
-## Contributing
+## 🙏 Acknowledgments
 
-Contributions welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+Built with support from:
+- [Nanopublication ecosystem](http://nanopub.org/)
+- [Knowledge Pixels](https://knowledgepixels.com/)
+- [Science Live](https://sciencelive4all.org/)
 
-## License
+---
 
-MIT License - see LICENSE file
-
-## Credits
-
-Built for the [Knowledge Pixels](https://knowledgepixels.com/) ecosystem.
-
-Part of the [ScienceLive Hub](https://github.com/ScienceLiveHub) project.
-
-## Links
-
-- [Nanopublications](http://nanopub.org/)
-- [Nanodash](https://nanodash.knowledgepixels.com/)
-- [YASGUI Query Interface](https://query.petapico.org/tools/full/yasgui.html)
-- [Zotero Plugin](https://github.com/ScienceLiveHub/zotero-plugin-nanopub)
+Made with 💜 by the Science Live team
