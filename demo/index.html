@@ -3,32 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nanopub Creator Demo - Create Nanopublications from Templates</title>
+  <title>Nanopub Creator Demo</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="./demo.css">
 </head>
 <body>
   <div class="demo-header">
     <h1>🧬 Nanopub Creator Demo</h1>
-    <p>Create nanopublications from templates using the @sciencelivehub/nanopub-create library</p>
+    <p>Create nanopublications from templates</p>
   </div>
 
   <div class="demo-container">
     <!-- Template Selection -->
     <div class="template-selection">
-      <h2><i class="fas fa-layer-group"></i> Select a Template</h2>
-      <p>Choose from popular nanopublication templates to get started:</p>
+      <h2><i class="fas fa-layer-group"></i> Select or Load Template</h2>
       
-      <div class="template-grid" id="template-grid">
-        <!-- Templates will be inserted here -->
+      <!-- Custom Template URL Input -->
+      <div class="custom-template-section">
+        <label for="template-url-input">Or load from URL:</label>
+        <div class="url-input-group">
+          <input 
+            type="url" 
+            id="template-url-input" 
+            placeholder="https://w3id.org/np/RA..." 
+            class="template-url-input"
+          />
+          <button id="load-template-btn" class="btn-load">
+            <i class="fas fa-download"></i> Load
+          </button>
+        </div>
       </div>
+
+      <p>Or choose from examples:</p>
+      <div class="template-grid" id="template-grid"></div>
     </div>
 
     <!-- Creator Form -->
     <div id="creator-container">
       <div class="empty-state">
         <h3>Select a Template to Begin</h3>
-        <p>Click on any template card above to load the form</p>
+        <p>Click on any template card above or enter a template URL</p>
       </div>
     </div>
 
@@ -55,7 +69,7 @@
         <div class="event-log-item">
           <span class="event-time">--:--:--</span>
           <span class="event-type change">INFO</span>
-          <span class="event-message">Demo initialized - select a template to begin</span>
+          <span class="event-message">Demo initialized</span>
         </div>
       </div>
     </div>
@@ -65,7 +79,6 @@
     import NanopubCreator from '../src/index.js';
     import '../src/styles/creator.css';
 
-    // Available templates with metadata
     const templates = [
       {
         uri: 'https://w3id.org/np/RA24onqmqTMsraJ7ypYFOuckmNWpo4Zv5gsLqhXt7xYPU',
@@ -81,174 +94,130 @@
       },
       {
         uri: 'https://w3id.org/np/RAtoyEeCmsTWoUG2BsE7PxjabWTkYwRcoBSG1CPPNcwNk',
-        name: 'Describing scholarly work at summary level - simple',
+        name: 'Scholarly work metadata',
         description: 'Describe a scholarly work with detailed metadata',
         tags: ['metadata', 'publication']
-      },
-      {
-        uri: 'https://w3id.org/np/RAKMzFc-2RgvSyrJy0BHfTFx0bEK5yENbnjJ5ElX9WSvc',
-        name: 'Share Link',
-        description: 'Share a useful link with the community',
-        tags: ['sharing', 'resource']
-      },
-      {
-        uri: 'http://purl.org/np/RAn0gvGnriPVVIes27pRmyCzVVQk5cKbjiQNu9phlpCjE',
-        name: 'New Idea',
-        description: 'Describe a new research idea or concept',
-        tags: ['idea', 'concept']
       }
     ];
 
     let creator = null;
     let currentTrigContent = '';
-    let selectedTemplate = null;
 
-    // Initialize template grid
     function initTemplateGrid() {
       const grid = document.getElementById('template-grid');
       
       templates.forEach(template => {
         const card = document.createElement('div');
         card.className = 'template-card';
-        card.onclick = () => selectTemplate(template);
-        
         card.innerHTML = `
           <h3>${template.name}</h3>
           <p>${template.description}</p>
           <div class="template-tags">
-            ${template.tags.map(tag => `<span class="template-tag">${tag}</span>`).join('')}
+            ${template.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
           </div>
         `;
-        
+        card.addEventListener('click', () => loadTemplate(template.uri));
         grid.appendChild(card);
       });
     }
 
-    // Event logging
+    async function loadTemplate(uri) {
+      logEvent('INFO', `Loading template: ${uri}`);
+      const container = document.getElementById('creator-container');
+      container.innerHTML = '<div class="loading">Loading template...</div>';
+
+      try {
+        if (creator) {
+          creator.destroy?.();
+        }
+
+        creator = new NanopubCreator({
+          publishServer: 'https://np.petapico.org/',
+          validateOnChange: true,
+          showHelp: true
+        });
+
+        creator.on('change', (data) => {
+          logEvent('CHANGE', 'Form data updated');
+        });
+
+        creator.on('submit', ({ trigContent, formData }) => {
+          logEvent('SUCCESS', 'Nanopublication generated');
+          displayOutput(trigContent);
+        });
+
+        creator.on('error', ({ type, error }) => {
+          logEvent('ERROR', `${type}: ${error.message}`);
+        });
+
+        await creator.renderFromTemplateUri(uri, container);
+        logEvent('SUCCESS', 'Template loaded successfully');
+      } catch (error) {
+        logEvent('ERROR', `Failed to load template: ${error.message}`);
+        container.innerHTML = `<div class="error-state"><p>Error: ${error.message}</p></div>`;
+      }
+    }
+
+    function displayOutput(trigContent) {
+      currentTrigContent = trigContent;
+      const outputSection = document.getElementById('output-section');
+      const outputContent = document.getElementById('output-content');
+      const outputActions = document.getElementById('output-actions');
+
+      outputSection.style.display = 'block';
+      outputContent.classList.remove('empty');
+      outputContent.textContent = trigContent;
+      outputActions.style.display = 'flex';
+    }
+
     function logEvent(type, message) {
-      const timestamp = new Date().toLocaleTimeString();
-      const logItem = document.createElement('div');
-      logItem.className = 'event-log-item';
-      
-      logItem.innerHTML = `
-        <span class="event-time">${timestamp}</span>
-        <span class="event-type ${type}">${type.toUpperCase()}</span>
+      const log = document.getElementById('event-log');
+      const time = new Date().toLocaleTimeString();
+      const item = document.createElement('div');
+      item.className = 'event-log-item';
+      item.innerHTML = `
+        <span class="event-time">${time}</span>
+        <span class="event-type ${type.toLowerCase()}">${type}</span>
         <span class="event-message">${message}</span>
       `;
-      
-      const eventLog = document.getElementById('event-log');
-      eventLog.insertBefore(logItem, eventLog.firstChild);
-      
-      // Keep only last 30 items
-      while (eventLog.children.length > 30) {
-        eventLog.removeChild(eventLog.lastChild);
-      }
+      log.insertBefore(item, log.firstChild);
     }
 
-    // Select template
-    async function selectTemplate(template) {
-      selectedTemplate = template;
-      
-      // Update UI
-      document.querySelectorAll('.template-card').forEach(card => {
-        card.classList.remove('selected');
-      });
-      event.currentTarget.classList.add('selected');
-      
-      logEvent('change', `Loading template: ${template.name}`);
-      
-      // Show loading state
-      const container = document.getElementById('creator-container');
-      container.innerHTML = `
-        <div class="loading-state">
-          <div class="loading-spinner"></div>
-          <p>Loading ${template.name} template...</p>
-        </div>
-      `;
-      
-      // Clean up previous creator
-      if (creator) {
-        creator.destroy();
-      }
-
-      // Create new instance
-      creator = new NanopubCreator({
-        publishServer: 'https://np.petapico.org/',
-        theme: 'default',
-        validateOnChange: true,
-        showHelp: true
-      });
-
-      // Event listeners
-      creator.on('change', (data) => {
-        logEvent('change', `Form updated`);
-      });
-
-      creator.on('submit', async ({ trigContent, formData }) => {
-        logEvent('submit', 'Nanopublication generated successfully');
-        currentTrigContent = trigContent;
-        
-        // Show output
-        const outputContent = document.getElementById('output-content');
-        const outputSection = document.getElementById('output-section');
-        const outputActions = document.getElementById('output-actions');
-        
-        outputContent.textContent = trigContent;
-        outputContent.classList.remove('empty');
-        outputSection.style.display = 'block';
-        outputActions.style.display = 'flex';
-      });
-
-      creator.on('error', ({ type, error, errors }) => {
-        logEvent('error', `Error (${type}): ${error?.message || errors?.join(', ')}`);
-      });
-
-      // Load template
-      try {
-        await creator.renderFromTemplateUri(template.uri, container);
-        logEvent('change', `${template.name} template loaded and form rendered`);
-      } catch (error) {
-        logEvent('error', `Failed to load template: ${error.message}`);
-        container.innerHTML = `
-          <div class="empty-state">
-            <h3>❌ Error Loading Template</h3>
-            <p>${error.message}</p>
-            <p>Please try another template or check your network connection.</p>
-          </div>
-        `;
-      }
-    }
-
-    // Copy output
     window.copyOutput = function() {
-      navigator.clipboard.writeText(currentTrigContent).then(() => {
-        logEvent('change', 'Output copied to clipboard');
-        const btn = document.querySelector('.btn-copy');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-        setTimeout(() => {
-          btn.innerHTML = originalText;
-        }, 2000);
-      });
+      navigator.clipboard.writeText(currentTrigContent);
+      logEvent('INFO', 'Copied to clipboard');
     };
 
-    // Download output
     window.downloadOutput = function() {
-      const blob = new Blob([currentTrigContent], { type: 'application/trig' });
+      const blob = new Blob([currentTrigContent], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `nanopub-${Date.now()}.trig`;
-      document.body.appendChild(a);
+      a.download = 'nanopublication.trig';
       a.click();
-      document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      logEvent('change', 'Output downloaded as file');
+      logEvent('INFO', 'Downloaded nanopublication');
     };
 
-    // Initialize
+    // Custom URL loading
+    document.getElementById('load-template-btn').addEventListener('click', () => {
+      const input = document.getElementById('template-url-input');
+      const url = input.value.trim();
+      if (url) {
+        loadTemplate(url);
+      }
+    });
+
+    document.getElementById('template-url-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const url = e.target.value.trim();
+        if (url) {
+          loadTemplate(url);
+        }
+      }
+    });
+
     initTemplateGrid();
-    logEvent('change', 'Demo ready - select a template to begin');
   </script>
 </body>
 </html>
