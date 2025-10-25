@@ -369,8 +369,10 @@ export class FormGenerator {
    * Render fields from statements
    */
   renderFields(container) {
-    // Group statements by their grouping
     const processedGroups = new Set();
+    const renderedPlaceholders = new Set(); // Track which placeholders we've already shown
+    
+    console.log('[renderFields] Processing statements...');
     
     this.template.statements.forEach(statement => {
       // Skip if this statement is part of a grouped statement we've already processed
@@ -378,17 +380,22 @@ export class FormGenerator {
         g.statements.includes(statement.id)
       );
       
+      console.log(`  ${statement.id}: parentGroup=${parentGroup?.id}, processed=${processedGroups.has(parentGroup?.id)}`);
+      
       if (parentGroup && processedGroups.has(parentGroup.id)) {
+        console.log(`    → Skipping (group already processed)`);
         return;
       }
       
-      if (statement.grouped && parentGroup) {
-        // Render the entire group together
-        this.renderGroupedStatement(container, parentGroup, statement);
+      if (parentGroup) {
+        // This statement is part of a group - render the entire group
+        console.log(`    → Rendering grouped statement ${parentGroup.id}`);
+        this.renderGroupedStatement(container, parentGroup, statement, renderedPlaceholders);
         processedGroups.add(parentGroup.id);
       } else {
         // Render individual statement
-        this.renderStatement(container, statement);
+        console.log(`    → Rendering individual statement`);
+        this.renderStatement(container, statement, renderedPlaceholders);
       }
     });
   }
@@ -396,7 +403,7 @@ export class FormGenerator {
   /**
    * Render a grouped statement (multiple sub-statements as one field group)
    */
-  renderGroupedStatement(container, group, parentStatement) {
+  renderGroupedStatement(container, group, parentStatement, renderedPlaceholders = new Set()) {
     const groupContainer = document.createElement('div');
     groupContainer.className = 'form-field-group';
     if (parentStatement.repeatable) {
@@ -411,21 +418,32 @@ export class FormGenerator {
       .map(stId => this.template.statements.find(s => s.id === stId))
       .filter(s => s);
     
-    // Use the first statement's subject as the group label
+    // Render the subject placeholder input at the top if it exists and hasn't been rendered
     const firstStmt = groupStatements[0];
     if (firstStmt) {
       const subjectPlaceholder = this.findPlaceholder(firstStmt.subject);
-      if (subjectPlaceholder) {
-        const groupLabel = document.createElement('div');
-        groupLabel.className = 'field-group-label';
-        groupLabel.textContent = subjectPlaceholder.label || this.getLabel(firstStmt.subject);
-        groupContainer.appendChild(groupLabel);
+      if (subjectPlaceholder && !renderedPlaceholders.has(subjectPlaceholder.id)) {
+        const subjField = document.createElement('div');
+        subjField.className = 'form-field';
+        
+        const subjLabel = document.createElement('label');
+        subjLabel.className = 'field-label';
+        subjLabel.textContent = subjectPlaceholder.label || this.getLabel(firstStmt.subject);
+        subjField.appendChild(subjLabel);
+        
+        const subjInput = this.renderInput(subjectPlaceholder);
+        subjInput.name = `${firstStmt.id}_subject`;
+        subjInput.id = `field_${firstStmt.id}_subject`;
+        subjField.appendChild(subjInput);
+        
+        groupContainer.appendChild(subjField);
+        renderedPlaceholders.add(subjectPlaceholder.id);
       }
     }
     
-    // Render each statement in the group
+    // Render each statement in the group (predicate + object only)
     groupStatements.forEach(stmt => {
-      this.renderStatementInGroup(groupContainer, stmt);
+      this.renderStatementInGroup(groupContainer, stmt, renderedPlaceholders);
     });
     
     // Add repeatable controls if needed
@@ -439,85 +457,42 @@ export class FormGenerator {
   /**
    * Render a statement within a group (no separate labels for subject)
    */
-  renderStatementInGroup(container, statement) {
+  renderStatementInGroup(container, statement, renderedPlaceholders = new Set()) {
+    console.log(`[renderStatementInGroup] ${statement.id}:`, {
+      predicate: statement.predicate,
+      object: statement.object,
+      isLiteralObject: statement.isLiteralObject
+    });
+    
     const objectPlaceholder = this.findPlaceholder(statement.object);
     const predicatePlaceholder = this.findPlaceholder(statement.predicate);
     
-    // Only render if there's a placeholder
-    if (!objectPlaceholder && !predicatePlaceholder) {
-      // Both are fixed - show as read-only info only if it's a literal
-      if (statement.isLiteralObject) {
-        const infoField = document.createElement('div');
-        infoField.className = 'form-field readonly-field';
-        
-        const label = document.createElement('label');
-        label.className = 'field-label';
-        label.textContent = this.getLabel(statement.predicate);
-        
-        const value = document.createElement('div');
-        value.className = 'field-value';
-        value.textContent = statement.object;
-        
-        infoField.appendChild(label);
-        infoField.appendChild(value);
-        container.appendChild(infoField);
-      }
+    console.log(`  objectPlaceholder:`, objectPlaceholder?.id);
+    console.log(`  predicatePlaceholder:`, predicatePlaceholder?.id);
+    
+    // Check if we need to render anything
+    const needToRenderPredicate = predicatePlaceholder && !renderedPlaceholders.has(predicatePlaceholder.id);
+    const needToRenderObject = objectPlaceholder && !renderedPlaceholders.has(objectPlaceholder.id);
+    
+    // If both predicate and object are placeholders that were already rendered, skip this statement
+    if (predicatePlaceholder && objectPlaceholder && 
+        !needToRenderPredicate && !needToRenderObject) {
+      console.log(`  → SKIP (both placeholders already rendered)`);
       return;
     }
     
-    // Render placeholder input
-    const targetPlaceholder = predicatePlaceholder || objectPlaceholder;
-    const field = document.createElement('div');
-    field.className = 'form-field';
+    // Always show the predicate label for context
+    const predicateLabel = this.getLabel(statement.predicate);
     
-    if (statement.optional) {
-      field.classList.add('optional');
-    }
-    
-    const label = document.createElement('label');
-    label.className = 'field-label';
-    label.htmlFor = `field_${statement.id}`;
-    
-    // Use predicate label, or placeholder label if predicate is the placeholder
-    if (predicatePlaceholder) {
-      label.textContent = predicatePlaceholder.label || this.getLabel(statement.predicate);
-    } else {
-      label.textContent = this.getLabel(statement.predicate);
-    }
-    
-    if (statement.optional) {
-      const optionalBadge = document.createElement('span');
-      optionalBadge.className = 'optional-badge';
-      optionalBadge.textContent = 'optional';
-      label.appendChild(optionalBadge);
-    }
-    
-    const input = this.renderInput(targetPlaceholder);
-    input.name = statement.id;
-    input.id = `field_${statement.id}`;
-    
-    field.appendChild(label);
-    field.appendChild(input);
-    
-    container.appendChild(field);
-  }
-
-  /**
-   * Render a single statement as a form field
-   */
-  renderStatement(container, statement) {
-    const subjectPlaceholder = this.findPlaceholder(statement.subject);
-    const predicatePlaceholder = this.findPlaceholder(statement.predicate);
-    const objectPlaceholder = this.findPlaceholder(statement.object);
-    
-    // Show fixed literal values as read-only
-    if (statement.isLiteralObject && !objectPlaceholder && !predicatePlaceholder && !subjectPlaceholder) {
+    // Both are fixed - show as read-only info
+    if (!objectPlaceholder && !predicatePlaceholder) {
+      console.log(`  → READONLY path: ${predicateLabel} = ${statement.object}`);
       const infoField = document.createElement('div');
       infoField.className = 'form-field readonly-field';
       
       const label = document.createElement('label');
       label.className = 'field-label';
-      label.textContent = this.getLabel(statement.predicate);
+      label.textContent = predicateLabel;
       
       const value = document.createElement('div');
       value.className = 'field-value';
@@ -529,8 +504,108 @@ export class FormGenerator {
       return;
     }
     
-    // Skip if no placeholders at all
-    if (!subjectPlaceholder && !predicatePlaceholder && !objectPlaceholder) {
+    // If object placeholder was already rendered (and predicate is fixed), skip
+    if (objectPlaceholder && !needToRenderObject && !predicatePlaceholder) {
+      console.log(`  → SKIP (object placeholder already rendered)`);
+      return;
+    }
+    
+    console.log(`  → INPUT path`);
+    
+    // Has placeholder - render input field
+    const field = document.createElement('div');
+    field.className = 'form-field';
+    
+    if (statement.optional) {
+      field.classList.add('optional');
+    }
+    
+    // Show predicate label first
+    const predLabelEl = document.createElement('label');
+    predLabelEl.className = 'field-label';
+    predLabelEl.textContent = predicateLabel;
+    field.appendChild(predLabelEl);
+    
+    // If predicate is a placeholder AND not already rendered, render its input
+    if (needToRenderPredicate) {
+      const predInput = this.renderInput(predicatePlaceholder);
+      predInput.name = `${statement.id}_predicate`;
+      predInput.id = `field_${statement.id}_predicate`;
+      field.appendChild(predInput);
+      renderedPlaceholders.add(predicatePlaceholder.id);
+    }
+    
+    // If object is a placeholder AND not already rendered, render its input
+    if (needToRenderObject) {
+      // Add placeholder label as help text
+      if (objectPlaceholder.label) {
+        const helpText = document.createElement('div');
+        helpText.className = 'field-help';
+        helpText.textContent = objectPlaceholder.label;
+        field.appendChild(helpText);
+      }
+      
+      const objInput = this.renderInput(objectPlaceholder);
+      objInput.name = statement.id;
+      objInput.id = `field_${statement.id}`;
+      field.appendChild(objInput);
+      renderedPlaceholders.add(objectPlaceholder.id);
+    } else if (!objectPlaceholder) {
+      // Object is fixed, show its value
+      const value = document.createElement('div');
+      value.className = 'field-value';
+      value.textContent = this.getLabel(statement.object) || statement.object;
+      field.appendChild(value);
+    }
+    
+    if (statement.optional) {
+      const optionalBadge = document.createElement('span');
+      optionalBadge.className = 'optional-badge';
+      optionalBadge.textContent = 'optional';
+      predLabelEl.appendChild(optionalBadge);
+    }
+    
+    container.appendChild(field);
+  }
+
+  /**
+   * Render a single statement as a form field
+   */
+  renderStatement(container, statement, renderedPlaceholders = new Set()) {
+    const subjectPlaceholder = this.findPlaceholder(statement.subject);
+    const predicatePlaceholder = this.findPlaceholder(statement.predicate);
+    const objectPlaceholder = this.findPlaceholder(statement.object);
+    
+    // Get predicate label for display
+    const predicateLabel = this.getLabel(statement.predicate);
+    
+    // Check if we need to render anything for this statement
+    const needToRenderSubject = subjectPlaceholder && !renderedPlaceholders.has(subjectPlaceholder.id);
+    const needToRenderPredicate = predicatePlaceholder && !renderedPlaceholders.has(predicatePlaceholder.id);
+    const needToRenderObject = objectPlaceholder && !renderedPlaceholders.has(objectPlaceholder.id);
+    
+    // If all placeholders already rendered and predicate/object are not fixed, skip entirely
+    if (!needToRenderSubject && !needToRenderPredicate && !needToRenderObject && 
+        (predicatePlaceholder || objectPlaceholder)) {
+      return;
+    }
+    
+    // Show fixed predicate/object as read-only (even if subject was already rendered)
+    if (!predicatePlaceholder && !objectPlaceholder && !needToRenderSubject) {
+      const infoField = document.createElement('div');
+      infoField.className = 'form-field readonly-field';
+      
+      const label = document.createElement('label');
+      label.className = 'field-label';
+      label.textContent = predicateLabel;
+      
+      const value = document.createElement('div');
+      value.className = 'field-value';
+      value.textContent = this.getLabel(statement.object) || statement.object;
+      
+      infoField.appendChild(label);
+      infoField.appendChild(value);
+      container.appendChild(infoField);
       return;
     }
     
@@ -544,56 +619,74 @@ export class FormGenerator {
       field.classList.add('optional');
     }
     
-    // Render predicate placeholder if exists
-    if (predicatePlaceholder) {
+    // 1. SUBJECT - render first if not already rendered
+    if (needToRenderSubject) {
+      const subjLabel = document.createElement('label');
+      subjLabel.className = 'field-label';
+      subjLabel.textContent = subjectPlaceholder.label || this.getLabel(statement.subject);
+      field.appendChild(subjLabel);
+      
+      const subjInput = this.renderInput(subjectPlaceholder);
+      subjInput.name = `${statement.id}_subject`;
+      subjInput.id = `field_${statement.id}_subject`;
+      if (!statement.optional) subjInput.required = true;
+      field.appendChild(subjInput);
+      
+      renderedPlaceholders.add(subjectPlaceholder.id);
+    }
+    
+    // 2. PREDICATE - render second if not already rendered
+    if (needToRenderPredicate) {
       const predLabel = document.createElement('label');
       predLabel.className = 'field-label';
-      predLabel.textContent = predicatePlaceholder.label || this.getLabel(statement.predicate);
+      predLabel.textContent = predicatePlaceholder.label || predicateLabel;
+      field.appendChild(predLabel);
       
       const predInput = this.renderInput(predicatePlaceholder);
       predInput.name = `${statement.id}_predicate`;
       predInput.id = `field_${statement.id}_predicate`;
       if (!statement.optional) predInput.required = true;
-      
-      field.appendChild(predLabel);
       field.appendChild(predInput);
-    }
-    
-    // Render object placeholder if exists
-    if (objectPlaceholder) {
-      const objLabel = document.createElement('label');
-      objLabel.className = 'field-label';
-      objLabel.textContent = objectPlaceholder.label || this.getLabel(statement.object);
+      
+      renderedPlaceholders.add(predicatePlaceholder.id);
+    } else if (!predicatePlaceholder) {
+      // Show predicate as label even if not a placeholder
+      const predLabel = document.createElement('label');
+      predLabel.className = 'field-label';
+      predLabel.textContent = predicateLabel;
       
       if (statement.optional) {
         const optionalBadge = document.createElement('span');
         optionalBadge.className = 'optional-badge';
         optionalBadge.textContent = 'optional';
-        objLabel.appendChild(optionalBadge);
+        predLabel.appendChild(optionalBadge);
+      }
+      
+      field.appendChild(predLabel);
+    }
+    
+    // 3. OBJECT - render last if not already rendered
+    if (needToRenderObject) {
+      if (objectPlaceholder.label) {
+        const helpText = document.createElement('div');
+        helpText.className = 'field-help';
+        helpText.textContent = objectPlaceholder.label;
+        field.appendChild(helpText);
       }
       
       const objInput = this.renderInput(objectPlaceholder);
       objInput.name = `${statement.id}_object`;
       objInput.id = `field_${statement.id}_object`;
       if (!statement.optional) objInput.required = true;
-      
-      field.appendChild(objLabel);
       field.appendChild(objInput);
-    }
-    
-    // Render subject placeholder if exists (rare)
-    if (subjectPlaceholder && !predicatePlaceholder && !objectPlaceholder) {
-      const subjLabel = document.createElement('label');
-      subjLabel.className = 'field-label';
-      subjLabel.textContent = subjectPlaceholder.label || this.getLabel(statement.subject);
       
-      const subjInput = this.renderInput(subjectPlaceholder);
-      subjInput.name = `${statement.id}_subject`;
-      subjInput.id = `field_${statement.id}_subject`;
-      if (!statement.optional) subjInput.required = true;
-      
-      field.appendChild(subjLabel);
-      field.appendChild(subjInput);
+      renderedPlaceholders.add(objectPlaceholder.id);
+    } else if (!objectPlaceholder) {
+      // Show fixed object value
+      const value = document.createElement('div');
+      value.className = 'field-value';
+      value.textContent = this.getLabel(statement.object) || statement.object;
+      field.appendChild(value);
     }
     
     container.appendChild(field);

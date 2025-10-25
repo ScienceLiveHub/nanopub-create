@@ -97,7 +97,8 @@ export class TemplateParser {
     console.log('Parsing placeholders...');
     
     // Match both Placeholder types AND Resource types (LocalResource, IntroducedResource, etc)
-    const placeholderRegex = /(sub:[\w-]+)\s+a\s+nt:([\w,\s]+(Placeholder|Resource)[^;]*);/g;
+    // Handle both semicolon (;) and period (.) endings
+    const placeholderRegex = /(sub:[\w-]+)\s+a\s+nt:([\w,\s]+(Placeholder|Resource)[^;.\n]*)[;.]/g;
     let match;
     
     while ((match = placeholderRegex.exec(this.content)) !== null) {
@@ -154,22 +155,30 @@ export class TemplateParser {
           const valueText = possibleValueMatch[1];
           console.log(`  → Raw value text: ${valueText.substring(0, 100)}...`);
           const inlineValues = [];
-          // Match both <URL> and sub:reference
-          const valueRegex = /<([^>]+)>|(sub:[\w-]+)/g;
+          // Match both <URL> and prefix:reference (any prefix like sub:, npx:, etc.)
+          const valueRegex = /<([^>]+)>|([\w-]+:[\w-]+)/g;
           let valueMatch;
           while ((valueMatch = valueRegex.exec(valueText)) !== null) {
             inlineValues.push(valueMatch[1] || valueMatch[2]);
           }
           if (inlineValues.length > 0) {
             placeholder.options = inlineValues.map(v => {
-              let label = v;
-              if (v.startsWith('http')) {
-                label = v.replace(/^https?:\/\//, '').replace(/\/$/, '');
-                label = label.charAt(0).toUpperCase() + label.slice(1);
-              } else if (v.startsWith('sub:')) {
-                // Use the actual placeholder this references
-                label = v.replace('sub:', '');
+              // First check if there's a label in template.labels
+              let label = this.template.labels[v];
+              
+              if (!label) {
+                // Fallback to generating label from URI or prefixed value
+                if (v.startsWith('http')) {
+                  label = v.replace(/^https?:\/\//, '').replace(/\/$/, '');
+                  label = label.charAt(0).toUpperCase() + label.slice(1);
+                } else if (v.includes(':')) {
+                  // Has a namespace prefix (sub:, npx:, etc.) - use the local part
+                  label = v.split(':')[1];
+                } else {
+                  label = v;
+                }
               }
+              
               return { value: v, label: label };
             });
             console.log(`  → Found ${placeholder.options.length} inline options:`, placeholder.options.map(o => o.label));
