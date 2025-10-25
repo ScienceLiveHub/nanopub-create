@@ -287,7 +287,7 @@ export class FormGenerator {
     fieldsContainer.className = 'grouped-fields';
     
     // Add each nested statement as a field
-    statement.nestedStatements.forEach(nested => {
+    (statement.nestedStatements || []).forEach(nested => {
       const field = this.buildStatementField(nested, index);
       fieldsContainer.appendChild(field);
       groupData.fields.push(field);
