@@ -516,6 +516,41 @@ export class FormGenerator {
     return field;
   }
 
+handleAddRepetition(statement, container) {
+  const groups = container._repetitionGroups;
+  const newIndex = groups.length;
+  
+  const newGroup = this.createRepetitionGroup(statement, newIndex);
+  groups.push(newGroup);
+  
+  // Insert before controls
+  const lastGroup = groups[groups.length - 2].element;
+  lastGroup.parentNode.insertBefore(newGroup.element, lastGroup.nextSibling);
+  
+  this.updateRepetitionButtons(container);
+  this.emit('change', this.collectFormData());
+}
+
+handleRemoveRepetition(statement, container, index) {
+  const groups = container._repetitionGroups;
+  
+  if (groups.length <= 1) return; // Keep at least one
+  
+  const groupToRemove = groups.find(g => g.index === index);
+  if (groupToRemove) {
+    groupToRemove.element.remove();
+    groups.splice(groups.indexOf(groupToRemove), 1);
+    
+    // Reindex remaining groups
+    groups.forEach((g, i) => {
+      g.index = i;
+      g.element.dataset.index = i;
+    });
+  }
+  
+  this.updateRepetitionButtons(container);
+  this.emit('change', this.collectFormData());
+}
   /**
    * Create input element based on placeholder configuration
    */

@@ -37,6 +37,7 @@ export class TemplateParser {
     this.parseTemplateMetadata();
     this.parseLabels();
     this.parsePlaceholders();
+    this.parsePlaceholderOptions();
     this.parseStatements();
     this.identifyRepeatablePlaceholders();
     
@@ -146,6 +147,32 @@ export class TemplateParser {
     
     this.log(`✓ Parsed ${count} placeholders`);
   }
+async parsePlaceholderOptions() {
+  for (const placeholder of this.template.placeholders) {
+    if (placeholder.possibleValuesFrom) {
+      try {
+        const optionsNp = await fetch(
+          placeholder.possibleValuesFrom.replace('https://w3id.org/np/', 
+          'https://np.petapico.org/') + '.trig'
+        );
+        const content = await optionsNp.text();
+        
+        // Parse options from the nanopub
+        // Look for np:hasLabelFromApi or similar
+        const optionMatches = content.matchAll(/<([^>]+)>\s+rdfs:label\s+"([^"]+)"/g);
+        placeholder.options = [];
+        for (const match of optionMatches) {
+          placeholder.options.push({
+            value: match[1],
+            label: match[2]
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to fetch options for', placeholder.id, e);
+      }
+    }
+  }
+}
 
   parseStatements() {
     this.log('🔧 Starting statement parsing...');
