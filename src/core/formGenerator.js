@@ -355,115 +355,89 @@ export class FormGenerator {
     return controls;
   }
 
-  /**
-   * Add a new repetition group (called when "+ Add Another" clicked)
-   */
-  addRepetitionGroup(container) {
-    const statement = container._statement;
-    const repetitionGroups = container._repetitionGroups;
-    const newIndex = repetitionGroups.length;
-    
-    const newGroup = this.createRepetitionGroup(statement, newIndex);
-    repetitionGroups.push(newGroup);
-    
-    // Append to container (before any subsequent elements)
-    const lastGroup = repetitionGroups[repetitionGroups.length - 2].element;
-    lastGroup.parentElement.insertBefore(newGroup.element, lastGroup.nextSibling);
-    
-    // Update button visibility following nanodash logic
-    this.updateRepetitionButtons(container);
-    
-    // Trigger change event
-    this.emit('change', { action: 'addGroup', statementId: statement.id, groupIndex: newIndex });
-  }
+/**
+ * Add a new repetition group
+ */
+addRepetitionGroup(container) {
+  const statement = container._statement;
+  const repetitionGroups = container._repetitionGroups;
+  const newIndex = repetitionGroups.length;
+  
+  console.log('➕ Adding repetition group', newIndex);
+  
+  const newGroup = this.createRepetitionGroup(statement, newIndex);
+  repetitionGroups.push(newGroup);
+  
+  // Insert after last group
+  const lastGroup = repetitionGroups[repetitionGroups.length - 2].element;
+  lastGroup.parentNode.insertBefore(newGroup.element, lastGroup.nextSibling);
+  
+  this.updateRepetitionButtons(container);
+  this.emit('change', { action: 'addGroup', statementId: statement.id, groupIndex: newIndex });
+}
 
-  /**
-   * Remove a repetition group (called when "− Remove" clicked)
-   */
-  removeRepetitionGroup(container, indexToRemove) {
-    const repetitionGroups = container._repetitionGroups;
+/**
+ * Remove a repetition group
+ */
+removeRepetitionGroup(container, index) {
+  const repetitionGroups = container._repetitionGroups;
+  
+  if (repetitionGroups.length <= 1) {
+    console.warn('Cannot remove last group');
+    return;
+  }
+  
+  console.log('➖ Removing repetition group', index);
+  
+  const groupToRemove = repetitionGroups[index];
+  if (groupToRemove) {
+    groupToRemove.element.remove();
+    repetitionGroups.splice(index, 1);
     
-    if (repetitionGroups.length <= 1) {
-      return; // Can't remove last group
-    }
-    
-    // Find and remove from DOM
-    const groupToRemove = repetitionGroups.find(g => g.index === indexToRemove);
-    if (groupToRemove) {
-      groupToRemove.element.remove();
-    }
-    
-    // Remove from array
-    repetitionGroups.splice(repetitionGroups.findIndex(g => g.index === indexToRemove), 1);
-    
-    // Re-index remaining groups
-    repetitionGroups.forEach((group, i) => {
-      group.index = i;
-      group.element.dataset.index = i;
-      
-      // Update field names
-      group.fields.forEach(fieldElement => {
-        const input = fieldElement.querySelector('input, select, textarea');
-        if (input) {
-          const oldName = input.name;
-          const newName = oldName.replace(/_\d+$/, `_${i}`);
-          input.name = newName;
-          input.dataset.groupIndex = i;
-        }
-      });
+    // Reindex
+    repetitionGroups.forEach((g, i) => {
+      g.index = i;
+      g.element.dataset.index = i;
     });
     
-    // Update button visibility
     this.updateRepetitionButtons(container);
-    
-    // Trigger change event
-    this.emit('change', { action: 'removeGroup', statementId: container._statement.id, groupIndex: indexToRemove });
+    this.emit('change', { action: 'removeGroup', groupIndex: index });
   }
+}
 
-  /**
-   * Update visibility of add/remove buttons following nanodash logic
-   * 
-   * Rules (from nanodash StatementItem.java):
-   * - Add button: only visible on last group
-   * - Remove button: visible on all except when only one
-   * - Optional mark: only visible when single instance
-   */
-  updateRepetitionButtons(container) {
-    const statement = container._statement;
-    const repetitionGroups = container._repetitionGroups;
-    const isOnly = repetitionGroups.length === 1;
+/**
+ * Update button visibility
+ */
+updateRepetitionButtons(container) {
+  const repetitionGroups = container._repetitionGroups;
+  const statement = container._statement;
+  
+  if (!statement.repeatable) return;
+  
+  repetitionGroups.forEach((group, index) => {
+    const controls = group.element.querySelector('.repetition-controls');
+    if (!controls) return;
     
-    repetitionGroups.forEach((group, i) => {
-      const controls = group.element.querySelector('.repetition-controls');
-      if (!controls) return;
-      
-      const isLast = i === repetitionGroups.length - 1;
-      
-      // Add button: only visible on last group (nanodash pattern)
-      const addBtn = controls.querySelector('.btn-add-group');
-      if (addBtn) {
-        addBtn.style.display = (statement.repeatable && isLast && !this.options.readOnly) 
-          ? 'inline-block' 
-          : 'none';
-      }
-      
-      // Remove button: visible on all except when only one (nanodash pattern)
-      const removeBtn = controls.querySelector('.btn-remove-group');
-      if (removeBtn) {
-        removeBtn.style.display = (statement.repeatable && !isOnly && !this.options.readOnly) 
-          ? 'inline-block' 
-          : 'none';
-      }
-      
-      // Optional mark: only visible when single instance (nanodash pattern)
-      const optionalMark = controls.querySelector('.optional-mark');
-      if (optionalMark) {
-        optionalMark.style.display = (statement.optional && isOnly && !this.options.readOnly) 
-          ? 'inline' 
-          : 'none';
-      }
-    });
-  }
+    const removeBtn = controls.querySelector('.btn-remove-group');
+    const addBtn = controls.querySelector('.btn-add-group');
+    const optionalMark = controls.querySelector('.optional-mark');
+    
+    // Remove button: show if more than 1 group
+    if (removeBtn) {
+      removeBtn.style.display = repetitionGroups.length > 1 ? 'inline-block' : 'none';
+    }
+    
+    // Add button: only on last group
+    if (addBtn) {
+      addBtn.style.display = index === repetitionGroups.length - 1 ? 'inline-block' : 'none';
+    }
+    
+    // Optional mark: only on single instance
+    if (optionalMark && statement.optional) {
+      optionalMark.style.display = repetitionGroups.length === 1 ? 'inline' : 'none';
+    }
+  });
+}
 
   /**
    * Build a statement field (for use in grouped statements)
@@ -474,21 +448,94 @@ export class FormGenerator {
     field.className = 'statement-field';
     field.dataset.statementId = statement.id;
     
+    console.log(`🔧 Building field for statement:`, {
+      id: statement.id,
+      subject: statement.subject,
+      predicate: statement.predicate,
+      object: statement.object
+    });
+    
+    // Special case: rdf:type statements with fixed object
+    // These should show the type as read-only text, not an input
+    if (statement.predicate === 'rdf:type' || statement.predicate === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
+      console.log(`📌 This is an rdf:type statement - should be read-only`);
+      
+      // Create label
+      const label = this.createLabelElement(
+        this.getLabel(statement.predicate),
+        statement.predicate
+      );
+      
+      // Create read-only display
+      const display = document.createElement('div');
+      display.className = 'readonly-value';
+      display.textContent = this.getLabel(statement.object);
+      display.style.padding = '8px';
+      display.style.backgroundColor = '#f5f5f5';
+      display.style.border = '1px solid #ddd';
+      display.style.borderRadius = '4px';
+      
+      // Hidden input to store the value
+      const hiddenInput = document.createElement('input');
+      hiddenInput.type = 'hidden';
+      hiddenInput.name = `statement_${statement.id}_object_${groupIndex}`;
+      hiddenInput.value = statement.object;
+      hiddenInput.dataset.statementId = statement.id;
+      hiddenInput.dataset.groupIndex = groupIndex;
+      
+      field.appendChild(label);
+      field.appendChild(display);
+      field.appendChild(hiddenInput);
+      
+      return field;
+    }
+    
     // Create label using the predicate
     const label = this.createLabelElement(
       this.getLabel(statement.predicate),
       statement.predicate
     );
     
-    // Determine field type based on object
-    const objectPlaceholder = this.template.placeholders.find(
-      p => `sub:${p.id}` === statement.object || p.id === statement.object.replace('sub:', '')
-    );
+    // Determine field type based on predicate AND object
+    // In some templates, the predicate itself is a placeholder (RestrictedChoice)
+    const predicateId = statement.predicate.replace('sub:', '');
+    const objectId = statement.object.replace('sub:', '');
+    
+    console.log(`🔍 Looking for placeholder - predicate: "${predicateId}", object: "${objectId}"`);
+    console.log(`   Available placeholders:`, this.template.placeholders.map(p => ({
+      id: p.id,
+      type: p.type,
+      optionsCount: p.options?.length || 0
+    })));
+    
+    // Try predicate first (for RestrictedChoice predicates), then object
+    let fieldPlaceholder = this.template.placeholders.find(p => p.id === predicateId);
+    let isPredicatePlaceholder = !!fieldPlaceholder;
+    
+    if (!fieldPlaceholder) {
+      fieldPlaceholder = this.template.placeholders.find(p => p.id === objectId);
+    }
+    
+    // Debug: show what we found
+    if (fieldPlaceholder) {
+      console.log(`🔎 Found placeholder "${fieldPlaceholder.id}" (${isPredicatePlaceholder ? 'predicate' : 'object'}):`, {
+        type: fieldPlaceholder.type,
+        hasOptions: !!fieldPlaceholder.options,
+        optionsCount: fieldPlaceholder.options?.length || 0,
+        optionsPreview: fieldPlaceholder.options?.slice(0, 2)
+      });
+    }
     
     let input;
-    if (objectPlaceholder) {
+    if (fieldPlaceholder) {
+      // Debug: log placeholder info
+      console.log(`🔍 Creating input for placeholder: ${fieldPlaceholder.id}`, {
+        type: fieldPlaceholder.type,
+        hasOptions: !!fieldPlaceholder.options,
+        optionsCount: fieldPlaceholder.options?.length || 0
+      });
       // Use placeholder configuration to create appropriate input
-      input = this.createInputForPlaceholder(objectPlaceholder, groupIndex);
+      input = this.createInputForPlaceholder(fieldPlaceholder, groupIndex);
     } else {
       // Default text input
       input = document.createElement('input');
@@ -496,16 +543,16 @@ export class FormGenerator {
       input.placeholder = this.getLabel(statement.object);
     }
     
-    input.name = `statement_${statement.id}_object_${groupIndex}`;
+    input.name = `statement_${statement.id}_${isPredicatePlaceholder ? 'predicate' : 'object'}_${groupIndex}`;
     input.dataset.statementId = statement.id;
     input.dataset.groupIndex = groupIndex;
     
     // Add validation if needed
-    if (objectPlaceholder && objectPlaceholder.validation) {
-      if (objectPlaceholder.validation.regex) {
-        input.pattern = objectPlaceholder.validation.regex;
+    if (fieldPlaceholder && fieldPlaceholder.validation) {
+      if (fieldPlaceholder.validation.regex) {
+        input.pattern = fieldPlaceholder.validation.regex;
       }
-      if (objectPlaceholder.required) {
+      if (fieldPlaceholder.required) {
         input.required = true;
       }
     }
@@ -531,6 +578,64 @@ handleAddRepetition(statement, container) {
   this.emit('change', this.collectFormData());
 }
 
+/**
+ * Remove a repetition group
+ */
+removeRepetitionGroup(container, index) {
+  const repetitionGroups = container._repetitionGroups;
+  
+  if (repetitionGroups.length <= 1) return; // Keep at least one
+  
+  const groupToRemove = repetitionGroups[index];
+  if (groupToRemove) {
+    groupToRemove.element.remove();
+    repetitionGroups.splice(index, 1);
+    
+    // Reindex remaining groups
+    repetitionGroups.forEach((g, i) => {
+      g.index = i;
+      g.element.dataset.index = i;
+    });
+    
+    this.updateRepetitionButtons(container);
+    this.emit('change', { action: 'removeGroup', groupIndex: index });
+  }
+}
+
+/**
+ * Update button visibility following nanodash logic
+ */
+updateRepetitionButtons(container) {
+  const repetitionGroups = container._repetitionGroups;
+  const statement = container._statement;
+  
+  if (!statement.repeatable) return;
+  
+  repetitionGroups.forEach((group, index) => {
+    const controls = group.element.querySelector('.repetition-controls');
+    if (!controls) return;
+    
+    const removeBtn = controls.querySelector('.btn-remove-group');
+    const addBtn = controls.querySelector('.btn-add-group');
+    const optionalMark = controls.querySelector('.optional-mark');
+    
+    // Show remove button only if more than one group
+    if (removeBtn) {
+      removeBtn.style.display = repetitionGroups.length > 1 ? 'inline-block' : 'none';
+    }
+    
+    // Show add button only on last group
+    if (addBtn) {
+      addBtn.style.display = index === repetitionGroups.length - 1 ? 'inline-block' : 'none';
+    }
+    
+    // Show optional mark only on single instance
+    if (optionalMark && statement.optional) {
+      optionalMark.style.display = repetitionGroups.length === 1 ? 'inline' : 'none';
+    }
+  });
+}
+
 handleRemoveRepetition(statement, container, index) {
   const groups = container._repetitionGroups;
   
@@ -551,68 +656,237 @@ handleRemoveRepetition(statement, container, index) {
   this.updateRepetitionButtons(container);
   this.emit('change', this.collectFormData());
 }
-  /**
-   * Create input element based on placeholder configuration
-   */
-  createInputForPlaceholder(placeholder, groupIndex = 0) {
-    let input;
+/**
+ * Create input element based on placeholder configuration
+ */
+createInputForPlaceholder(placeholder, groupIndex = 0) {
+  let input;
+  
+  switch (placeholder.type) {
+    case 'LiteralPlaceholder':
+      input = document.createElement('input');
+      input.type = 'text';
+      input.maxLength = 200;
+      break;
     
-    switch (placeholder.type) {
-      case 'LiteralPlaceholder':
-        input = document.createElement('input');
-        input.type = 'text';
-        input.maxLength = 200;
-        break;
+    case 'LongLiteralPlaceholder':
+      input = document.createElement('textarea');
+      input.rows = 4;
+      input.maxLength = 5000;
+      break;
+    
+    case 'ExternalUriPlaceholder':
+    case 'TrustyUriPlaceholder':
+    case 'UriPlaceholder':
+      input = document.createElement('input');
+      input.type = 'url';
+      input.placeholder = 'https://example.org/...';
+      break;
+    
+    case 'RestrictedChoicePlaceholder':
+      input = document.createElement('select');
+      input.innerHTML = '<option value="">Select...</option>';
       
-      case 'LongLiteralPlaceholder':
-        input = document.createElement('textarea');
-        input.rows = 4;
-        input.maxLength = 5000;
-        break;
+      // Add unique ID for tracking
+      const uniqueId = `select-${placeholder.id}-${Date.now()}`;
+      input.id = uniqueId;
       
-      case 'ExternalUriPlaceholder':
-      case 'TrustyUriPlaceholder':
-      case 'UriPlaceholder':
-        input = document.createElement('input');
-        input.type = 'url';
-        input.placeholder = 'https://example.org/...';
-        break;
+      // Force visible styles
+      input.style.display = 'block';
+      input.style.width = '100%';
+      input.style.minHeight = '35px';
+      input.style.padding = '5px';
+      input.style.border = '1px solid #ccc';
       
-      case 'RestrictedChoicePlaceholder':
-      case 'GuidedChoicePlaceholder':
-        input = document.createElement('select');
-        input.innerHTML = '<option value="">Select...</option>';
-        // Options would be populated from placeholder.options
-        if (placeholder.options) {
-          placeholder.options.forEach(opt => {
-            const option = document.createElement('option');
-            option.value = opt.value || opt;
-            option.textContent = opt.label || opt;
-            input.appendChild(option);
+      console.log(`📋 RestrictedChoice field for ${placeholder.id} (ID: ${uniqueId}):`, {
+        hasOptions: !!placeholder.options,
+        optionsIsArray: Array.isArray(placeholder.options),
+        optionsLength: placeholder.options?.length,
+        hasPossibleValuesFrom: !!placeholder.possibleValuesFrom
+      });
+      
+      // Use pre-loaded options from template parser if available
+      if (placeholder.options && Array.isArray(placeholder.options) && placeholder.options.length > 0) {
+        console.log(`✅ Using ${placeholder.options.length} pre-loaded options for ${placeholder.id}`);
+        
+        // Build complete HTML string first (more reliable than DOM manipulation)
+        let optionsHtml = '<option value="">Select...</option>';
+        placeholder.options.forEach(opt => {
+          const value = (opt.value || opt).replace(/"/g, '&quot;');
+          const label = (opt.label || opt).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          optionsHtml += `<option value="${value}">${label}</option>`;
+        });
+        input.innerHTML = optionsHtml;
+        
+        // Debug: verify options were added to DOM
+        console.log(`🔬 DOM check for ${uniqueId}: select has ${input.options.length} options`);
+        if (input.options.length > 1) {
+          console.log(`   First real option:`, {
+            value: input.options[1].value,
+            text: input.options[1].textContent
           });
         }
-        break;
-      
-      case 'ValuePlaceholder':
-      case 'LocalResource':
-      default:
-        input = document.createElement('input');
-        input.type = 'text';
-        break;
-    }
+        
+        // CRITICAL: Log a way to find this element later
+        console.log(`🎯 To inspect in console: document.getElementById('${uniqueId}')`);
+      } else if (placeholder.possibleValuesFrom) {
+        // Fallback: fetch if not already loaded
+        this.loadRestrictedChoiceOptions(placeholder, input);
+      }
+      break;
     
-    if (placeholder.label) {
-      input.placeholder = placeholder.label;
-    }
+    case 'GuidedChoicePlaceholder':
+      // CORS blocked - use text input
+      input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = placeholder.label || 'Type to search...';
+      console.warn('⚠️ GuidedChoicePlaceholder using text input (CORS blocked)');
+      break;
     
-    return input;
+    case 'IntroducedResource':
+    case 'LocalResource':
+      input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'Local identifier';
+      break;
+    
+    case 'ValuePlaceholder':
+    default:
+      input = document.createElement('input');
+      input.type = 'text';
+      break;
   }
+  
+  if (placeholder.label) {
+    input.placeholder = placeholder.label;
+  }
+  
+  return input;
+}
 
-  /**
-   * END OF GROUPED STATEMENT IMPLEMENTATION
-   * ========================================================================
-   */
+/**
+ * Load options for RestrictedChoicePlaceholder from nanopub
+ */
+/**
+ * Load options for RestrictedChoicePlaceholder
+ */
+async loadRestrictedChoiceOptions(placeholder, selectElement) {
+  try {
+    const npUri = placeholder.possibleValuesFrom;
+    console.log(`📥 Fetching options from: ${npUri}`);
+    
+    // Convert to server URI
+    const serverUri = npUri.replace(/^https?:\/\/(w3id\.org|purl\.org)\/np\//, 
+                                     'https://np.petapico.org/') + '.trig';
+    
+    const response = await fetch(serverUri);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const trigContent = await response.text();
+    const options = this.parseOptionsFromTrig(trigContent);
+    
+    // Clear and populate
+    selectElement.innerHTML = '<option value="">Select...</option>';
+    options.forEach(opt => {
+      const option = document.createElement('option');
+      option.value = opt.value;
+      option.textContent = opt.label;
+      selectElement.appendChild(option);
+    });
+    
+    console.log(`✅ Loaded ${options.length} options`);
+    
+  } catch (error) {
+    console.error('Failed to load options:', error);
+    selectElement.innerHTML = '<option value="">Error loading options</option>';
+  }
+}
 
+/**
+ * Parse options from TriG content (handles assertion block)
+ */
+parseOptionsFromTrig(trigContent) {
+  const options = [];
+  const lines = trigContent.split('\n');
+  
+  let inAssertion = false;
+  let currentUri = null;
+  let currentLabel = null;
+  
+  for (const line of lines) {
+    const trimmed = line.trim();
+    
+    // Track assertion block
+    if (trimmed.includes('assertion {')) {
+      inAssertion = true;
+      continue;
+    }
+    if (inAssertion && trimmed === '}') {
+      inAssertion = false;
+    }
+    
+    if (!inAssertion) continue;
+    
+    // Match: <http://...> rdfs:label "..." .
+    const match = trimmed.match(/^<([^>]+)>\s+rdfs:label\s+"([^"]+)"\s*\.?$/);
+    if (match) {
+      options.push({
+        value: match[1],
+        label: match[2]
+      });
+    }
+  }
+  
+  return options;
+}
+/**
+ * Parse RestrictedChoice options from TriG nanopub
+ */
+parseRestrictedChoiceOptions(trigContent) {
+  const options = [];
+  const lines = trigContent.split('\n');
+  
+  // Simple regex patterns for RDF triples
+  const subjectPattern = /^  <([^>]+)>/;
+  const labelPattern = /rdfs:label "([^"]+)"/;
+  
+  let currentSubject = null;
+  let currentLabel = null;
+  
+  for (const line of lines) {
+    const trimmed = line.trim();
+    
+    // Extract subject URI
+    const subjectMatch = trimmed.match(subjectPattern);
+    if (subjectMatch) {
+      if (currentSubject && currentLabel) {
+        options.push({ value: currentSubject, label: currentLabel });
+      }
+      currentSubject = subjectMatch[1];
+      currentLabel = null;
+    }
+    
+    // Extract label
+    const labelMatch = trimmed.match(labelPattern);
+    if (labelMatch && currentSubject) {
+      currentLabel = labelMatch[1];
+    }
+    
+    // End of subject
+    if (trimmed === '.' && currentSubject && currentLabel) {
+      options.push({ value: currentSubject, label: currentLabel });
+      currentSubject = null;
+      currentLabel = null;
+    }
+  }
+  
+  // Add last option if exists
+  if (currentSubject && currentLabel) {
+    options.push({ value: currentSubject, label: currentLabel });
+  }
+  
+  return options;
+}
   /**
    * Build a regular (non-grouped) statement
    */
@@ -659,12 +933,36 @@ handleRemoveRepetition(statement, container, index) {
   }
 
   /**
-   * Get placeholders that are not part of statements
+   * Get placeholders that should be rendered as standalone fields
+   * These are placeholders that appear in statements but NOT as predicates
    */
   getNonRepeatablePlaceholders() {
-    const repeatablePlaceholderIds = this.template.repeatablePlaceholderIds || [];
+    // Collect placeholder IDs used as PREDICATES in statements
+    // These should NOT be standalone fields (they're chosen via dropdown in the statement)
+    const usedAsPredicates = new Set();
+    
+    (this.template.statements || []).forEach(stmt => {
+      // Check if predicate is a placeholder (not a full URI)
+      if (stmt.predicate && stmt.predicate.match(/^[a-zA-Z]/)) {
+        usedAsPredicates.add(stmt.predicate);
+      }
+    });
+    
+    // Also exclude placeholders that are literal/type objects (like ScholarlyWork)
+    const literalObjects = new Set();
+    (this.template.statements || []).forEach(stmt => {
+      // If object is a full URI (not a placeholder), don't create field for it
+      if (stmt.object && stmt.object.startsWith('http')) {
+        literalObjects.add(stmt.object);
+      }
+    });
+    
+    console.log(`🔍 Predicates used as placeholders:`, Array.from(usedAsPredicates));
+    console.log(`🔍 Literal objects:`, Array.from(literalObjects));
+    
+    // Return placeholders NOT used as predicates
     return (this.template.placeholders || [])
-      .filter(p => !repeatablePlaceholderIds.includes(p.id))
+      .filter(p => !usedAsPredicates.has(p.id))
       .map(p => this.placeholderToField(p));
   }
 

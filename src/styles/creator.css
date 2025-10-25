@@ -433,3 +433,54 @@ textarea:focus {
     border: 1px solid #000;
   }
 }
+
+/* Repetition controls */
+.repetition-controls {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btn-add-group,
+.btn-remove-group {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.875rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-group {
+  background: #4CAF50;
+  color: white;
+  border-color: #4CAF50;
+}
+
+.btn-add-group:hover {
+  background: #45a049;
+}
+
+.btn-remove-group {
+  background: #f44336;
+  color: white;
+  border-color: #f44336;
+}
+
+.btn-remove-group:hover {
+  background: #da190b;
+}
+
+.optional-mark {
+  color: #666;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.group-separator {
+  margin: 1.5rem 0;
+  border: none;
+  border-top: 2px dashed #ddd;
+}

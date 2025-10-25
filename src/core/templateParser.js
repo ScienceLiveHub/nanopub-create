@@ -37,7 +37,7 @@ export class TemplateParser {
     this.parseTemplateMetadata();
     this.parseLabels();
     this.parsePlaceholders();
-    this.parsePlaceholderOptions();
+    await this.parsePlaceholderOptions(); // Make sure this runs
     this.parseStatements();
     this.identifyRepeatablePlaceholders();
     
@@ -129,14 +129,27 @@ export class TemplateParser {
         type: type,
         label: this.extractLabel(block),
         description: this.extractDescription(block),
-        validation: this.extractValidation(block)
+        validation: this.extractValidation(block),
+        possibleValuesFrom: null,
+        possibleValuesFromApi: null,
+        options: []
       };
 
-      // Add type-specific properties
-      if (type.includes('RestrictedChoice') || type.includes('GuidedChoice')) {
-        const valuesMatch = block.match(/nt:possibleValues(?:From(?:Api)?)\s+(<[^>]+>|"[^"]+")/);
-        if (valuesMatch) {
-          placeholder.possibleValuesFrom = this.cleanUri(valuesMatch[1]);
+      // Extract possibleValuesFrom for RestrictedChoicePlaceholder
+      if (type.includes('RestrictedChoice')) {
+        const valuesFromMatch = block.match(/nt:possibleValuesFrom\s+<([^>]+)>/);
+        if (valuesFromMatch) {
+          placeholder.possibleValuesFrom = valuesFromMatch[1];
+          console.log(`  Found possibleValuesFrom: ${placeholder.possibleValuesFrom}`);
+        }
+      }
+
+      // Extract possibleValuesFromApi for GuidedChoicePlaceholder
+      if (type.includes('GuidedChoice')) {
+        const valuesFromApiMatch = block.match(/nt:possibleValuesFromApi\s+"([^"]+)"/);
+        if (valuesFromApiMatch) {
+          placeholder.possibleValuesFromApi = valuesFromApiMatch[1];
+          console.log(`  Found possibleValuesFromApi: ${placeholder.possibleValuesFromApi}`);
         }
       }
 
@@ -147,32 +160,49 @@ export class TemplateParser {
     
     this.log(`✓ Parsed ${count} placeholders`);
   }
-async parsePlaceholderOptions() {
-  for (const placeholder of this.template.placeholders) {
-    if (placeholder.possibleValuesFrom) {
-      try {
-        const optionsNp = await fetch(
-          placeholder.possibleValuesFrom.replace('https://w3id.org/np/', 
-          'https://np.petapico.org/') + '.trig'
-        );
-        const content = await optionsNp.text();
-        
-        // Parse options from the nanopub
-        // Look for np:hasLabelFromApi or similar
-        const optionMatches = content.matchAll(/<([^>]+)>\s+rdfs:label\s+"([^"]+)"/g);
-        placeholder.options = [];
-        for (const match of optionMatches) {
-          placeholder.options.push({
-            value: match[1],
-            label: match[2]
-          });
+
+  async parsePlaceholderOptions() {
+    for (const placeholder of this.template.placeholders) {
+      if (placeholder.possibleValuesFrom) {
+        try {
+          const serverUri = placeholder.possibleValuesFrom
+            .replace(/^https?:\/\/(w3id\.org|purl\.org)\/np\//, 'https://np.petapico.org/') + '.trig';
+          
+          console.log(`📥 Fetching options from: ${serverUri}`);
+          const optionsNp = await fetch(serverUri);
+          
+          if (!optionsNp.ok) {
+            throw new Error(`HTTP ${optionsNp.status}`);
+          }
+          
+          const content = await optionsNp.text();
+          
+          // Parse options from the assertion block
+          const assertionMatch = content.match(/sub:assertion\s*{([^}]+)}/s);
+          if (assertionMatch) {
+            const assertionBlock = assertionMatch[1];
+            const optionMatches = assertionBlock.matchAll(/<([^>]+)>\s+rdfs:label\s+"([^"]+)"/g);
+            
+            placeholder.options = [];
+            for (const match of optionMatches) {
+              placeholder.options.push({
+                value: match[1],
+                label: match[2]
+              });
+            }
+            console.log(`✅ Loaded ${placeholder.options.length} options for ${placeholder.id}`);
+            if (placeholder.options.length > 0) {
+              console.log(`   First option:`, placeholder.options[0]);
+            }
+          } else {
+            console.warn(`⚠️ No assertion block found in options nanopub`);
+          }
+        } catch (e) {
+          console.warn('Failed to fetch options for', placeholder.id, e);
         }
-      } catch (e) {
-        console.warn('Failed to fetch options for', placeholder.id, e);
       }
     }
   }
-}
 
   parseStatements() {
     this.log('🔧 Starting statement parsing...');
@@ -269,20 +299,31 @@ async parsePlaceholderOptions() {
 
   cleanUri(uri) {
     if (!uri) return uri;
-    return uri.replace(/^<|>$/g, '').replace(/^"|"$/g, '').trim();
+    // Remove angle brackets, quotes, and sub: prefix
+    return uri.replace(/^<|>$/g, '')
+              .replace(/^"|"$/g, '')
+              .replace(/^sub:/, '')
+              .trim();
   }
 
   identifyRepeatablePlaceholders() {
     const repeatableIds = new Set();
     
     this.template.statements.forEach(stmt => {
-      if (stmt.repeatable && stmt.object.startsWith('sub:')) {
-        repeatableIds.add(stmt.object.replace('sub:', ''));
+      if (stmt.repeatable) {
+        // Add object if it's a placeholder (short name, not a full URI)
+        if (stmt.object && !stmt.object.startsWith('http')) {
+          repeatableIds.add(stmt.object);
+        }
+        // Also add predicate if it's a placeholder
+        if (stmt.predicate && !stmt.predicate.startsWith('http') && stmt.predicate !== 'rdf:type') {
+          repeatableIds.add(stmt.predicate);
+        }
       }
     });
     
     this.template.repeatablePlaceholderIds = Array.from(repeatableIds);
-    this.log(`✓ Identified ${this.template.repeatablePlaceholderIds.length} repeatable placeholders`);
+    this.log(`✓ Identified ${this.template.repeatablePlaceholderIds.length} repeatable placeholders: ${this.template.repeatablePlaceholderIds.join(', ')}`);
   }
 
   extractLabel(block) {
