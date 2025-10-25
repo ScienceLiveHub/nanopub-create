@@ -1,450 +1,435 @@
 /**
- * Nanopub Creator Form Styles
+ * Enhanced CSS for nanopub-create with Grouped Statement Support
  * 
- * Styles for forms with proper label display, tooltips, and visual feedback
+ * Follows nanodash visual patterns for grouped statements
+ * Includes: group styling, separators, button controls, optional marks
  */
 
-/* Container */
-.nanopub-creator.enhanced {
-  max-width: 800px;
+/* ========== Base Form Styles ========== */
+
+.nanopub-creator {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  max-width: 900px;
   margin: 0 auto;
   padding: 20px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
-/* Header */
-.creator-header {
+.creator-form {
+  background: white;
+  border-radius: 8px;
+  padding: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ========== Form Header ========== */
+
+.form-header {
   margin-bottom: 30px;
   padding-bottom: 20px;
   border-bottom: 2px solid #e0e0e0;
 }
 
-.creator-header h2 {
+.form-header h2 {
   margin: 0 0 10px 0;
-  color: #333;
   font-size: 24px;
   font-weight: 600;
+  color: #333;
 }
 
-.creator-description {
+.form-description {
   margin: 0;
   color: #666;
-  font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
-/* Form sections */
-.form-fields,
+/* ========== Form Fields (Regular Placeholders) ========== */
+
+.form-fields {
+  margin-bottom: 30px;
+}
+
+.form-field {
+  margin-bottom: 20px;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  color: #333;
+}
+
+.form-field .required-mark {
+  color: #f44336;
+  margin-left: 3px;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+.form-field textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* ========== Statements Section ========== */
+
 .statements-section {
   margin-bottom: 30px;
 }
 
-.statements-section > h3 {
-  margin: 0 0 20px 0;
-  color: #444;
-  font-size: 18px;
+.section-header {
+  font-size: 20px;
   font-weight: 600;
-  border-bottom: 1px solid #e0e0e0;
-  padding-bottom: 10px;
-}
-
-/* Form field */
-.form-field,
-.statement-field {
-  margin-bottom: 20px;
-}
-
-.form-field.required label::after {
-  content: ' *';
-  color: #e74c3c;
-}
-
-/* Labels with URI tooltips */
-.form-field label,
-.statement-field label {
-  display: block;
-  margin-bottom: 6px;
   color: #333;
+  margin: 0 0 20px 0;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.statements-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ========== Statement Base Styles ========== */
+
+.nanopub-statement {
+  padding: 15px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.statement-header {
+  font-size: 16px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+/* ========== Grouped Statements (following nanodash) ========== */
+
+.nanopub-group,
+.grouped-statement {
+  border: 1px solid #ddd;
+  background: #f9f9f9;
+  padding: 20px;
+  margin: 15px 0;
+}
+
+/* Optional statement styling (nanodash pattern) */
+.nanopub-optional {
+  border-left: 3px solid #ff9800;
+}
+
+/* Regular (non-grouped) statement */
+.regular-statement {
+  border: 1px solid #e0e0e0;
+  background: white;
+  padding: 15px;
+}
+
+/* ========== Repetition Group ========== */
+
+.repetition-group {
+  position: relative;
+  padding: 15px 0;
+}
+
+.repetition-group:first-child {
+  padding-top: 0;
+}
+
+/* Grouped fields container */
+.grouped-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 12px;
+}
+
+/* ========== Statement Field (within groups) ========== */
+
+.statement-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.statement-field label {
   font-weight: 500;
   font-size: 14px;
-  cursor: help;
+  color: #333;
 }
 
-.has-tooltip {
-  position: relative;
-  border-bottom: 1px dotted #999;
-}
-
-.uri-info-icon {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  line-height: 16px;
-  text-align: center;
-  font-size: 12px;
-  color: #666;
-  background: #f0f0f0;
-  border-radius: 50%;
-  margin-left: 4px;
-  cursor: help;
-}
-
-.uri-info-icon:hover {
-  background: #3498db;
-  color: white;
-}
-
-/* Inputs */
-.form-input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #d0d0d0;
+.statement-field input,
+.statement-field select,
+.statement-field textarea {
+  padding: 10px;
+  border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 14px;
   font-family: inherit;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s;
 }
 
-.form-input:focus {
+.statement-field input:focus,
+.statement-field select:focus,
+.statement-field textarea:focus {
   outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
 }
 
-.form-input.invalid {
-  border-color: #e74c3c;
-}
-
-.form-input.invalid:focus {
-  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
-}
-
-textarea.form-input {
-  resize: vertical;
-  min-height: 80px;
-  line-height: 1.5;
-}
-
-select.form-input {
-  cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 36px;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-}
-
-select.form-input:disabled {
-  background-color: #f5f5f5;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/* Fixed object display */
-.fixed-object {
-  display: inline-block;
-  padding: 8px 12px;
-  background: #f8f9fa;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  color: #555;
-  font-size: 14px;
+/* URI tooltip */
+.has-tooltip {
   cursor: help;
 }
 
-/* Help text */
-.field-help {
-  display: block;
-  margin-top: 6px;
-  color: #777;
-  font-size: 13px;
-  line-height: 1.4;
+/* ========== Group Separator (nanodash pattern) ========== */
+
+.group-separator {
+  border: none;
+  border-top: 1px solid #ccc;
+  margin: 20px 0;
 }
 
-/* Error message */
-.field-error {
-  display: none;
-  margin-top: 6px;
-  padding: 6px 10px;
-  background: #fee;
-  border-left: 3px solid #e74c3c;
-  color: #c0392b;
-  font-size: 13px;
-  border-radius: 3px;
-}
+/* ========== Repetition Controls (nanodash pattern) ========== */
 
-/* Repeatable fields */
-.repeatable-group {
-  margin: 30px 0;
-  padding: 20px;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  background: #fafafa;
-}
-
-.repeatable-header {
+.repetition-controls {
   display: flex;
-  justify-content: space-between;
+  gap: 12px;
   align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #d0d0d0;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e8e8e8;
 }
 
-.repeatable-header h4 {
-  margin: 0;
-  color: #444;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: help;
-}
-
-.btn-add-field {
-  padding: 6px 14px;
-  background: #3498db;
+/* Add button (nanodash: only on last group) */
+.btn-add-group {
+  padding: 7px 14px;
+  background: #4CAF50;
   color: white;
   border: none;
   border-radius: 4px;
+  cursor: pointer;
   font-size: 13px;
   font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s;
+  transition: background-color 0.2s;
 }
 
-.btn-add-field:hover {
-  background: #2980b9;
+.btn-add-group:hover {
+  background: #45a049;
 }
 
-.btn-add-field:active {
+.btn-add-group:active {
   transform: translateY(1px);
 }
 
-/* Repeatable field items */
-.repeatable-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.repeatable-field-item {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  padding: 12px;
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-}
-
-.repeatable-input {
-  flex: 1;
-}
-
-.btn-remove-field {
-  flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  background: #e74c3c;
+/* Remove button (nanodash: visible except when only one) */
+.btn-remove-group {
+  padding: 7px 14px;
+  background: #f44336;
   color: white;
   border: none;
   border-radius: 4px;
-  font-size: 16px;
-  line-height: 28px;
   cursor: pointer;
-  transition: background 0.2s;
-  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 0.2s;
 }
 
-.btn-remove-field:hover {
-  background: #c0392b;
+.btn-remove-group:hover {
+  background: #da190b;
 }
 
-/* Form actions */
-.form-actions {
+.btn-remove-group:active {
+  transform: translateY(1px);
+}
+
+/* Optional mark (nanodash: only on single instance) */
+.optional-mark {
+  color: #666;
+  font-size: 13px;
+  font-style: italic;
+  margin-left: auto;
+}
+
+/* ========== Form Controls ========== */
+
+.form-controls {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
-  margin-top: 30px;
   padding-top: 20px;
   border-top: 2px solid #e0e0e0;
+  margin-top: 30px;
 }
 
 .btn {
   padding: 12px 24px;
   border: none;
-  border-radius: 6px;
-  font-size: 15px;
+  border-radius: 4px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-primary {
-  background: #27ae60;
+  background: #4CAF50;
   color: white;
 }
 
 .btn-primary:hover {
-  background: #229954;
+  background: #45a049;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3);
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
 }
 
 .btn-secondary {
-  background: #95a5a6;
+  background: #2196F3;
   color: white;
 }
 
 .btn-secondary:hover {
-  background: #7f8c8d;
+  background: #0b7dda;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
 }
 
 .btn:active {
   transform: translateY(0);
 }
 
-/* Loading state */
-.form-input:disabled {
-  background: #f5f5f5;
-  cursor: not-allowed;
-  opacity: 0.6;
+/* ========== Read-Only Mode ========== */
+
+.form-readonly .repetition-controls button {
+  display: none !important;
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-  .nanopub-creator.enhanced {
-    padding: 15px;
-  }
+.form-readonly .btn-add-statement {
+  display: none !important;
+}
 
-  .creator-header h2 {
+.form-readonly input,
+.form-readonly select,
+.form-readonly textarea {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+/* ========== Validation States ========== */
+
+.form-field.error input,
+.statement-field.error input,
+.form-field.error select,
+.statement-field.error select,
+.form-field.error textarea,
+.statement-field.error textarea {
+  border-color: #f44336;
+}
+
+.form-field.error .error-message,
+.statement-field.error .error-message {
+  color: #f44336;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.form-field.success input,
+.statement-field.success input {
+  border-color: #4CAF50;
+}
+
+/* ========== Responsive Design ========== */
+
+@media (max-width: 768px) {
+  .nanopub-creator {
+    padding: 10px;
+  }
+  
+  .creator-form {
+    padding: 20px;
+  }
+  
+  .form-header h2 {
     font-size: 20px;
   }
-
-  .repeatable-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .btn-add-field {
-    width: 100%;
-  }
-
-  .form-actions {
+  
+  .form-controls {
     flex-direction: column;
   }
-
+  
   .btn {
     width: 100%;
   }
-}
-
-/* Animation for adding/removing fields */
-.repeatable-field-item {
-  animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  
+  .repetition-controls {
+    flex-wrap: wrap;
   }
 }
 
-/* Tooltip styles */
-[title] {
-  position: relative;
-}
+/* ========== Accessibility ========== */
 
-/* Preview modal (if used) */
-.preview-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
-.preview-content {
-  background: white;
-  border-radius: 8px;
-  padding: 30px;
-  max-width: 800px;
-  max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-}
-
-.preview-content h3 {
-  margin: 0 0 20px 0;
-  color: #333;
-  font-size: 20px;
-}
-
-.preview-statement {
-  padding: 12px;
-  margin-bottom: 10px;
-  background: #f8f9fa;
-  border-left: 3px solid #3498db;
-  border-radius: 4px;
-}
-
-.preview-statement-part {
-  margin: 4px 0;
-  font-size: 14px;
-}
-
-.preview-statement-part strong {
-  display: inline-block;
-  width: 100px;
-  color: #666;
-}
-
-.preview-uri {
-  color: #95a5a6;
-  font-size: 12px;
-  font-family: 'Monaco', 'Menlo', monospace;
-  margin-left: 4px;
-}
-
-.preview-close {
-  margin-top: 20px;
-  text-align: right;
-}
-
-/* Focus visible for accessibility */
-*:focus-visible {
-  outline: 2px solid #3498db;
+.btn:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid #4CAF50;
   outline-offset: 2px;
 }
 
-button:focus-visible,
-.btn:focus-visible {
-  outline-color: #2980b9;
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .nanopub-group,
+  .grouped-statement {
+    border: 2px solid #000;
+  }
+  
+  .nanopub-optional {
+    border-left: 4px solid #ff9800;
+  }
 }
 
-/* Print styles */
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+/* ========== Print Styles ========== */
+
 @media print {
-  .form-actions,
-  .btn-add-field,
-  .btn-remove-field {
+  .form-controls,
+  .repetition-controls {
     display: none;
   }
-
-  .form-input {
-    border-color: #000;
+  
+  .creator-form {
+    box-shadow: none;
+    border: 1px solid #000;
   }
 }
