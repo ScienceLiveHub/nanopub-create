@@ -54,7 +54,7 @@ const FieldComponents = {
   
   'RestrictedChoicePlaceholder': (placeholder) => {
     const select = document.createElement('select');
-    select.className = 'form-input';
+    select.className = 'form-select';
     
     // Only add "Select..." if there are multiple options
     if (placeholder.options && placeholder.options.length > 1) {
