@@ -105,10 +105,21 @@ const FieldComponents = {
   },
   
   'LocalResource': (placeholder) => {
+    // LocalResource is auto-generated, should not render as input
+    // Return a hidden input or null - handled specially in renderStatement
+    return null;
+  },
+  
+  'IntroducedResource': (placeholder) => {
+    // IntroducedResource is auto-generated, should not render as input
+    return null;
+  },
+  
+  'ValuePlaceholder': (placeholder) => {
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'form-input';
-    input.placeholder = placeholder.label || '';
+    input.placeholder = placeholder.label || 'Enter value';
     return input;
   },
   
@@ -374,30 +385,115 @@ export class FormGenerator {
     
     console.log('[renderFields] Processing statements...');
     
-    this.template.statements.forEach(statement => {
+    // Group consecutive statements by subject
+    let currentSubjectGroup = null;
+    let currentSubject = null;
+    
+    this.template.statements.forEach((statement, index) => {
       // Skip if this statement is part of a grouped statement we've already processed
       const parentGroup = this.template.groupedStatements.find(g => 
         g.statements.includes(statement.id)
       );
       
-      console.log(`  ${statement.id}: parentGroup=${parentGroup?.id}, processed=${processedGroups.has(parentGroup?.id)}`);
+      console.log(`  ${statement.id}: parentGroup=${parentGroup?.id}, processed=${processedGroups.has(parentGroup?.id)}, subject=${statement.subject}`);
       
       if (parentGroup && processedGroups.has(parentGroup.id)) {
         console.log(`    → Skipping (group already processed)`);
         return;
       }
       
+      // Skip statements where both subject and object are fixed (not placeholders)
+      // These are typically auto-filled like nt:ASSERTION → dct:creator → nt:CREATOR
+      const subjectPlaceholder = this.findPlaceholder(statement.subject);
+      const objectPlaceholder = this.findPlaceholder(statement.object);
+      const predicatePlaceholder = this.findPlaceholder(statement.predicate);
+      
+      if (!subjectPlaceholder && !objectPlaceholder && !predicatePlaceholder) {
+        console.log(`    → Skipping (all fixed - auto-filled statement)`);
+        return;
+      }
+      
+      // Also skip if subject is ExternalUriPlaceholder and both predicate/object are fixed
+      // These are metadata statements about what the URI should be (like "is a Activity")
+      if (subjectPlaceholder && 
+          (subjectPlaceholder.type.includes('ExternalUriPlaceholder') || 
+           subjectPlaceholder.type.includes('UriPlaceholder')) &&
+          !predicatePlaceholder && !objectPlaceholder) {
+        console.log(`    → Skipping (URI placeholder metadata statement)`);
+        return;
+      }
+      
+      // Check if we're starting a new subject group
+      if (statement.subject !== currentSubject) {
+        // Close previous subject group if exists
+        if (currentSubjectGroup) {
+          container.appendChild(currentSubjectGroup);
+          currentSubjectGroup = null;
+        }
+        
+        // Check if multiple statements share this subject
+        const sameSubjectStatements = this.template.statements.filter(
+          s => s.subject === statement.subject
+        );
+        
+        // Create a subject group if there are multiple statements with same subject
+        if (sameSubjectStatements.length > 1) {
+          currentSubjectGroup = document.createElement('div');
+          currentSubjectGroup.className = 'subject-group';
+          // Add inline styles for visual grouping
+          currentSubjectGroup.style.cssText = 'margin: 1.5rem 0; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb;';
+          
+          // Add subject header ONLY if the subject is a placeholder (not fixed URIs like nt:ASSERTION)
+          const subjectPlaceholder = this.findPlaceholder(statement.subject);
+          if (subjectPlaceholder && !renderedPlaceholders.has(subjectPlaceholder.id)) {
+            const subjectField = document.createElement('div');
+            subjectField.className = 'form-field subject-field';
+            
+            const subjLabel = document.createElement('label');
+            subjLabel.className = 'field-label subject-label';
+            subjLabel.style.cssText = 'font-weight: 600; font-size: 1.1em; color: #1f2937;';
+            subjLabel.textContent = subjectPlaceholder.label || this.getLabel(statement.subject);
+            subjectField.appendChild(subjLabel);
+            
+            const subjInput = this.renderInput(subjectPlaceholder);
+            if (subjInput !== null) {
+              subjInput.name = `${statement.id}_subject`;
+              subjInput.id = `field_${statement.id}_subject`;
+              subjectField.appendChild(subjInput);
+            } else {
+              // Auto-generated resource - show as readonly
+              const value = document.createElement('div');
+              value.className = 'field-value auto-generated';
+              value.textContent = '(auto-generated)';
+              subjectField.appendChild(value);
+            }
+            
+            currentSubjectGroup.appendChild(subjectField);
+            renderedPlaceholders.add(subjectPlaceholder.id);
+          }
+        }
+        
+        currentSubject = statement.subject;
+      }
+      
       if (parentGroup) {
         // This statement is part of a group - render the entire group
         console.log(`    → Rendering grouped statement ${parentGroup.id}`);
-        this.renderGroupedStatement(container, parentGroup, statement, renderedPlaceholders);
+        const groupContainer = currentSubjectGroup || container;
+        this.renderGroupedStatement(groupContainer, parentGroup, statement, renderedPlaceholders);
         processedGroups.add(parentGroup.id);
       } else {
         // Render individual statement
         console.log(`    → Rendering individual statement`);
-        this.renderStatement(container, statement, renderedPlaceholders);
+        const targetContainer = currentSubjectGroup || container;
+        this.renderStatement(targetContainer, statement, renderedPlaceholders);
       }
     });
+    
+    // Close final subject group if exists
+    if (currentSubjectGroup) {
+      container.appendChild(currentSubjectGroup);
+    }
   }
 
   /**
@@ -627,10 +723,18 @@ export class FormGenerator {
       field.appendChild(subjLabel);
       
       const subjInput = this.renderInput(subjectPlaceholder);
-      subjInput.name = `${statement.id}_subject`;
-      subjInput.id = `field_${statement.id}_subject`;
-      if (!statement.optional) subjInput.required = true;
-      field.appendChild(subjInput);
+      if (subjInput !== null) {
+        subjInput.name = `${statement.id}_subject`;
+        subjInput.id = `field_${statement.id}_subject`;
+        if (!statement.optional) subjInput.required = true;
+        field.appendChild(subjInput);
+      } else {
+        // Auto-generated resource - show as readonly
+        const value = document.createElement('div');
+        value.className = 'field-value auto-generated';
+        value.textContent = '(auto-generated)';
+        field.appendChild(value);
+      }
       
       renderedPlaceholders.add(subjectPlaceholder.id);
     }
@@ -667,18 +771,27 @@ export class FormGenerator {
     
     // 3. OBJECT - render last if not already rendered
     if (needToRenderObject) {
-      if (objectPlaceholder.label) {
-        const helpText = document.createElement('div');
-        helpText.className = 'field-help';
-        helpText.textContent = objectPlaceholder.label;
-        field.appendChild(helpText);
-      }
-      
       const objInput = this.renderInput(objectPlaceholder);
-      objInput.name = `${statement.id}_object`;
-      objInput.id = `field_${statement.id}_object`;
-      if (!statement.optional) objInput.required = true;
-      field.appendChild(objInput);
+      
+      // If renderInput returns null (LocalResource, IntroducedResource), treat as readonly
+      if (objInput === null) {
+        const value = document.createElement('div');
+        value.className = 'field-value auto-generated';
+        value.textContent = objectPlaceholder.label || statement.object;
+        field.appendChild(value);
+      } else {
+        if (objectPlaceholder.label) {
+          const helpText = document.createElement('div');
+          helpText.className = 'field-help';
+          helpText.textContent = objectPlaceholder.label;
+          field.appendChild(helpText);
+        }
+        
+        objInput.name = `${statement.id}_object`;
+        objInput.id = `field_${statement.id}_object`;
+        if (!statement.optional) objInput.required = true;
+        field.appendChild(objInput);
+      }
       
       renderedPlaceholders.add(objectPlaceholder.id);
     } else if (!objectPlaceholder) {

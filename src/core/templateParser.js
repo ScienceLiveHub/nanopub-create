@@ -141,9 +141,23 @@ export class TemplateParser {
 
       // Handle RestrictedChoicePlaceholder
       if (primaryType.includes('RestrictedChoice')) {
-        const valuesFromMatch = block.match(/nt:possibleValuesFrom\s+<([^>]+)>/);
+        // Match both <URL> and prefix:id formats
+        const valuesFromMatch = block.match(/nt:possibleValuesFrom\s+(?:<([^>]+)>|([\w-]+:[\w-]+))/);
         if (valuesFromMatch) {
-          placeholder.possibleValuesFrom = valuesFromMatch[1];
+          const url = valuesFromMatch[1] || valuesFromMatch[2];
+          // If it's a prefixed URI, we need to expand it
+          if (url && url.includes(':') && !url.startsWith('http')) {
+            // Extract prefix and expand
+            const [prefix, localPart] = url.split(':');
+            const prefixMatch = this.content.match(new RegExp(`@prefix ${prefix}:\\s+<([^>]+)>`));
+            if (prefixMatch) {
+              placeholder.possibleValuesFrom = prefixMatch[1] + localPart;
+            } else {
+              placeholder.possibleValuesFrom = url; // Keep as-is if can't expand
+            }
+          } else {
+            placeholder.possibleValuesFrom = url;
+          }
           console.log(`  → Will fetch options from: ${placeholder.possibleValuesFrom}`);
         }
         
@@ -336,7 +350,7 @@ export class TemplateParser {
 
   parseGroupedStatements() {
     // Find all GroupedStatement declarations - may have multiple types like "a nt:GroupedStatement, nt:RepeatableStatement"
-    const groupRegex = /(sub:st[\w-]+)\s+a\s+[^;]*nt:GroupedStatement[^;]*;\s*nt:hasStatement\s+([^;.]+)/g;
+    const groupRegex = /(sub:st[\w.-]+)\s+a\s+[^;]*nt:GroupedStatement[^;]*;\s*nt:hasStatement\s+([^;.]+)/g;
     let match;
     
     while ((match = groupRegex.exec(this.content)) !== null) {
@@ -365,8 +379,8 @@ export class TemplateParser {
       });
     }
     
-    // Standalone statements - includes hyphens
-    const standaloneRegex = /(sub:st[\w-]+)\s+(?:a\s+nt:|rdf:)/g;
+    // Standalone statements - includes hyphens and dots
+    const standaloneRegex = /(sub:st[\w.-]+)\s+(?:a\s+nt:|rdf:)/g;
     while ((match = standaloneRegex.exec(this.content)) !== null) {
       ids.add(match[1]);
     }
@@ -379,7 +393,7 @@ export class TemplateParser {
     // Match the statement block - must contain rdf:subject, predicate, or object
     // This avoids matching statement IDs in nt:hasStatement lists
     const blockRegex = new RegExp(
-      `${escaped}\\s+(?:a\\s+[^;]+;\\s*)?(rdf:[\\s\\S]*?)(?=\\n\\s*(?:sub:[\\w-]+|<[^>]+>)\\s+|\\n\\s*}|$)`,
+      `${escaped}\\s+(?:a\\s+[^;]+;\\s*)?(rdf:[\\s\\S]*?)(?=\\n\\s*(?:sub:[\\w.-]+|<[^>]+>)\\s+|\\n\\s*}|$)`,
       'i'
     );
     
