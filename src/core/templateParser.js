@@ -96,8 +96,8 @@ export class TemplateParser {
   parsePlaceholders() {
     console.log('Parsing placeholders...');
     
-    // Simple regex that just finds placeholder declarations
-    const placeholderRegex = /(sub:[\w-]+)\s+a\s+nt:([\w,\s]+Placeholder[^;]*);/g;
+    // Match both Placeholder types AND Resource types (LocalResource, IntroducedResource, etc)
+    const placeholderRegex = /(sub:[\w-]+)\s+a\s+nt:([\w,\s]+(Placeholder|Resource)[^;]*);/g;
     let match;
     
     while ((match = placeholderRegex.exec(this.content)) !== null) {
@@ -129,6 +129,7 @@ export class TemplateParser {
       const placeholder = {
         id: this.cleanUri(id),
         type: primaryType,
+        isLocalResource: types.some(t => t.includes('LocalResource')),
         label: this.extractLabel(block),
         description: this.extractDescription(block),
         validation: this.extractValidation(block),
@@ -153,22 +154,27 @@ export class TemplateParser {
           const valueText = possibleValueMatch[1];
           console.log(`  → Raw value text: ${valueText.substring(0, 100)}...`);
           const inlineValues = [];
-          const valueRegex = /<([^>]+)>/g;
+          // Match both <URL> and sub:reference
+          const valueRegex = /<([^>]+)>|(sub:[\w-]+)/g;
           let valueMatch;
           while ((valueMatch = valueRegex.exec(valueText)) !== null) {
-            inlineValues.push(valueMatch[1]);
+            inlineValues.push(valueMatch[1] || valueMatch[2]);
           }
           if (inlineValues.length > 0) {
             placeholder.options = inlineValues.map(v => {
-              // Clean up the URL for display
-              let label = v.replace(/^https?:\/\//, '').replace(/\/$/, '');
-              // Capitalize first letter
-              label = label.charAt(0).toUpperCase() + label.slice(1);
+              let label = v;
+              if (v.startsWith('http')) {
+                label = v.replace(/^https?:\/\//, '').replace(/\/$/, '');
+                label = label.charAt(0).toUpperCase() + label.slice(1);
+              } else if (v.startsWith('sub:')) {
+                // Use the actual placeholder this references
+                label = v.replace('sub:', '');
+              }
               return { value: v, label: label };
             });
             console.log(`  → Found ${placeholder.options.length} inline options:`, placeholder.options.map(o => o.label));
           } else {
-            console.warn(`  → No URLs found in possibleValue text`);
+            console.warn(`  → No values found in possibleValue text`);
           }
         }
       }
@@ -320,8 +326,8 @@ export class TemplateParser {
   }
 
   parseGroupedStatements() {
-    // Find all GroupedStatement declarations
-    const groupRegex = /(sub:st[\w-]+)\s+a\s+nt:GroupedStatement\s*;[\s\S]*?nt:hasStatement\s+([^;.]+)/g;
+    // Find all GroupedStatement declarations - may have multiple types like "a nt:GroupedStatement, nt:RepeatableStatement"
+    const groupRegex = /(sub:st[\w-]+)\s+a\s+[^;]*nt:GroupedStatement[^;]*;\s*nt:hasStatement\s+([^;.]+)/g;
     let match;
     
     while ((match = groupRegex.exec(this.content)) !== null) {
@@ -361,8 +367,10 @@ export class TemplateParser {
 
   parseStatement(stmtId) {
     const escaped = stmtId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Match the statement block - must contain rdf:subject, predicate, or object
+    // This avoids matching statement IDs in nt:hasStatement lists
     const blockRegex = new RegExp(
-      `${escaped}\\s+([\\s\\S]*?)(?=\\n\\s*(?:sub:[\\w-]+|<[^>]+>)\\s+(?:a\\s+nt:|rdf:)|\\n\\s*}|$)`,
+      `${escaped}\\s+(?:a\\s+[^;]+;\\s*)?(rdf:[\\s\\S]*?)(?=\\n\\s*(?:sub:[\\w-]+|<[^>]+>)\\s+|\\n\\s*}|$)`,
       'i'
     );
     
@@ -376,21 +384,31 @@ export class TemplateParser {
     
     const subjMatch = block.match(/rdf:subject\s+(<[^>]+>|[\w:-]+)/);
     const predMatch = block.match(/rdf:predicate\s+(<[^>]+>|[\w:-]+)/);
-    const objMatch = block.match(/rdf:object\s+(<[^>]+>|[\w:-]+)/);
+    // Match URIs, references, OR literal strings
+    const objMatch = block.match(/rdf:object\s+(?:<([^>]+)>|([\w:-]+)|"([^"]+)")/);
     
     if (!subjMatch || !predMatch || !objMatch) {
       console.warn(`Incomplete statement ${stmtId}:`, { subjMatch: !!subjMatch, predMatch: !!predMatch, objMatch: !!objMatch });
       return null;
     }
     
-    const typeMatch = block.match(/a\s+([^;.]+)/);
+    // Extract object value from any of the three match groups
+    let objectValue;
+    if (objMatch[1]) objectValue = objMatch[1];        // URI in brackets
+    else if (objMatch[2]) objectValue = objMatch[2];   // Prefixed URI
+    else if (objMatch[3]) objectValue = objMatch[3];   // Literal (without quotes)
+    
+    // Check for types in the full match (before rdf: properties)
+    const fullBlock = blockMatch[0];
+    const typeMatch = fullBlock.match(/a\s+([^;.]+)/);
     const types = typeMatch ? typeMatch[1].split(',').map(t => t.trim()) : [];
     
     return {
       id: this.cleanUri(stmtId),
       subject: this.cleanUri(subjMatch[1]),
       predicate: this.cleanUri(predMatch[1]),
-      object: this.cleanUri(objMatch[1]),
+      object: objectValue,
+      isLiteralObject: !!objMatch[3],  // Mark if it's a literal
       repeatable: types.some(t => t.includes('RepeatableStatement')),
       optional: types.some(t => t.includes('OptionalStatement')),
       grouped: types.some(t => t.includes('GroupedStatement')),

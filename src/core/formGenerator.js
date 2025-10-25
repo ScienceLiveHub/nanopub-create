@@ -56,19 +56,28 @@ const FieldComponents = {
     const select = document.createElement('select');
     select.className = 'form-input';
     
-    const emptyOption = document.createElement('option');
-    emptyOption.value = '';
-    emptyOption.textContent = 'Select...';
-    select.appendChild(emptyOption);
+    // Only add "Select..." if there are multiple options
+    if (placeholder.options && placeholder.options.length > 1) {
+      const emptyOption = document.createElement('option');
+      emptyOption.value = '';
+      emptyOption.textContent = 'Select...';
+      select.appendChild(emptyOption);
+    }
     
     console.log(`[RestrictedChoice] Rendering ${placeholder.id} with ${placeholder.options?.length || 0} options`);
     
     // Options are loaded by templateParser
     if (placeholder.options && Array.isArray(placeholder.options)) {
-      placeholder.options.forEach(opt => {
+      placeholder.options.forEach((opt, idx) => {
         const option = document.createElement('option');
         option.value = opt.value || opt;
         option.textContent = opt.label || opt.value || opt;
+        
+        // Auto-select if only one option
+        if (placeholder.options.length === 1) {
+          option.selected = true;
+        }
+        
         select.appendChild(option);
       });
     } else {
@@ -108,6 +117,14 @@ const FieldComponents = {
     input.type = 'text';
     input.className = 'form-input';
     input.placeholder = placeholder.label || '';
+    return input;
+  },
+  
+  'AgentPlaceholder': (placeholder) => {
+    const input = document.createElement('input');
+    input.type = 'url';
+    input.className = 'form-input';
+    input.placeholder = placeholder.label || 'https://orcid.org/...';
     return input;
   }
 };
@@ -264,303 +281,330 @@ export class FormGenerator {
     // Search in placeholders
     const placeholder = this.template.placeholders?.find(p => p.id === cleanId);
     
-    if (!placeholder) {
-      console.warn(`No placeholder found for "${cleanId}" (from "${objectRef}")`);
-      console.log('Available placeholders:', this.template.placeholders?.map(p => p.id));
+    return placeholder;
+  }
+
+  /**
+   * Check if a value is a fixed literal (not a placeholder)
+   */
+  isFixedValue(value) {
+    if (!value) return false;
+    
+    // First check if there's a placeholder for this value
+    const placeholder = this.findPlaceholder(value);
+    if (placeholder) {
+      return false; // It's a placeholder, not fixed
     }
     
-    return placeholder;
+    // If it's a URI (starts with http or has angle brackets), it's fixed
+    if (value.startsWith('http') || value.startsWith('<')) {
+      return true;
+    }
+    
+    // If it's a simple id without colon or slash, and no placeholder, it's fixed
+    if (!value.includes(':') && !value.includes('/')) {
+      return true;
+    }
+    
+    // If it's a prefixed URI like foaf:name or rdf:type (and no placeholder), it's fixed
+    if (value.includes(':')) {
+      return true;
+    }
+    
+    return false;
   }
 
   /**
    * Render form
    */
   renderForm(container) {
-    if (typeof container === 'string') {
-      container = document.querySelector(container);
-    }
+    console.log('Rendering form with template:', this.template);
     
-    if (!container) {
-      throw new Error('Container not found');
-    }
+    this.formElement = document.createElement('form');
+    this.formElement.className = 'nanopub-form';
     
-    container.innerHTML = '';
-    container.className = 'nanopub-creator';
-
-    const form = document.createElement('form');
-    form.className = 'creator-form';
-    form.noValidate = true;
-    this.formElement = form;
-
     // Header
-    form.appendChild(this.buildHeader());
-
-    // Build form from statements
-    const statements = this.template.statements || [];
-    
-    console.log('Building form from statements:', statements.length);
-    console.log('Available placeholders:', this.template.placeholders?.map(p => ({ id: p.id, type: p.type, label: p.label })));
-    
-    // Group by optional/required
-    const requiredStatements = [];
-    const optionalStatements = [];
-    
-    statements.forEach(stmt => {
-      // Skip rdf:type
-      if (stmt.predicate === 'rdf:type' || 
-          stmt.predicate === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
-        return;
-      }
-      
-      if (stmt.optional) {
-        optionalStatements.push(stmt);
-      } else {
-        requiredStatements.push(stmt);
-      }
-    });
-
-    console.log('Required statements:', requiredStatements.length);
-    console.log('Optional statements:', optionalStatements.length);
-
-    // Required fields section
-    if (requiredStatements.length > 0) {
-      const section = document.createElement('div');
-      section.className = 'form-section';
-      
-      requiredStatements.forEach(stmt => {
-        const field = this.buildStatementField(stmt);
-        if (field) section.appendChild(field);
-      });
-      
-      form.appendChild(section);
-    }
-
-    // Optional fields section
-    if (optionalStatements.length > 0) {
-      const section = document.createElement('div');
-      section.className = 'form-section optional-section';
-      
-      const header = document.createElement('h3');
-      header.textContent = 'Additional Information (Optional)';
-      header.className = 'section-header';
-      section.appendChild(header);
-      
-      optionalStatements.forEach(stmt => {
-        const field = this.buildStatementField(stmt);
-        if (field) section.appendChild(field);
-      });
-      
-      form.appendChild(section);
-    }
-
-    // Controls
-    form.appendChild(this.buildControls());
-
-    container.appendChild(form);
-    this.setupEventListeners();
-    
-    return form;
-  }
-
-  /**
-   * Build header
-   */
-  buildHeader() {
     const header = document.createElement('div');
     header.className = 'form-header';
     
     const title = document.createElement('h2');
-    title.textContent = this.template.label || 'Create Nanopublication';
+    title.textContent = this.template.label || 'Nanopublication Template';
     header.appendChild(title);
     
     if (this.template.description) {
-      const desc = document.createElement('div');
+      const desc = document.createElement('p');
       desc.className = 'form-description';
-      desc.innerHTML = this.template.description;
+      desc.textContent = this.template.description;
       header.appendChild(desc);
     }
     
-    return header;
+    this.formElement.appendChild(header);
+    
+    // Fields
+    const fieldsContainer = document.createElement('div');
+    fieldsContainer.className = 'form-fields';
+    
+    this.renderFields(fieldsContainer);
+    
+    this.formElement.appendChild(fieldsContainer);
+    
+    // Controls
+    this.formElement.appendChild(this.buildControls());
+    
+    // Clear and append
+    if (typeof container === 'string') {
+      container = document.querySelector(container);
+    }
+    
+    if (container) {
+      container.innerHTML = '';
+      container.appendChild(this.formElement);
+      this.setupEventListeners();
+    }
+    
+    return this.formElement;
   }
 
   /**
-   * Build field for a statement
-   * Creates fields for ALL placeholders (subject, predicate, object)
-   * Handles grouped statements
+   * Render fields from statements
    */
-  buildStatementField(statement) {
-    // Check if this is a grouped statement
-    const groupedStatement = this.template.groupedStatements?.find(g => g.id === statement.id);
+  renderFields(container) {
+    // Group statements by their grouping
+    const processedGroups = new Set();
     
-    if (groupedStatement) {
-      // Render all statements in the group together
-      return this.buildGroupedStatementField(groupedStatement, statement);
+    this.template.statements.forEach(statement => {
+      // Skip if this statement is part of a grouped statement we've already processed
+      const parentGroup = this.template.groupedStatements.find(g => 
+        g.statements.includes(statement.id)
+      );
+      
+      if (parentGroup && processedGroups.has(parentGroup.id)) {
+        return;
+      }
+      
+      if (statement.grouped && parentGroup) {
+        // Render the entire group together
+        this.renderGroupedStatement(container, parentGroup, statement);
+        processedGroups.add(parentGroup.id);
+      } else {
+        // Render individual statement
+        this.renderStatement(container, statement);
+      }
+    });
+  }
+
+  /**
+   * Render a grouped statement (multiple sub-statements as one field group)
+   */
+  renderGroupedStatement(container, group, parentStatement) {
+    const groupContainer = document.createElement('div');
+    groupContainer.className = 'form-field-group';
+    if (parentStatement.repeatable) {
+      groupContainer.classList.add('repeatable-group');
+    }
+    if (parentStatement.optional) {
+      groupContainer.classList.add('optional-group');
     }
     
-    // Check which positions have placeholders
+    // Find all statements in this group
+    const groupStatements = group.statements
+      .map(stId => this.template.statements.find(s => s.id === stId))
+      .filter(s => s);
+    
+    // Use the first statement's subject as the group label
+    const firstStmt = groupStatements[0];
+    if (firstStmt) {
+      const subjectPlaceholder = this.findPlaceholder(firstStmt.subject);
+      if (subjectPlaceholder) {
+        const groupLabel = document.createElement('div');
+        groupLabel.className = 'field-group-label';
+        groupLabel.textContent = subjectPlaceholder.label || this.getLabel(firstStmt.subject);
+        groupContainer.appendChild(groupLabel);
+      }
+    }
+    
+    // Render each statement in the group
+    groupStatements.forEach(stmt => {
+      this.renderStatementInGroup(groupContainer, stmt);
+    });
+    
+    // Add repeatable controls if needed
+    if (parentStatement.repeatable) {
+      groupContainer.appendChild(this.buildRepeatableControls(parentStatement, null));
+    }
+    
+    container.appendChild(groupContainer);
+  }
+
+  /**
+   * Render a statement within a group (no separate labels for subject)
+   */
+  renderStatementInGroup(container, statement) {
+    const objectPlaceholder = this.findPlaceholder(statement.object);
+    const predicatePlaceholder = this.findPlaceholder(statement.predicate);
+    
+    // Only render if there's a placeholder
+    if (!objectPlaceholder && !predicatePlaceholder) {
+      // Both are fixed - show as read-only info only if it's a literal
+      if (statement.isLiteralObject) {
+        const infoField = document.createElement('div');
+        infoField.className = 'form-field readonly-field';
+        
+        const label = document.createElement('label');
+        label.className = 'field-label';
+        label.textContent = this.getLabel(statement.predicate);
+        
+        const value = document.createElement('div');
+        value.className = 'field-value';
+        value.textContent = statement.object;
+        
+        infoField.appendChild(label);
+        infoField.appendChild(value);
+        container.appendChild(infoField);
+      }
+      return;
+    }
+    
+    // Render placeholder input
+    const targetPlaceholder = predicatePlaceholder || objectPlaceholder;
+    const field = document.createElement('div');
+    field.className = 'form-field';
+    
+    if (statement.optional) {
+      field.classList.add('optional');
+    }
+    
+    const label = document.createElement('label');
+    label.className = 'field-label';
+    label.htmlFor = `field_${statement.id}`;
+    
+    // Use predicate label, or placeholder label if predicate is the placeholder
+    if (predicatePlaceholder) {
+      label.textContent = predicatePlaceholder.label || this.getLabel(statement.predicate);
+    } else {
+      label.textContent = this.getLabel(statement.predicate);
+    }
+    
+    if (statement.optional) {
+      const optionalBadge = document.createElement('span');
+      optionalBadge.className = 'optional-badge';
+      optionalBadge.textContent = 'optional';
+      label.appendChild(optionalBadge);
+    }
+    
+    const input = this.renderInput(targetPlaceholder);
+    input.name = statement.id;
+    input.id = `field_${statement.id}`;
+    
+    field.appendChild(label);
+    field.appendChild(input);
+    
+    container.appendChild(field);
+  }
+
+  /**
+   * Render a single statement as a form field
+   */
+  renderStatement(container, statement) {
     const subjectPlaceholder = this.findPlaceholder(statement.subject);
     const predicatePlaceholder = this.findPlaceholder(statement.predicate);
     const objectPlaceholder = this.findPlaceholder(statement.object);
     
-    // If no placeholders, skip this statement (it's all literals)
+    // Show fixed literal values as read-only
+    if (statement.isLiteralObject && !objectPlaceholder && !predicatePlaceholder && !subjectPlaceholder) {
+      const infoField = document.createElement('div');
+      infoField.className = 'form-field readonly-field';
+      
+      const label = document.createElement('label');
+      label.className = 'field-label';
+      label.textContent = this.getLabel(statement.predicate);
+      
+      const value = document.createElement('div');
+      value.className = 'field-value';
+      value.textContent = statement.object;
+      
+      infoField.appendChild(label);
+      infoField.appendChild(value);
+      container.appendChild(infoField);
+      return;
+    }
+    
+    // Skip if no placeholders at all
     if (!subjectPlaceholder && !predicatePlaceholder && !objectPlaceholder) {
-      console.log(`Skipping statement ${statement.id} - no placeholders found (all literals)`);
-      return null;
+      return;
     }
     
-    const container = document.createElement('div');
-    container.className = 'form-field-group';
-    container.dataset.statementId = statement.id;
+    const field = document.createElement('div');
+    field.className = 'form-field';
     
-    // Add statement label/context if needed (when multiple placeholders)
-    if ((subjectPlaceholder ? 1 : 0) + (predicatePlaceholder ? 1 : 0) + (objectPlaceholder ? 1 : 0) > 1) {
-      const contextLabel = document.createElement('div');
-      contextLabel.className = 'statement-context';
-      
-      // Use predicate as context label if it's not a placeholder
-      if (!predicatePlaceholder && statement.predicate) {
-        const predicateLabel = this.getLabel(statement.predicate);
-        contextLabel.textContent = predicateLabel;
-      } else {
-        // Don't show a label - let the individual field labels speak for themselves
-        // Just add spacing
-        contextLabel.style.display = 'none';
-      }
-      
-      container.appendChild(contextLabel);
+    if (statement.repeatable) {
+      field.classList.add('repeatable');
+    }
+    if (statement.optional) {
+      field.classList.add('optional');
     }
     
-    // Create field for SUBJECT if it's a placeholder
-    if (subjectPlaceholder) {
-      const field = this.buildSingleField(statement.id, 'subject', subjectPlaceholder, statement.optional);
-      if (field) container.appendChild(field);
-    }
-    
-    // Create field for PREDICATE if it's a placeholder
+    // Render predicate placeholder if exists
     if (predicatePlaceholder) {
-      const field = this.buildSingleField(statement.id, 'predicate', predicatePlaceholder, statement.optional);
-      if (field) container.appendChild(field);
+      const predLabel = document.createElement('label');
+      predLabel.className = 'field-label';
+      predLabel.textContent = predicatePlaceholder.label || this.getLabel(statement.predicate);
+      
+      const predInput = this.renderInput(predicatePlaceholder);
+      predInput.name = `${statement.id}_predicate`;
+      predInput.id = `field_${statement.id}_predicate`;
+      if (!statement.optional) predInput.required = true;
+      
+      field.appendChild(predLabel);
+      field.appendChild(predInput);
     }
     
-    // Create field for OBJECT if it's a placeholder
+    // Render object placeholder if exists
     if (objectPlaceholder) {
-      const field = this.buildSingleField(statement.id, 'object', objectPlaceholder, statement.optional);
-      if (field) container.appendChild(field);
-    }
-    
-    // Repeatable controls for the entire statement group
-    if (statement.repeatable && (subjectPlaceholder || predicatePlaceholder || objectPlaceholder)) {
-      const firstPlaceholder = subjectPlaceholder || predicatePlaceholder || objectPlaceholder;
-      container.appendChild(this.buildRepeatableControls(statement, firstPlaceholder));
-    }
-    
-    return container;
-  }
-
-  /**
-   * Build field for a grouped statement
-   */
-  buildGroupedStatementField(groupedStatement, statement) {
-    const container = document.createElement('div');
-    container.className = 'form-field-group grouped';
-    container.dataset.statementId = groupedStatement.id;
-    
-    console.log(`Building grouped statement ${groupedStatement.id} with statements:`, groupedStatement.statements);
-    
-    // Collect all placeholders from all statements in the group
-    const allPlaceholders = [];
-    
-    groupedStatement.statements.forEach(stmtId => {
-      const stmt = this.template.statements.find(s => s.id === stmtId);
-      if (!stmt) {
-        console.warn(`Statement ${stmtId} not found in grouped statement ${groupedStatement.id}`);
-        return;
+      const objLabel = document.createElement('label');
+      objLabel.className = 'field-label';
+      objLabel.textContent = objectPlaceholder.label || this.getLabel(statement.object);
+      
+      if (statement.optional) {
+        const optionalBadge = document.createElement('span');
+        optionalBadge.className = 'optional-badge';
+        optionalBadge.textContent = 'optional';
+        objLabel.appendChild(optionalBadge);
       }
       
-      const subjectPlaceholder = this.findPlaceholder(stmt.subject);
-      const predicatePlaceholder = this.findPlaceholder(stmt.predicate);
-      const objectPlaceholder = this.findPlaceholder(stmt.object);
+      const objInput = this.renderInput(objectPlaceholder);
+      objInput.name = `${statement.id}_object`;
+      objInput.id = `field_${statement.id}_object`;
+      if (!statement.optional) objInput.required = true;
       
-      // Add unique placeholders
-      if (subjectPlaceholder && !allPlaceholders.find(p => p.id === subjectPlaceholder.id)) {
-        allPlaceholders.push({ ...subjectPlaceholder, position: 'subject', stmtId: stmt.id });
-      }
-      if (predicatePlaceholder && !allPlaceholders.find(p => p.id === predicatePlaceholder.id)) {
-        allPlaceholders.push({ ...predicatePlaceholder, position: 'predicate', stmtId: stmt.id });
-      }
-      if (objectPlaceholder && !allPlaceholders.find(p => p.id === objectPlaceholder.id)) {
-        allPlaceholders.push({ ...objectPlaceholder, position: 'object', stmtId: stmt.id });
-      }
-    });
-    
-    if (allPlaceholders.length === 0) {
-      console.log(`Skipping grouped statement ${groupedStatement.id} - no placeholders found`);
-      return null;
+      field.appendChild(objLabel);
+      field.appendChild(objInput);
     }
     
-    // Render each unique placeholder
-    allPlaceholders.forEach(placeholder => {
-      const field = this.buildSingleField(
-        placeholder.stmtId,
-        placeholder.position,
-        placeholder,
-        statement.optional
-      );
-      if (field) container.appendChild(field);
-    });
-    
-    // Repeatable controls
-    if (statement.repeatable && allPlaceholders.length > 0) {
-      container.appendChild(this.buildRepeatableControls(statement, allPlaceholders[0]));
+    // Render subject placeholder if exists (rare)
+    if (subjectPlaceholder && !predicatePlaceholder && !objectPlaceholder) {
+      const subjLabel = document.createElement('label');
+      subjLabel.className = 'field-label';
+      subjLabel.textContent = subjectPlaceholder.label || this.getLabel(statement.subject);
+      
+      const subjInput = this.renderInput(subjectPlaceholder);
+      subjInput.name = `${statement.id}_subject`;
+      subjInput.id = `field_${statement.id}_subject`;
+      if (!statement.optional) subjInput.required = true;
+      
+      field.appendChild(subjLabel);
+      field.appendChild(subjInput);
     }
     
-    return container;
+    container.appendChild(field);
+    
+    if (statement.repeatable) {
+      container.appendChild(this.buildRepeatableControls(statement, null));
+    }
   }
 
   /**
-   * Build a single field for one position (subject/predicate/object)
-   */
-  buildSingleField(statementId, position, placeholder, isOptional) {
-    const fieldDiv = document.createElement('div');
-    fieldDiv.className = 'form-field';
-    fieldDiv.dataset.position = position;
-    
-    // Label from placeholder
-    const label = document.createElement('label');
-    label.textContent = placeholder.label || placeholder.id;
-    
-    if (!isOptional) {
-      const required = document.createElement('span');
-      required.className = 'required-mark';
-      required.textContent = ' *';
-      label.appendChild(required);
-    } else {
-      const optional = document.createElement('span');
-      optional.className = 'optional-mark';
-      optional.textContent = ' (optional)';
-      label.appendChild(optional);
-    }
-    
-    fieldDiv.appendChild(label);
-    
-    console.log(`Building field for statement ${statementId} ${position}:`, {
-      placeholderType: placeholder.type,
-      placeholderLabel: placeholder.label
-    });
-    
-    // Render input using component registry
-    const input = this.renderInput(placeholder);
-    input.name = `${statementId}_${position}_0`;
-    input.id = `field_${statementId}_${position}_0`;
-    if (!isOptional) input.required = true;
-    
-    fieldDiv.appendChild(input);
-    
-    return fieldDiv;
-  }
-
-  /**
-   * Render input using component registry
+   * Render input based on placeholder type
    */
   renderInput(placeholder) {
     // Handle multiple types (e.g., "nt:IntroducedResource, nt:LocalResource")
