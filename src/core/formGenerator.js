@@ -440,8 +440,8 @@ export class FormGenerator {
         if (sameSubjectStatements.length > 1) {
           currentSubjectGroup = document.createElement('div');
           currentSubjectGroup.className = 'subject-group';
-          // Add inline styles for visual grouping
-          currentSubjectGroup.style.cssText = 'margin: 1.5rem 0; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb;';
+          // Use Science Live colors: purple/magenta palette
+          currentSubjectGroup.style.cssText = 'margin: 1.5rem 0; padding: 1.5rem; border: 2px solid #be2e78; border-radius: 8px; background: #f6d7e8; box-shadow: 0 1px 3px rgba(190, 46, 120, 0.1);';
           
           // Add subject header ONLY if the subject is a placeholder (not fixed URIs like nt:ASSERTION)
           const subjectPlaceholder = this.findPlaceholder(statement.subject);
@@ -451,7 +451,7 @@ export class FormGenerator {
             
             const subjLabel = document.createElement('label');
             subjLabel.className = 'field-label subject-label';
-            subjLabel.style.cssText = 'font-weight: 600; font-size: 1.1em; color: #1f2937;';
+            subjLabel.style.cssText = 'font-weight: 600; font-size: 1.15em; color: #2b3456; margin-bottom: 0.75rem; display: block;';
             subjLabel.textContent = subjectPlaceholder.label || this.getLabel(statement.subject);
             subjectField.appendChild(subjLabel);
             

@@ -1,17 +1,20 @@
 /**
- * Demo Styles - Matching nanopub-view design
+ * Demo Styles - Science Live color palette
  */
 
 :root {
   --primary: #BE2E78;
   --primary-hover: #9e1e5e;
-  --secondary: #101E43;
+  --secondary: #2b3456;
+  --secondary-dark: #131d43;
   --text-dark: #1f2937;
   --text-light: #6b7280;
   --border: #e5e7eb;
   --border-light: #f3f4f6;
   --bg-light: #f9fafb;
   --bg-subtle: #f8f9fa;
+  --pink-light: #f6d7e8;
+  --pink-border: #be2e78;
 }
 
 * {
@@ -310,13 +313,13 @@ body {
 }
 
 .event-type.change {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: #f6d7e8;
+  color: #be2e78;
 }
 
 .event-type.submit {
-  background: #e8f5e9;
-  color: #4caf50;
+  background: #e8f1f8;
+  color: #2b3456;
 }
 
 .event-type.error {
@@ -325,6 +328,9 @@ body {
 }
 
 .event-type.published {
+  background: #f6d7e8;
+  color: #be2e78;
+}
   background: #f3e5f5;
   color: #9c27b0;
 }
@@ -410,13 +416,59 @@ body {
   
 .btn-load {
   padding: 10px 20px;
-  background: #667eea;
+  background: var(--primary);
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-weight: 500;
   transition: background 0.2s;
-} 
+}
 
+.btn-load:hover {
+  background: var(--primary-hover);
+}
 
+/* Form Buttons */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95em;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(190, 46, 120, 0.25);
+}
+
+.btn-secondary {
+  background: var(--secondary);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: var(--secondary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(43, 52, 86, 0.25);
+}
+
+.form-controls {
+  display: flex;
+  gap: 12px;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 2px solid var(--border-light);
+}
