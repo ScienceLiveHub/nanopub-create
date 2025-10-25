@@ -1,7 +1,120 @@
 /**
- * Enhanced Form Generator with user-friendly style Rendering
- * Properly displays placeholders with human-readable labels and appropriate field types
+ * Component-Based Form Generator 
+ * Maps placeholder types to rendering components
  */
+
+// ============================================
+// COMPONENT REGISTRY
+// ============================================
+
+const FieldComponents = {
+  
+  'LiteralPlaceholder': (placeholder) => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-input';
+    input.placeholder = placeholder.label || '';
+    if (placeholder.validation?.regex) {
+      input.pattern = placeholder.validation.regex;
+    }
+    return input;
+  },
+  
+  'LongLiteralPlaceholder': (placeholder) => {
+    const textarea = document.createElement('textarea');
+    textarea.className = 'form-input';
+    textarea.rows = 5;
+    textarea.placeholder = placeholder.label || '';
+    return textarea;
+  },
+  
+  'ExternalUriPlaceholder': (placeholder) => {
+    const input = document.createElement('input');
+    input.type = 'url';
+    input.className = 'form-input';
+    input.placeholder = placeholder.label || 'https://...';
+    return input;
+  },
+  
+  'UriPlaceholder': (placeholder) => {
+    const input = document.createElement('input');
+    input.type = 'url';
+    input.className = 'form-input';
+    input.placeholder = placeholder.label || 'https://...';
+    return input;
+  },
+  
+  'TrustyUriPlaceholder': (placeholder) => {
+    const input = document.createElement('input');
+    input.type = 'url';
+    input.className = 'form-input';
+    input.placeholder = placeholder.label || 'https://...';
+    return input;
+  },
+  
+  'RestrictedChoicePlaceholder': (placeholder) => {
+    const select = document.createElement('select');
+    select.className = 'form-input';
+    
+    const emptyOption = document.createElement('option');
+    emptyOption.value = '';
+    emptyOption.textContent = 'Select...';
+    select.appendChild(emptyOption);
+    
+    console.log(`[RestrictedChoice] Rendering ${placeholder.id} with ${placeholder.options?.length || 0} options`);
+    
+    // Options are loaded by templateParser
+    if (placeholder.options && Array.isArray(placeholder.options)) {
+      placeholder.options.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt.value || opt;
+        option.textContent = opt.label || opt.value || opt;
+        select.appendChild(option);
+      });
+    } else {
+      console.warn(`[RestrictedChoice] No options found for ${placeholder.id}`);
+    }
+    
+    return select;
+  },
+  
+  'GuidedChoicePlaceholder': (placeholder) => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-input';
+    input.placeholder = placeholder.label || 'Type to search...';
+    input.setAttribute('data-guided-choice', 'true');
+    return input;
+  },
+  
+  'IntroducedResource': (placeholder) => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-input';
+    input.placeholder = placeholder.label || '';
+    return input;
+  },
+  
+  'LocalResource': (placeholder) => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-input';
+    input.placeholder = placeholder.label || '';
+    return input;
+  },
+  
+  'AutoEscapeUriPlaceholder': (placeholder) => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-input';
+    input.placeholder = placeholder.label || '';
+    return input;
+  }
+};
+
+// ============================================
+// FORM GENERATOR
+// ============================================
 
 export class FormGenerator {
   constructor(template, options = {}) {
@@ -9,15 +122,11 @@ export class FormGenerator {
     this.options = {
       validateOnChange: true,
       showHelp: true,
-      showUriTooltips: true,
-      readOnly: false,
-      theme: 'default',
       ...options
     };
     
     this.labels = options.labels || template.labels || {};
     this.formData = {};
-    this.errors = {};
     this.eventListeners = {
       change: [],
       submit: [],
@@ -27,28 +136,35 @@ export class FormGenerator {
   }
 
   /**
-   * Get human-readable label for a URI or placeholder
+   * Get label for URI or placeholder
    */
   getLabel(uri) {
     if (!uri) return '';
     
-    // Check if it's a placeholder reference
-    if (uri.startsWith('sub:')) {
-      const placeholderId = uri.replace('sub:', '');
-      const placeholder = this.template.placeholders?.find(p => p.id === placeholderId);
-      if (placeholder && placeholder.label) {
-        return placeholder.label;
-      }
-      return placeholderId;
+    // Check if it's a placeholder reference (starts with sub: and has no colon after)
+    if (uri.startsWith('sub:') && !uri.substring(4).includes(':')) {
+      const cleanId = uri.replace(/^sub:/, '');
+      const placeholder = this.template.placeholders?.find(p => p.id === cleanId);
+      if (placeholder?.label) return placeholder.label;
+      
+      // Parse ID: "post-title" → "Post Title"
+      return cleanId.split(/[-_]/).map(w => 
+        w.charAt(0).toUpperCase() + w.slice(1)
+      ).join(' ');
     }
     
-    // Check labels object
+    // Try direct label lookup first
     if (this.labels[uri]) {
       const label = this.labels[uri];
-      if (typeof label === 'string') {
-        return label;
-      } else if (typeof label === 'object') {
-        return label.label || label['@value'] || label.value || this.parseUriLabel(uri);
+      return typeof label === 'string' ? label : 
+        (label.label || label['@value'] || label.value || this.parseUriLabel(uri));
+    }
+    
+    // For prefixed URIs (dct:title), expand and try again
+    if (!uri.startsWith('http') && uri.includes(':')) {
+      const expandedUri = this.expandUri(uri);
+      if (expandedUri !== uri && this.labels[expandedUri]) {
+        return this.labels[expandedUri];
       }
     }
     
@@ -56,192 +172,211 @@ export class FormGenerator {
   }
 
   /**
-   * Parse a human-readable label from a URI
+   * Expand prefixed URI (e.g., dct:title → http://purl.org/dc/terms/title)
+   */
+  expandUri(uri) {
+    if (!uri || uri.startsWith('http')) return uri;
+    
+    const colonIndex = uri.indexOf(':');
+    if (colonIndex > 0) {
+      const prefix = uri.substring(0, colonIndex);
+      const localPart = uri.substring(colonIndex + 1);
+      
+      // Use template prefixes if available
+      if (this.template.prefixes && this.template.prefixes[prefix]) {
+        return this.template.prefixes[prefix] + localPart;
+      }
+      
+      // Common fallbacks
+      const commonPrefixes = {
+        'dct': 'http://purl.org/dc/terms/',
+        'foaf': 'http://xmlns.com/foaf/0.1/',
+        'prov': 'http://www.w3.org/ns/prov#',
+        'rdfs': 'http://www.w3.org/2000/01/rdf-schema#',
+        'schema': 'https://schema.org/',
+        'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'
+      };
+      
+      if (commonPrefixes[prefix]) {
+        return commonPrefixes[prefix] + localPart;
+      }
+    }
+    
+    return uri;
+  }
+
+  /**
+   * Parse label from URI
    */
   parseUriLabel(uri) {
     if (!uri) return '';
     
-    // Special RDF predicates
-    if (uri === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') return 'Type';
-    if (uri === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#subject') return 'Subject';
-    if (uri === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#predicate') return 'Predicate';
-    if (uri === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#object') return 'Object';
+    // Handle common prefixes first
+    const prefixMap = {
+      'dct:': 'DC Terms: ',
+      'foaf:': 'FOAF: ',
+      'prov:': 'Provenance: ',
+      'rdfs:': 'RDFS: ',
+      'schema:': 'Schema: '
+    };
     
+    // If it's a prefixed URI (like dct:title), extract the local part
+    for (const [prefix, fullName] of Object.entries(prefixMap)) {
+      if (uri.startsWith(prefix)) {
+        const localPart = uri.substring(prefix.length);
+        // Convert camelCase to Title Case
+        return localPart.replace(/([a-z])([A-Z])/g, '$1 $2')
+                        .split(/[-_]/)
+                        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                        .join(' ');
+      }
+    }
+    
+    // For full URIs
     const parts = uri.split(/[#\/]/);
-    let label = parts[parts.length - 1];
+    let label = parts[parts.length - 1] || '';
     
     if (!label && parts.length > 1) {
       label = parts[parts.length - 2];
     }
     
-    if (!label) return uri;
+    // camelCase → Title Case
+    label = label.replace(/([a-z])([A-Z])/g, '$1 $2')
+                 .replace(/[_-]/g, ' ')
+                 .replace(/^(has|is)\s+/i, '')
+                 .trim()
+                 .split(' ')
+                 .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                 .join(' ');
     
-    // Convert camelCase to Title Case
-    label = label.replace(/([a-z])([A-Z])/g, '$1 $2');
-    label = label.replace(/[_-]/g, ' ');
-    label = label.replace(/^has\s*/i, '');
-    label = label.replace(/^is\s*/i, '');
-    label = label.trim().replace(/\s+/g, ' ');
-    
-    label = label.split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-    
-    return label;
+    return label || uri;
   }
 
   /**
-   * Create a label element with optional URI tooltip
+   * Find placeholder by ID (handles with or without 'sub:' prefix)
    */
-  createLabelElement(text, uri = null, required = false) {
-    const label = document.createElement('label');
-    label.textContent = text;
+  findPlaceholder(objectRef) {
+    if (!objectRef) return null;
     
-    if (required) {
-      const requiredMark = document.createElement('span');
-      requiredMark.className = 'required-mark';
-      requiredMark.textContent = ' *';
-      label.appendChild(requiredMark);
+    // Remove 'sub:' prefix if present
+    const cleanId = objectRef.replace(/^sub:/, '');
+    
+    // Search in placeholders
+    const placeholder = this.template.placeholders?.find(p => p.id === cleanId);
+    
+    if (!placeholder) {
+      console.warn(`No placeholder found for "${cleanId}" (from "${objectRef}")`);
+      console.log('Available placeholders:', this.template.placeholders?.map(p => p.id));
     }
     
-    if (uri && this.options.showUriTooltips) {
-      label.title = `URI: ${uri}`;
-      label.className = 'has-tooltip';
-    }
-    
-    return label;
+    return placeholder;
   }
 
   /**
-   * Render complete form HTML
+   * Render form
    */
   renderForm(container) {
-    const schema = this.generateSchema();
-    
     if (typeof container === 'string') {
       container = document.querySelector(container);
     }
     
     if (!container) {
-      throw new Error('Container element not found');
+      throw new Error('Container not found');
     }
     
     container.innerHTML = '';
-    container.className = 'nanopub-creator enhanced';
+    container.className = 'nanopub-creator';
 
-    const formElement = document.createElement('form');
-    formElement.className = 'creator-form';
-    formElement.noValidate = true;
-    this.formElement = formElement;
+    const form = document.createElement('form');
+    form.className = 'creator-form';
+    form.noValidate = true;
+    this.formElement = form;
 
-    // Add header
-    formElement.appendChild(this.buildHeader(schema));
+    // Header
+    form.appendChild(this.buildHeader());
 
-    // Add regular placeholder fields (not used in statements)
-    const fieldsSection = document.createElement('div');
-    fieldsSection.className = 'form-fields';
+    // Build form from statements
+    const statements = this.template.statements || [];
     
-    schema.fields.forEach(field => {
-      fieldsSection.appendChild(this.buildField(field));
+    console.log('Building form from statements:', statements.length);
+    console.log('Available placeholders:', this.template.placeholders?.map(p => ({ id: p.id, type: p.type, label: p.label })));
+    
+    // Group by optional/required
+    const requiredStatements = [];
+    const optionalStatements = [];
+    
+    statements.forEach(stmt => {
+      // Skip rdf:type
+      if (stmt.predicate === 'rdf:type' || 
+          stmt.predicate === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
+        return;
+      }
+      
+      if (stmt.optional || stmt.repeatable) {
+        optionalStatements.push(stmt);
+      } else {
+        requiredStatements.push(stmt);
+      }
     });
-    
-    if (schema.fields.length > 0) {
-      formElement.appendChild(fieldsSection);
+
+    console.log('Required statements:', requiredStatements.length);
+    console.log('Optional statements:', optionalStatements.length);
+
+    // Required fields section
+    if (requiredStatements.length > 0) {
+      const section = document.createElement('div');
+      section.className = 'form-section';
+      
+      requiredStatements.forEach(stmt => {
+        const field = this.buildStatementField(stmt);
+        if (field) section.appendChild(field);
+      });
+      
+      form.appendChild(section);
     }
 
-    // Add statements section
-    if (schema.statements && schema.statements.length > 0) {
-      formElement.appendChild(this.buildStatementsSection(schema.statements));
+    // Optional fields section
+    if (optionalStatements.length > 0) {
+      const section = document.createElement('div');
+      section.className = 'form-section optional-section';
+      
+      const header = document.createElement('h3');
+      header.textContent = 'Additional Information (Optional)';
+      header.className = 'section-header';
+      section.appendChild(header);
+      
+      optionalStatements.forEach(stmt => {
+        const field = this.buildStatementField(stmt);
+        if (field) section.appendChild(field);
+      });
+      
+      form.appendChild(section);
     }
 
-    // Add form controls
-    formElement.appendChild(this.buildFormControls());
+    // Controls
+    form.appendChild(this.buildControls());
 
-    container.appendChild(formElement);
-    
-    // Set up event listeners
+    container.appendChild(form);
     this.setupEventListeners();
     
-    return formElement;
+    return form;
   }
 
   /**
-   * Generate form schema from template
+   * Build header
    */
-  generateSchema() {
-    return {
-      title: this.template.label || 'Create Nanopublication',
-      description: this.template.description,
-      fields: this.getNonStatementPlaceholders(),
-      statements: this.template.statements || [],
-      labels: this.labels
-    };
-  }
-
-  /**
-   * Get placeholders that should be rendered as standalone fields
-   * Excludes placeholders that are only used in statements
-   */
-  getNonStatementPlaceholders() {
-    const usedInStatements = new Set();
-    
-    (this.template.statements || []).forEach(stmt => {
-      // Collect all placeholder references in statements
-      if (stmt.subject && stmt.subject.startsWith('sub:')) {
-        usedInStatements.add(stmt.subject.replace('sub:', ''));
-      }
-      if (stmt.predicate && stmt.predicate.startsWith('sub:')) {
-        usedInStatements.add(stmt.predicate.replace('sub:', ''));
-      }
-      if (stmt.object && stmt.object.startsWith('sub:')) {
-        usedInStatements.add(stmt.object.replace('sub:', ''));
-      }
-    });
-    
-    // Return placeholders NOT used in statements as their subject
-    // Subject placeholders are typically shown in statements, not as separate fields
-    return (this.template.placeholders || [])
-      .filter(p => {
-        // Include only placeholders that are:
-        // 1. Not the subject of any statement
-        // 2. OR explicitly meant to be standalone (like IntroducedResource, AutoEscapeUriPlaceholder)
-        const isSubject = this.template.statements?.some(s => s.subject === `sub:${p.id}`);
-        const isStandaloneType = ['IntroducedResource', 'AutoEscapeUriPlaceholder', 'LocalResource'].includes(p.type);
-        return !isSubject || isStandaloneType;
-      })
-      .map(p => this.placeholderToField(p));
-  }
-
-  /**
-   * Convert placeholder to form field configuration
-   */
-  placeholderToField(placeholder) {
-    return {
-      id: placeholder.id,
-      name: placeholder.id,
-      label: placeholder.label || this.getLabel(`sub:${placeholder.id}`),
-      type: placeholder.type,
-      required: placeholder.required !== false,
-      placeholder: placeholder,
-      description: placeholder.description
-    };
-  }
-
-  /**
-   * Build form header
-   */
-  buildHeader(schema) {
+  buildHeader() {
     const header = document.createElement('div');
     header.className = 'form-header';
     
     const title = document.createElement('h2');
-    title.textContent = schema.title;
+    title.textContent = this.template.label || 'Create Nanopublication';
     header.appendChild(title);
     
-    if (schema.description) {
+    if (this.template.description) {
       const desc = document.createElement('div');
       desc.className = 'form-description';
-      desc.innerHTML = schema.description; // Allow HTML in description
+      desc.innerHTML = this.template.description;
       header.appendChild(desc);
     }
     
@@ -249,274 +384,142 @@ export class FormGenerator {
   }
 
   /**
-   * Build form field (for regular placeholders)
+   * Build field for a statement
+   * Key: Use predicate as label, object placeholder for input type
    */
-  buildField(field) {
-    const fieldElement = document.createElement('div');
-    fieldElement.className = 'form-field';
-    fieldElement.dataset.placeholderId = field.id;
+  buildStatementField(statement) {
+    const fieldDiv = document.createElement('div');
+    fieldDiv.className = 'form-field';
+    fieldDiv.dataset.statementId = statement.id;
     
-    const label = this.createLabelElement(field.label, `sub:${field.id}`, field.required);
-    
-    const input = this.createInputForPlaceholder(field.placeholder, 0);
-    input.name = field.name;
-    input.id = `field-${field.id}`;
-    if (field.required) {
-      input.required = true;
-    }
-    
-    fieldElement.appendChild(label);
-    
-    // Add description if available
-    if (field.description) {
-      const desc = document.createElement('div');
-      desc.className = 'field-description';
-      desc.textContent = field.description;
-      fieldElement.appendChild(desc);
-    }
-    
-    fieldElement.appendChild(input);
-    
-    return fieldElement;
-  }
-
-  /**
-   * Build statements section
-   */
-  buildStatementsSection(statements) {
-    const section = document.createElement('div');
-    section.className = 'statements-section';
-    
-    const header = document.createElement('h3');
-    header.textContent = 'Statements';
-    header.className = 'section-header';
-    section.appendChild(header);
-    
-    const statementsContainer = document.createElement('div');
-    statementsContainer.className = 'statements-container';
-    
-    statements.forEach(statement => {
-      const statementElement = this.buildStatement(statement);
-      statementsContainer.appendChild(statementElement);
-    });
-    
-    section.appendChild(statementsContainer);
-    return section;
-  }
-
-  /**
-   * Build a statement
-   */
-  buildStatement(statement) {
-    const container = document.createElement('div');
-    container.className = 'nanopub-statement';
-    container.dataset.statementId = statement.id;
-    
-    if (statement.optional) {
-      container.classList.add('nanopub-optional');
-    }
-    
-    // Create statement field
-    const field = this.buildStatementField(statement, 0);
-    container.appendChild(field);
-    
-    // If repeatable, add controls
-    if (statement.repeatable && !this.options.readOnly) {
-      const controls = document.createElement('div');
-      controls.className = 'repetition-controls';
-      
-      const addBtn = document.createElement('button');
-      addBtn.type = 'button';
-      addBtn.className = 'btn-add-group';
-      addBtn.textContent = '+ Add Another';
-      addBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.handleAddRepetition(statement, container);
-      });
-      
-      controls.appendChild(addBtn);
-      container.appendChild(controls);
-      
-      // Initialize repetition tracking
-      container._repetitionCount = 1;
-    }
-    
-    return container;
-  }
-
-  /**
-   * Build a statement field with proper label from predicate
-   */
-  buildStatementField(statement, index = 0) {
-    const field = document.createElement('div');
-    field.className = 'statement-field';
-    field.dataset.statementId = statement.id;
-    field.dataset.index = index;
-    
-    // Get the predicate label for the field label
+    // Label from predicate
     const predicateLabel = this.getLabel(statement.predicate);
-    
-    // Special case: rdf:type statements with fixed object (read-only)
-    if (statement.predicate === 'rdf:type' || 
-        statement.predicate === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type') {
-      const label = this.createLabelElement(predicateLabel, statement.predicate);
-      
-      const display = document.createElement('div');
-      display.className = 'readonly-value';
-      display.textContent = this.getLabel(statement.object);
-      
-      const hiddenInput = document.createElement('input');
-      hiddenInput.type = 'hidden';
-      hiddenInput.name = `statement_${statement.id}_${index}`;
-      hiddenInput.value = statement.object;
-      
-      field.appendChild(label);
-      field.appendChild(display);
-      field.appendChild(hiddenInput);
-      
-      return field;
-    }
-    
-    // Get placeholder for the object
-    const objectId = statement.object.replace('sub:', '');
-    const objectPlaceholder = this.template.placeholders.find(p => p.id === objectId);
-    
-    // Create label
-    const label = this.createLabelElement(predicateLabel, statement.predicate, !statement.optional);
-    field.appendChild(label);
-    
-    // Create input based on placeholder type
-    let input;
-    if (objectPlaceholder) {
-      input = this.createInputForPlaceholder(objectPlaceholder, index);
-      input.name = `statement_${statement.id}_${index}`;
-      input.id = `statement_${statement.id}_${index}`;
-    } else {
-      // Fallback: text input
-      input = document.createElement('input');
-      input.type = 'text';
-      input.name = `statement_${statement.id}_${index}`;
-      input.placeholder = this.getLabel(statement.object);
-    }
+    const label = document.createElement('label');
+    label.textContent = predicateLabel;
     
     if (!statement.optional) {
-      input.required = true;
-    }
-    
-    field.appendChild(input);
-    
-    return field;
-  }
-
-  /**
-   * Handle adding a repetition
-   */
-  handleAddRepetition(statement, container) {
-    const count = container._repetitionCount || 1;
-    container._repetitionCount = count + 1;
-    
-    const newField = this.buildStatementField(statement, count);
-    
-    // Insert before controls
-    const controls = container.querySelector('.repetition-controls');
-    if (controls) {
-      container.insertBefore(newField, controls);
+      const required = document.createElement('span');
+      required.className = 'required-mark';
+      required.textContent = ' *';
+      label.appendChild(required);
     } else {
-      container.appendChild(newField);
+      const optional = document.createElement('span');
+      optional.className = 'optional-mark';
+      optional.textContent = ' (optional)';
+      label.appendChild(optional);
     }
     
-    this.emit('change', this.collectFormData());
+    fieldDiv.appendChild(label);
+    
+    // Find placeholder for object
+    const placeholder = this.findPlaceholder(statement.object);
+    
+    if (!placeholder) {
+      console.warn(`Skipping statement ${statement.id} - no placeholder found for ${statement.object}`);
+      return null;
+    }
+    
+    console.log(`Building field for statement ${statement.id}:`, {
+      predicate: statement.predicate,
+      predicateLabel,
+      object: statement.object,
+      placeholderType: placeholder.type,
+      placeholderLabel: placeholder.label
+    });
+    
+    // Render input using component registry
+    const input = this.renderInput(placeholder);
+    input.name = `${statement.id}_0`;
+    input.id = `field_${statement.id}_0`;
+    if (!statement.optional) input.required = true;
+    
+    fieldDiv.appendChild(input);
+    
+    // Repeatable controls
+    if (statement.repeatable) {
+      fieldDiv.appendChild(this.buildRepeatableControls(statement, placeholder));
+    }
+    
+    return fieldDiv;
   }
 
   /**
-   * Create input element based on placeholder configuration
+   * Render input using component registry
    */
-  createInputForPlaceholder(placeholder, index = 0) {
-    let input;
+  renderInput(placeholder) {
+    // Handle multiple types (e.g., "nt:IntroducedResource, nt:LocalResource")
+    const types = placeholder.type.split(',').map(t => t.trim().replace(/^nt:/, ''));
     
-    switch (placeholder.type) {
-      case 'LiteralPlaceholder':
-        input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'form-input';
-        input.maxLength = 500;
-        input.placeholder = placeholder.label || '';
-        break;
-      
-      case 'LongLiteralPlaceholder':
-        input = document.createElement('textarea');
-        input.className = 'form-textarea';
-        input.rows = 4;
-        input.maxLength = 5000;
-        input.placeholder = placeholder.label || '';
-        break;
-      
-      case 'ExternalUriPlaceholder':
-      case 'TrustyUriPlaceholder':
-      case 'UriPlaceholder':
-        input = document.createElement('input');
-        input.type = 'url';
-        input.className = 'form-input';
-        input.placeholder = placeholder.label || 'https://example.org/...';
-        break;
-      
-      case 'AutoEscapeUriPlaceholder':
-      case 'IntroducedResource':
-      case 'LocalResource':
-        input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'form-input';
-        input.placeholder = placeholder.label || '';
-        break;
-      
-      case 'RestrictedChoicePlaceholder':
-        input = document.createElement('select');
-        input.className = 'form-select';
-        
-        const emptyOption = document.createElement('option');
-        emptyOption.value = '';
-        emptyOption.textContent = 'Select...';
-        input.appendChild(emptyOption);
-        
-        // Use pre-loaded options if available
-        if (placeholder.options && Array.isArray(placeholder.options) && placeholder.options.length > 0) {
-          placeholder.options.forEach(opt => {
-            const option = document.createElement('option');
-            option.value = opt.value || opt;
-            option.textContent = opt.label || opt.value || opt;
-            input.appendChild(option);
-          });
-        }
-        break;
-      
-      case 'GuidedChoicePlaceholder':
-        // For now, use text input (API calls would need CORS handling)
-        input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'form-input';
-        input.placeholder = placeholder.label || 'Type to search...';
-        break;
-      
-      default:
-        input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'form-input';
-        input.placeholder = placeholder.label || '';
-        break;
+    // Try each type until we find a matching component
+    for (const type of types) {
+      const component = FieldComponents[type];
+      if (component) {
+        console.log(`Using component ${type} for placeholder ${placeholder.id}`);
+        return component(placeholder, this.options);
+      }
     }
     
-    // Add validation pattern if specified
-    if (placeholder.hasRegex) {
-      input.pattern = placeholder.hasRegex;
-    }
-    
+    console.warn(`No component for types: ${placeholder.type}`);
+    // Fallback to text input
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-input';
+    input.placeholder = placeholder.label || '';
     return input;
   }
 
   /**
-   * Build form controls (submit/preview buttons)
+   * Build repeatable controls
    */
-  buildFormControls() {
+  buildRepeatableControls(statement, placeholder) {
+    const container = document.createElement('div');
+    container.className = 'repeatable-controls';
+    container.dataset.count = '1';
+    
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'btn-add-field';
+    addBtn.textContent = '+ Add Another';
+    addBtn.onclick = () => {
+      const count = parseInt(container.dataset.count);
+      container.dataset.count = count + 1;
+      
+      const field = this.buildRepeatableField(statement, placeholder, count);
+      container.parentElement.insertBefore(field, container);
+      
+      this.emit('change', this.collectFormData());
+    };
+    
+    container.appendChild(addBtn);
+    return container;
+  }
+
+  /**
+   * Build repeatable field instance
+   */
+  buildRepeatableField(statement, placeholder, index) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'repeatable-field';
+    
+    const input = this.renderInput(placeholder);
+    input.name = `${statement.id}_${index}`;
+    input.id = `field_${statement.id}_${index}`;
+    wrapper.appendChild(input);
+    
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn-remove-field';
+    removeBtn.textContent = '×';
+    removeBtn.onclick = () => wrapper.remove();
+    wrapper.appendChild(removeBtn);
+    
+    return wrapper;
+  }
+
+  /**
+   * Build controls
+   */
+  buildControls() {
     const controls = document.createElement('div');
     controls.className = 'form-controls';
     
@@ -524,7 +527,7 @@ export class FormGenerator {
     previewBtn.type = 'button';
     previewBtn.className = 'btn btn-secondary';
     previewBtn.textContent = 'Preview';
-    previewBtn.addEventListener('click', () => this.handlePreview());
+    previewBtn.onclick = () => this.handlePreview();
     
     const submitBtn = document.createElement('button');
     submitBtn.type = 'submit';
@@ -538,27 +541,29 @@ export class FormGenerator {
   }
 
   /**
-   * Set up event listeners
+   * Setup event listeners
    */
   setupEventListeners() {
     this.formElement.addEventListener('submit', (e) => {
       e.preventDefault();
-      this.handleSubmit();
+      
+      const validation = this.validate();
+      if (!validation.isValid) {
+        console.warn('Validation failed:', validation.errors);
+        return;
+      }
+      
+      this.formData = this.collectFormData();
+      this.emit('submit', { formData: this.formData });
     });
     
     if (this.options.validateOnChange) {
       this.formElement.addEventListener('input', (e) => {
-        this.validateField(e.target);
+        if (e.target.matches('input, select, textarea')) {
+          this.validateField(e.target);
+        }
       });
     }
-  }
-
-  /**
-   * Handle form submission
-   */
-  handleSubmit() {
-    this.formData = this.collectFormData();
-    this.emit('submit', { formData: this.formData });
   }
 
   /**
@@ -570,16 +575,14 @@ export class FormGenerator {
   }
 
   /**
-   * Collect all form data
+   * Collect form data
    */
   collectFormData() {
     const data = {};
-    const form = this.formElement;
+    const inputs = this.formElement.querySelectorAll('input, select, textarea');
     
-    const inputs = form.querySelectorAll('input, select, textarea');
     inputs.forEach(input => {
       if (input.name && input.value) {
-        // Handle multiple values for repeated statements
         if (data[input.name]) {
           if (Array.isArray(data[input.name])) {
             data[input.name].push(input.value);
@@ -596,20 +599,20 @@ export class FormGenerator {
   }
 
   /**
-   * Validate a form field
+   * Validate field
    */
   validateField(field) {
-    if (!field.name) return;
-    
     let isValid = true;
     let errorMessage = '';
     
-    if (field.required && !field.value) {
+    if (field.required && !field.value.trim()) {
       isValid = false;
       errorMessage = 'This field is required';
-    } else if (field.pattern && field.value && !new RegExp(field.pattern).test(field.value)) {
-      isValid = false;
-      errorMessage = 'Invalid format';
+    } else if (field.pattern && field.value) {
+      if (!new RegExp(field.pattern).test(field.value)) {
+        isValid = false;
+        errorMessage = 'Invalid format';
+      }
     } else if (field.type === 'url' && field.value) {
       try {
         new URL(field.value);
@@ -619,21 +622,20 @@ export class FormGenerator {
       }
     }
     
-    const parent = field.closest('.form-field, .statement-field');
+    const parent = field.closest('.form-field');
     if (parent) {
-      if (isValid) {
-        parent.classList.remove('error');
-        const existingError = parent.querySelector('.error-message');
-        if (existingError) existingError.remove();
-      } else {
-        parent.classList.add('error');
-        let errorEl = parent.querySelector('.error-message');
+      parent.classList.toggle('error', !isValid);
+      
+      let errorEl = parent.querySelector('.error-message');
+      if (!isValid) {
         if (!errorEl) {
           errorEl = document.createElement('div');
           errorEl.className = 'error-message';
           parent.appendChild(errorEl);
         }
         errorEl.textContent = errorMessage;
+      } else if (errorEl) {
+        errorEl.remove();
       }
     }
     
@@ -641,31 +643,28 @@ export class FormGenerator {
   }
 
   /**
-   * Validate entire form
+   * Validate form
    */
   validate() {
-    const inputs = this.formElement.querySelectorAll('input, select, textarea');
+    const required = this.formElement.querySelectorAll('[required]');
     let isValid = true;
     const errors = [];
     
-    inputs.forEach(input => {
+    required.forEach(input => {
       if (!this.validateField(input)) {
         isValid = false;
         errors.push({
           field: input.name,
-          message: input.closest('.error-message')?.textContent || 'Validation error'
+          message: 'Validation error'
         });
       }
     });
     
-    return {
-      isValid,
-      errors
-    };
+    return { isValid, errors };
   }
 
   /**
-   * Event emitter
+   * Event system
    */
   on(event, callback) {
     if (this.eventListeners[event]) {
@@ -675,12 +674,12 @@ export class FormGenerator {
 
   emit(event, data) {
     if (this.eventListeners[event]) {
-      this.eventListeners[event].forEach(callback => callback(data));
+      this.eventListeners[event].forEach(cb => cb(data));
     }
   }
 
   /**
-   * Destroy and clean up
+   * Cleanup
    */
   destroy() {
     if (this.formElement) {
@@ -688,7 +687,6 @@ export class FormGenerator {
     }
     this.formElement = null;
     this.formData = {};
-    this.eventListeners = { change: [], submit: [], preview: [] };
   }
 }
 
