@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nanopub Creator - WASM Demo</title>
+  <title>Nanopub Creator - Demo</title>
   <link rel="stylesheet" href="../src/styles/creator.css">
   <style>
     body {
@@ -22,6 +22,24 @@
     .subtitle {
       color: #666;
       margin-bottom: 30px;
+    }
+    
+    .demo-notice {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .demo-notice h3 {
+      margin: 0 0 10px 0;
+      color: #856404;
+    }
+    
+    .demo-notice p {
+      margin: 5px 0;
+      color: #856404;
     }
     
     .section {
@@ -98,11 +116,7 @@
       font-size: 0.95em;
       transition: all 0.2s;
       margin-right: 10px;
-    }
-    
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+      margin-bottom: 10px;
     }
     
     .btn-primary {
@@ -111,7 +125,7 @@
     }
     
     .btn-primary:hover:not(:disabled) {
-      background: #9e2664;
+      background: #9d2563;
     }
     
     .btn-secondary {
@@ -120,36 +134,27 @@
     }
     
     .btn-secondary:hover:not(:disabled) {
-      background: #5a6268;
+      background: #545b62;
     }
     
     .btn-outline {
       background: white;
-      color: #BE2E78;
-      border: 2px solid #BE2E78;
+      border: 2px solid #6c757d;
+      color: #6c757d;
     }
     
     .btn-outline:hover:not(:disabled) {
-      background: #BE2E78;
+      background: #6c757d;
       color: white;
     }
     
-    .profile-info {
-      background: #f8f9fa;
-      padding: 15px;
-      border-radius: 6px;
-      margin-top: 15px;
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
     
-    .profile-info p {
-      margin: 8px 0;
-    }
-    
-    .profile-actions {
-      margin-top: 15px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
+    .hidden {
+      display: none !important;
     }
     
     .help-text {
@@ -158,98 +163,166 @@
       margin-top: 5px;
     }
     
-    .hidden {
-      display: none;
+    .badge {
+      font-size: 0.7em;
+      padding: 3px 8px;
+      border-radius: 10px;
+      background: #17a2b8;
+      color: white;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     
-    .loading {
-      text-align: center;
-      padding: 20px;
-      color: #666;
+    .badge-wasm {
+      background: #6f42c1;
     }
     
-    #template-container {
-      min-height: 200px;
-    }
-    
-    .template-loaded {
-      border-left: 4px solid #BE2E78;
-      padding-left: 16px;
-    }
-    
-    .error-message {
-      background: #f8d7da;
-      color: #721c24;
+    .success-message, .error-message, .info-message, .warning-message {
       padding: 12px;
       border-radius: 6px;
-      margin: 10px 0;
+      margin-top: 10px;
     }
     
     .success-message {
       background: #d4edda;
       color: #155724;
-      padding: 12px;
-      border-radius: 6px;
-      margin: 10px 0;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
     }
     
     .info-message {
       background: #d1ecf1;
       color: #0c5460;
-      padding: 12px;
+      border: 1px solid #bee5eb;
+    }
+    
+    .warning-message {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+    
+    .file-input-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .file-input-wrapper input[type=file] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+    
+    .profile-info {
+      background: #f8f9fa;
+      padding: 15px;
       border-radius: 6px;
-      margin: 10px 0;
+      margin-bottom: 15px;
+    }
+    
+    .profile-info p {
+      margin: 8px 0;
+    }
+    
+    .profile-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
     }
     
     .key-preview {
-      font-family: monospace;
-      font-size: 0.75em;
-      background: #f8f9fa;
-      padding: 8px;
+      background: #282c34;
+      color: #abb2bf;
+      padding: 10px;
       border-radius: 4px;
-      margin-top: 5px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.8em;
       word-break: break-all;
-      max-height: 100px;
-      overflow-y: auto;
+      margin-top: 10px;
     }
-
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-size: 0.75em;
-      font-weight: 600;
-      margin-left: 8px;
+    
+    .loading {
+      text-align: center;
+      color: #666;
+      padding: 40px;
+      font-style: italic;
     }
-
-    .badge-wasm {
-      background: #e7f3ff;
-      color: #0066cc;
-    }
-
-    .file-input-wrapper {
-      position: relative;
-      overflow: hidden;
-      display: inline-block;
-    }
-
-    .file-input-wrapper input[type=file] {
-      position: absolute;
-      left: -9999px;
-    }
-
+    
     #messages {
       position: fixed;
       top: 20px;
       right: 20px;
+      z-index: 1000;
       max-width: 400px;
-      z-index: 2000;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+    }
+    
+    .download-info {
+      background: #e7f3ff;
+      padding: 15px;
+      border-radius: 6px;
+      border-left: 4px solid #0066cc;
+      margin-top: 15px;
+    }
+    
+    .download-info h4 {
+      margin: 0 0 10px 0;
+      color: #0066cc;
+    }
+    
+    .download-info ol {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    
+    .download-info code {
+      background: #f5f5f5;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: monospace;
     }
   </style>
 </head>
 <body>
-  <h1>Nanopub Creator <span class="badge badge-wasm">WASM</span></h1>
-  <p class="subtitle">Create, sign, and publish nanopublications using nanopub-rs WASM</p>
+  <h1>Nanopub Creator <span class="badge badge-wasm">WASM</span> <span class="badge">Demo</span></h1>
+  <p class="subtitle">Create and sign nanopublications using nanopub-rs WASM</p>
+
+  <div class="demo-notice">
+    <h3>📌 GitHub Pages Demo Mode</h3>
+    <p>This demo will <strong>sign your nanopublication</strong> and download it as a <code>.trig</code> file.</p>
+    <p>To publish to the nanopub network, you'll need to upload it manually or use the library in a platform with a backend (like Science Live or Zotero).</p>
+  </div>
 
   <div id="messages"></div>
 
@@ -334,10 +407,26 @@
       👁️ Preview
       <div style="margin-left: auto; display: flex; gap: 10px;">
         <button id="copy-btn" class="btn btn-secondary">Copy to Clipboard</button>
-        <button id="publish-btn" class="btn btn-primary">Sign & Publish</button>
+        <button id="sign-download-btn" class="btn btn-primary">Sign & Download</button>
       </div>
     </h2>
     <pre id="preview-text" style="background: #f5f5f5; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 0.85em; max-height: 400px;"></pre>
+    
+    <div class="download-info">
+      <h4>📥 What happens next?</h4>
+      <p>When you click "Sign & Download":</p>
+      <ol>
+        <li>Your nanopub will be signed with your private key</li>
+        <li>A <code>.trig</code> file will be downloaded to your computer</li>
+        <li>You can then upload it to the nanopub network</li>
+      </ol>
+      <p><strong>To publish manually:</strong></p>
+      <ol>
+        <li>Visit <a href="https://nanodash.knowledgepixels.com/" target="_blank">Nanodash</a></li>
+        <li>Go to "Publish" → "Upload Signed Nanopub"</li>
+        <li>Upload your downloaded <code>.trig</code> file</li>
+      </ol>
+    </div>
   </div>
 
   <script type="module">
@@ -349,80 +438,61 @@
     // Initialize creator
     async function initCreator() {
       try {
-        const statusEl = document.getElementById('profile-status');
-        statusEl.textContent = 'Initializing WASM...';
-        statusEl.className = 'status loading';
-
+        // No publishServer needed for download-only mode
         creator = new NanopubCreator({
-          publishServer: 'https://np.petapico.org/'
+          publishServer: null
         });
 
-        // Wait for WASM to initialize
-        await creator.ensureWasm();
-
-        // Setup event handlers
-        creator.on('submit', ({ trigContent, formData }) => {
-          console.log('Generated nanopub:', trigContent);
-          currentTrigContent = trigContent;
-          
-          showToast('✓ Nanopublication created!', 'success');
-          
-          // Show preview section
-          showPreview(trigContent);
-          
-          // Scroll to preview
-          document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
+        // Listen for form changes
+        creator.on('change', (data) => {
+          console.log('Form data changed:', data);
         });
 
-        creator.on('publish', ({ uri, signedContent }) => {
-          showToast(`✓ Published successfully! URI: ${uri}`, 'success');
-          console.log('Published at:', uri);
-          console.log('Signed content:', signedContent);
-          
-          setTimeout(() => {
-            if (confirm('Open published nanopublication in new tab?')) {
-              window.open(uri, '_blank');
-            }
-          }, 500);
+        // Listen for nanopub generation
+        creator.on('submit', (data) => {
+          console.log('Generated nanopub:', data.trigContent);
+          currentTrigContent = data.trigContent;
+          showPreview(data.trigContent);
         });
 
-        creator.on('error', ({ type, error }) => {
-          console.error('Error:', type, error);
-          showToast(`Error (${type}): ${error.message}`, 'error');
+        // Listen for errors
+        creator.on('error', (data) => {
+          console.error('Error:', data.type, data.error);
+          showToast(`Error (${data.type}): ${data.error.message}`, 'error');
         });
 
+        // Listen for profile needed
         creator.on('profileNeeded', () => {
-          showToast('Please setup your profile first to sign nanopublications!', 'warning');
-          document.getElementById('profile-setup').scrollIntoView({ behavior: 'smooth' });
+          showToast('Please setup your profile first to sign nanopublications', 'warning');
         });
 
-        // Check profile status
+        console.log('✓ Creator initialized successfully');
         updateProfileStatus();
         
-        console.log('✓ Creator initialized successfully');
-        
       } catch (error) {
-        console.error('Initialization failed:', error);
-        showToast(`Failed to initialize: ${error.message}`, 'error');
+        console.error('Failed to initialize:', error);
+        showToast('Failed to initialize: ' + error.message, 'error');
       }
     }
 
-    // Update profile status
+    // Update profile status display
     function updateProfileStatus() {
       const statusEl = document.getElementById('profile-status');
       const setupDiv = document.getElementById('profile-setup');
       const infoDiv = document.getElementById('profile-info');
       
-      if (creator && creator.hasProfile()) {
+      if (creator.hasProfile()) {
         const profile = creator.getProfile();
         
-        statusEl.textContent = 'Configured ✓';
+        statusEl.textContent = 'Configured';
         statusEl.className = 'status success';
         
         setupDiv.classList.add('hidden');
         infoDiv.classList.remove('hidden');
         
+        // Update profile display
         document.getElementById('profile-name').textContent = profile.name;
+        
         const orcidEl = document.getElementById('profile-orcid');
         if (profile.orcid) {
           orcidEl.textContent = profile.orcid;
@@ -498,7 +568,7 @@
         
         creator.importKeys(profileData);
         updateProfileStatus();
-        messageEl.innerHTML = '<div class="success-message">Profile imported successfully!</div>';
+        messageEl.innerHTML = '<div class="success-message">✓ Profile imported successfully!</div>';
         
         setTimeout(() => {
           messageEl.innerHTML = '';
@@ -506,52 +576,55 @@
         
       } catch (error) {
         console.error('Import failed:', error);
-        messageEl.innerHTML = `<div class="error-message">Failed to import: ${error.message}</div>`;
+        messageEl.innerHTML = `<div class="error-message">Import failed: ${error.message}</div>`;
       }
       
-      // Reset file input
       e.target.value = '';
     });
 
-    // Export keys
+    // Export profile
     document.getElementById('export-btn').addEventListener('click', () => {
-      const keys = creator.exportKeys();
-      const profile = creator.getProfile();
-      
-      const exportData = {
-        name: profile.name,
-        orcid: profile.orcid,
-        privateKey: keys.privateKey,
-        publicKey: keys.publicKey,
-        exportDate: new Date().toISOString(),
-        version: '1.0'
-      };
-      
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `nanopub-profile-${Date.now()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      
-      showToast('✓ Profile exported!', 'success');
+      try {
+        const profile = creator.getProfile();
+        const keys = creator.exportKeys();
+        
+        const exportData = {
+          name: profile.name,
+          orcid: profile.orcid,
+          privateKey: keys.privateKey,
+          publicKey: keys.publicKey,
+          exportedAt: new Date().toISOString()
+        };
+        
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `nanopub-profile-${profile.name.replace(/\s+/g, '-').toLowerCase()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        showToast('✓ Profile exported!', 'success');
+      } catch (error) {
+        console.error('Export failed:', error);
+        showToast('Export failed: ' + error.message, 'error');
+      }
     });
 
     // Clear profile
     document.getElementById('clear-btn').addEventListener('click', () => {
-      if (confirm('⚠️ Are you sure? This will delete your keys from this browser.\n\nMake sure you have exported your profile first if you want to keep it!')) {
+      if (confirm('Are you sure you want to clear your profile and keys? Make sure to export first if you want to keep them.')) {
         creator.clearCredentials();
         updateProfileStatus();
-        showToast('Profile cleared from browser.', 'info');
+        showToast('Profile cleared', 'info');
       }
     });
 
     // Load template
     document.getElementById('load-template-btn').addEventListener('click', async () => {
       const uri = document.getElementById('template-uri').value.trim();
-      const messageEl = document.getElementById('template-message');
       const container = document.getElementById('template-container');
+      const messageEl = document.getElementById('template-message');
       const btn = document.getElementById('load-template-btn');
       
       if (!uri) {
@@ -597,14 +670,14 @@
       });
     });
 
-    document.getElementById('publish-btn').addEventListener('click', () => {
-      publishNanopub();
+    document.getElementById('sign-download-btn').addEventListener('click', () => {
+      signAndDownload();
     });
 
-    // Publish nanopub
-    async function publishNanopub() {
+    // Sign and download nanopub
+    async function signAndDownload() {
       if (!currentTrigContent) {
-        showToast('No nanopublication to publish', 'warning');
+        showToast('No nanopublication to sign', 'warning');
         return;
       }
 
@@ -613,12 +686,44 @@
         return;
       }
 
+      const btn = document.getElementById('sign-download-btn');
+      
       try {
-        showToast('Signing and publishing...', 'info');
-        await creator.publish(currentTrigContent);
+        btn.disabled = true;
+        btn.textContent = 'Signing...';
+        showToast('🔐 Signing nanopublication...', 'info');
+        
+        // Use the publish method which will sign the nanopub
+        // Since publishServer is null, it will just sign without publishing
+        const result = await creator.publish(currentTrigContent);
+        
+        // Get signed content
+        const signedContent = result.signedContent;
+        
+        // Download the signed nanopub
+        const profile = creator.getProfile();
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `nanopub-signed-${timestamp}.trig`;
+        
+        const blob = new Blob([signedContent], { type: 'application/trig' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        showToast('✅ Signed nanopub downloaded!', 'success');
+        
+        // Update preview with signed content
+        document.getElementById('preview-text').textContent = signedContent;
+        
       } catch (error) {
-        console.error('Publish failed:', error);
-        showToast(`Publish failed: ${error.message}`, 'error');
+        console.error('Sign failed:', error);
+        showToast(`Sign failed: ${error.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sign & Download';
       }
     }
 

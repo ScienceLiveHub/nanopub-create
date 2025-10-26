@@ -190,7 +190,9 @@ class NanopubCreator {
 
     this.credentials = {
       privateKey: profileData.privateKey,
-      publicKey: profileData.publicKey
+      publicKey: profileData.publicKey,
+      orcid: this.normalizeOrcid(profileData.orcid),
+      name: profileData.name
     };
 
     this.saveCredentials();
@@ -323,6 +325,7 @@ class NanopubCreator {
 
   /**
    * Sign and publish nanopublication
+   * If publishServer is null, only signs and returns content for download
    */
   async publish(trigContent) {
     await this.ensureWasm();
@@ -362,13 +365,29 @@ class NanopubCreator {
 
       console.log('✅ Signed successfully');
       console.log('  Signed type:', typeof signedNp);
+      
+      // Get signed content
+      const signedContent = signedNp.rdf();
+      
+      // Check if we should publish or just return signed content
+      if (!this.options.publishServer) {
+        console.log('📥 Download-only mode (no publish server configured)');
+        
+        this.emit('publish', {
+          uri: null,
+          signedContent: signedContent,
+          downloadOnly: true
+        });
+
+        return { signedContent: signedContent, downloadOnly: true };
+      }
+
       console.log('📤 Publishing to network...');
       console.log('   Server:', this.options.publishServer);
 
       // publish() in Rust takes: publish(Option<profile>, Option<server_url>)
       // In WASM/JS this becomes: publish(profile_or_null, server_or_null)
-      // Pass null for profile (already signed) and server URL string
-      const result = await signedNp.publish(null, this.options.publishServer);
+      const result = await signedNp.publish(npProfile, this.options.publishServer);
       
       console.log('✅ Published successfully!');
       console.log('🌐 Result:', result);
@@ -378,13 +397,13 @@ class NanopubCreator {
       
       this.emit('publish', {
         uri: uri,
-        signedContent: typeof signedNp === 'string' ? signedNp : signedNp.toString()
+        signedContent: signedContent
       });
 
-      return { uri: uri, nanopub_uri: uri };
+      return { uri: uri, nanopub_uri: uri, signedContent: signedContent };
 
     } catch (error) {
-      console.error('❌ Publish failed:', error);
+      console.error('❌ Sign/Publish failed:', error);
       console.error('Error details:', error.message);
       this.emit('error', { type: 'publish', error });
       throw error;

@@ -29,8 +29,10 @@ export class NanopubBuilder {
     this.metadata = metadata; // Store for use in resolveValue
     
     const timestamp = new Date().toISOString();
-    const tempId = `temp-${Date.now()}-${this.generateRandomId()}`;
-    const baseUri = `https://w3id.org/np/${tempId}`;
+    // IMPORTANT: Use the exact temp URI format that nanopub-rs expects
+    // This MUST be "http://purl.org/nanopub/temp/" not "https://w3id.org/np/temp-..."
+    const tempId = this.generateRandomId();
+    const baseUri = `http://purl.org/nanopub/temp/${tempId}`;
     
     // Build the nanopub structure
     const prefixes = this.buildPrefixes(tempId);
@@ -65,11 +67,11 @@ ${pubinfo}
    * Build prefix declarations
    */
   buildPrefixes(tempId) {
-    const baseUri = `https://w3id.org/np/${tempId}`;
+    const baseUri = `http://purl.org/nanopub/temp/${tempId}`;
     
     const prefixes = [
       `@prefix this: <${baseUri}> .`,
-      `@prefix sub: <${baseUri}/> .`,
+      `@prefix sub: <${baseUri}#> .`,
       '@prefix np: <http://www.nanopub.org/nschema#> .',
       '@prefix dct: <http://purl.org/dc/terms/> .',
       '@prefix nt: <https://w3id.org/np/o/ntemplate/> .',
@@ -107,233 +109,101 @@ ${pubinfo}
   }
 
   /**
-   * Build assertion graph from form data and template statements
+   * Build assertion graph from form data
    */
   buildAssertion(baseUri, formData, tempId) {
-    const statements = [];
-    
-    if (!this.template.statements || this.template.statements.length === 0) {
-      return `sub:assertion {
-  # No statements defined in template
-}`;
-    }
-    
-    console.log('Building assertion with formData:', formData);
-    console.log('Template statements:', this.template.statements);
-    
-    // Debug: Show what each statement looks like
-    this.template.statements.forEach((stmt, i) => {
-      console.log(`Statement ${i}:`, {
-        id: stmt.id,
-        subject: stmt.subject,
-        predicate: stmt.predicate,
-        object: stmt.object
-      });
-    });
-    
-    // Group statements by subject for compact output
-    const grouped = {};
-    
-    for (const statement of this.template.statements) {
-      const subject = this.resolveValue(statement.subject, formData, 'subject', this.metadata);
-      const predicate = this.resolveValue(statement.predicate, formData, 'predicate', this.metadata);
-      const object = this.resolveValue(statement.object, formData, 'object', this.metadata);
-      
-      if (!subject || !predicate || !object) {
-        console.warn('Incomplete triple:', statement);
-        continue;
-      }
-      
-      // Use 'a' shorthand for rdf:type
-      const compactPredicate = predicate === 'rdf:type' ? 'a' : predicate;
-      
-      if (!grouped[subject]) {
-        grouped[subject] = [];
-      }
-      grouped[subject].push({ predicate: compactPredicate, object });
-    }
-    
-    // Build compact output
-    const output = [];
-    for (const [subject, predicates] of Object.entries(grouped)) {
-      if (predicates.length === 1) {
-        // Single predicate - simple format
-        output.push(`  ${subject} ${predicates[0].predicate} ${predicates[0].object} .`);
-      } else {
-        // Multiple predicates - use semicolon grouping
-        output.push(`  ${subject} ${predicates[0].predicate} ${predicates[0].object};`);
-        for (let i = 1; i < predicates.length - 1; i++) {
-          output.push(`    ${predicates[i].predicate} ${predicates[i].object};`);
-        }
-        output.push(`    ${predicates[predicates.length - 1].predicate} ${predicates[predicates.length - 1].object} .`);
-      }
-    }
-    
-    if (output.length === 0) {
-      return `sub:assertion {
-  # No data provided
-}`;
-    }
+    const statements = this.buildStatements(formData);
     
     return `sub:assertion {
-${output.join('\n')}
+${statements.join('\n')}
 }`;
   }
 
   /**
-   * Build a triple from statement and form data
+   * Build individual RDF statements from form data
    */
-  buildTriple(statement, formData) {
-    console.log(`\nBuilding triple for statement ${statement.id}:`);
+  buildStatements(formData) {
+    const statements = [];
     
-    const subject = this.resolveValue(statement.subject, formData, 'subject');
-    console.log(`  subject: ${statement.subject} → ${subject}`);
-    
-    const predicate = this.resolveValue(statement.predicate, formData, 'predicate');
-    console.log(`  predicate: ${statement.predicate} → ${predicate}`);
-    
-    const object = this.resolveValue(statement.object, formData, 'object');
-    console.log(`  object: ${statement.object} → ${object}`);
-    
-    if (!subject || !predicate || !object) {
-      console.warn('Incomplete triple:', statement);
-      return null;
-    }
-    
-    const triple = `${subject} ${predicate} ${object}`;
-    console.log(`  → Triple: ${triple}`);
-    return triple;
-  }
-
-  /**
-   * Resolve a value - either from form data (placeholder) or as literal
-   */
-  resolveValue(value, formData, role = null, metadata = {}) {
-    if (!value) return null;
-    
-    console.log(`    [resolveValue] value="${value}", role="${role}"`);
-    
-    // Handle special template placeholders
-    if (value === 'nt:ASSERTION') {
-      console.log(`    [resolveValue] ✅ Replacing nt:ASSERTION with sub:assertion`);
-      return 'sub:assertion';
-    }
-    
-    if (value === 'nt:CREATOR') {
-      const creator = metadata.creator || this.metadata?.creator || 'orcid:0000-0000-0000-0000';
-      const creatorRef = creator.startsWith('https://orcid.org/') 
-        ? 'orcid:' + creator.split('/').pop()
-        : creator;
-      console.log(`    [resolveValue] ✅ Replacing nt:CREATOR with ${creatorRef}`);
-      return creatorRef;
-    }
-    
-    // Check if it's a placeholder reference (like sub:article, sub:cited, sub:cites)
-    const cleanValue = value.replace(/^sub:/, '');
-    console.log(`    [resolveValue] cleanValue="${cleanValue}"`);
-    
-    // Direct lookup in form data
-    if (formData[cleanValue]) {
-      console.log(`    [resolveValue] Found direct match in formData!`);
-      return this.formatValue(formData[cleanValue]);
-    }
-    
-    // Check if it's used in any statement (st01_subject, st02_object, etc.)
-    // Form data structure is like: { st02_subject: "...", st02_predicate: "...", st02_object: "..." }
-    console.log(`    [resolveValue] Checking statement-based keys...`);
-    for (const [key, val] of Object.entries(formData)) {
-      console.log(`      Checking key: ${key}`);
-      // Extract statement parts (e.g., "st02_subject" -> "subject")
-      const parts = key.split('_');
-      if (parts.length === 2) {
-        const [stmtId, keyRole] = parts;
-        console.log(`        Statement ID: ${stmtId}, Role: ${keyRole}`);
-        
-        // Find the template statement - try both with and without sub: prefix
-        let statement = this.template.statements?.find(s => s.id === `sub:${stmtId}`);
-        if (!statement) {
-          statement = this.template.statements?.find(s => s.id === stmtId);
+    // Group form data by statement prefix (st01, st02, etc.)
+    const statementsData = {};
+    for (const [key, value] of Object.entries(formData)) {
+      if (!value) continue; // Skip empty values
+      
+      // Extract statement ID and part (st01_subject, st01_predicate, etc.)
+      const match = key.match(/^(st\d+)_(subject|predicate|object)$/);
+      if (match) {
+        const [, stId, part] = match;
+        if (!statementsData[stId]) {
+          statementsData[stId] = {};
         }
+        statementsData[stId][part] = value;
+      }
+    }
+    
+    // Build each statement
+    for (const [stId, parts] of Object.entries(statementsData)) {
+      if (parts.subject && parts.predicate && parts.object) {
+        const subject = this.formatValue(parts.subject, 'subject');
+        const predicate = this.formatValue(parts.predicate, 'predicate');
+        const object = this.formatValue(parts.object, 'object');
         
-        if (statement) {
-          console.log(`        Found statement:`, statement);
-          
-          // Check if this placeholder matches the statement role
-          // Both "article" and "sub:article" should match
-          const stmtSubject = statement.subject?.replace(/^sub:/, '');
-          const stmtPredicate = statement.predicate?.replace(/^sub:/, '');
-          const stmtObject = statement.object?.replace(/^sub:/, '');
-          
-          console.log(`        Comparing: cleanValue="${cleanValue}" with role="${keyRole}"`);
-          console.log(`          statement.subject="${stmtSubject}" (orig: ${statement.subject})`);
-          console.log(`          statement.predicate="${stmtPredicate}" (orig: ${statement.predicate})`);
-          console.log(`          statement.object="${stmtObject}" (orig: ${statement.object})`);
-          
-          // Check if this value matches the role in the statement
-          if (keyRole === 'subject' && stmtSubject === cleanValue) {
-            console.log(`        ✓ Match! subject matches`);
-            return this.formatValue(val);
-          } else if (keyRole === 'predicate' && stmtPredicate === cleanValue) {
-            console.log(`        ✓ Match! predicate matches`);
-            return this.formatValue(val);
-          } else if (keyRole === 'object' && stmtObject === cleanValue) {
-            console.log(`        ✓ Match! object matches`);
-            return this.formatValue(val);
-          }
+        // Check if this statement has a type (from template)
+        const hasType = this.hasStatementType(stId);
+        
+        if (hasType) {
+          // Multi-line format with type
+          statements.push(`  ${subject} a ${hasType};`);
+          statements.push(`    ${predicate} ${object} .`);
         } else {
-          console.log(`        Statement not found for ID: ${stmtId}`);
+          // Single-line format
+          statements.push(`  ${subject} ${predicate} ${object} .`);
         }
       }
     }
     
-    // Check if it's a placeholder in template
-    const placeholder = this.template.placeholders?.find(p => p.id === cleanValue);
-    if (placeholder && formData[placeholder.id]) {
-      console.log(`    [resolveValue] Found placeholder match!`);
-      return this.formatValue(formData[placeholder.id]);
-    }
-    
-    // It's a fixed value - return as is (adding angle brackets if it's a URI)
-    console.log(`    [resolveValue] Using as fixed value`);
-    if (value.startsWith('http://') || value.startsWith('https://')) {
-      return `<${value}>`;
-    }
-    
-    // If it has a colon, it's a prefixed name
-    if (value.includes(':')) {
-      return value;
-    }
-    
-    // Otherwise return with angle brackets
-    return `<${value}>`;
+    return statements;
   }
 
   /**
-   * Format a value based on its type
+   * Check if a statement has a type declaration in the template
    */
-  formatValue(value) {
+  hasStatementType(stId) {
+    if (!this.template.statements) return null;
+    
+    const statement = this.template.statements.find(st => st.id === stId);
+    if (!statement || !statement.subjectType) return null;
+    
+    return this.formatValue(statement.subjectType, 'type');
+  }
+
+  /**
+   * Format a value for RDF (URI or literal)
+   */
+  formatValue(value, position = 'any') {
     if (!value) return '""';
     
-    // If it's already formatted (starts with < or "), return as is
-    if (value.startsWith('<') || value.startsWith('"')) {
-      return value;
-    }
-    
-    // If it looks like a URI
+    // Check if it's a URI (starts with http:// or https://)
     if (value.startsWith('http://') || value.startsWith('https://')) {
       return `<${value}>`;
     }
     
-    // If it has a colon and looks like a prefixed name
-    if (value.includes(':') && !value.includes(' ')) {
+    // Check if it's a prefixed name (contains : but not http://)
+    if (value.includes(':') && !value.includes('://')) {
+      return value; // Already prefixed
+    }
+    
+    // Check if value is a URI in angle brackets already
+    if (value.startsWith('<') && value.endsWith('>')) {
       return value;
     }
     
-    // Otherwise it's a string literal
-    // Use triple quotes for multi-line strings
-    if (value.includes('\n')) {
+    // For objects, check if it should be a literal with triple quotes
+    if (position === 'object' && (value.includes('\n') || value.length > 100)) {
       return `"""${value}"""`;
     }
+    
+    // Otherwise, it's a literal string
     return `"${value}"`;
   }
 
@@ -341,15 +211,10 @@ ${output.join('\n')}
    * Build provenance graph
    */
   buildProvenance(baseUri, formData, metadata) {
-    const creator = metadata.creator || 'orcid:0000-0000-0000-0000';
-    
-    // Use ORCID without full URL if it's already a full URL
-    const creatorRef = creator.startsWith('https://orcid.org/') 
-      ? 'orcid:' + creator.split('/').pop()
-      : creator;
+    const creator = metadata.creator || 'https://orcid.org/0000-0000-0000-0000';
     
     return `sub:provenance {
-  sub:assertion prov:wasAttributedTo ${creatorRef} .
+  sub:assertion prov:wasAttributedTo ${this.formatValue(creator)} .
 }`;
   }
 
@@ -357,142 +222,120 @@ ${output.join('\n')}
    * Build publication info graph
    */
   buildPubinfo(baseUri, timestamp, metadata) {
-    console.log('🏗️ Building pubinfo with formData keys:', Object.keys(this.formData || {}));
-    console.log('   Full formData:', this.formData);
-    
-    const creator = metadata.creator || 'orcid:0000-0000-0000-0000';
+    const creator = metadata.creator || 'https://orcid.org/0000-0000-0000-0000';
     const creatorName = metadata.creatorName || 'Unknown';
     
-    // Use ORCID without full URL if it's already a full URL
-    const creatorRef = creator.startsWith('https://orcid.org/') 
-      ? 'orcid:' + creator.split('/').pop()
-      : creator;
+    const statements = [
+      `  ${this.formatValue(creator)} foaf:name "${creatorName}" .`,
+      '',
+      `  this: dct:created "${timestamp}"^^xsd:dateTime;`,
+      `    dct:creator ${this.formatValue(creator)};`,
+      `    dct:license <https://creativecommons.org/licenses/by/4.0/>`
+    ];
     
-    const statements = [];
-    
-    // Creator name
-    statements.push(`  ${creatorRef} foaf:name "${creatorName}" .`);
-    statements.push('');
-    
-    // Generate dynamic label from template pattern if available
-    let label = this.template.label || 'Nanopublication';
-    if (this.template.labelPattern) {
-      console.log('Applying label pattern:', this.template.labelPattern);
-      console.log('Form data for pattern:', this.formData);
-      
-      // Replace ${placeholder} with actual values from form data
-      label = this.template.labelPattern.replace(/\$\{(\w+)\}/g, (match, placeholder) => {
-        console.log(`  🔍 Looking for placeholder: "${placeholder}"`);
-        
-        // Try direct lookup first (e.g., formData["article"])
-        let value = this.formData?.[placeholder];
-        console.log(`    Direct lookup formData["${placeholder}"]:`, value);
-        
-        // If not found, check if any formData key contains this placeholder name
-        if (!value) {
-          // Look for keys like "st01_subject" where subject refers to "article"
-          for (const [key, val] of Object.entries(this.formData || {})) {
-            console.log(`    Checking formData["${key}"] = ${val}`);
-            
-            // Check if this key's statement uses the placeholder
-            const parts = key.split('_'); // e.g., ["st01", "subject"]
-            if (parts.length === 2) {
-              const stmtId = parts[0]; // "st01"
-              const role = parts[1];   // "subject"
-              
-              // Find the statement
-              const stmt = this.template.statements?.find(s => s.id?.replace(/^sub:/, '') === stmtId);
-              if (stmt) {
-                const stmtValue = stmt[role]?.replace(/^sub:/, '');
-                console.log(`      Statement ${stmtId} ${role} = "${stmtValue}"`);
-                
-                if (stmtValue === placeholder) {
-                  value = val;
-                  console.log(`    ✅ Found ${placeholder} in ${key}:`, value);
-                  break;
-                }
-              }
-            }
-          }
-        }
-        
-        if (value) {
-          // If it's a URI, try to get a human-readable label
-          if (value.startsWith('http://') || value.startsWith('https://')) {
-            // Try to find label from template
-            const label = this.template.labels?.[value];
-            if (label) {
-              console.log(`    🏷️ Found label for URI: "${label}"`);
-              // Extract just the first part before " - " if present
-              const shortLabel = label.split(' - ')[0].trim();
-              return shortLabel;
-            }
-            
-            // Extract from URI path as fallback
-            const parts = value.split(/[#\/]/);
-            const lastPart = parts[parts.length - 1] || parts[parts.length - 2];
-            if (lastPart) {
-              // Convert camelCase to spaces
-              const readable = lastPart
-                .replace(/([a-z])([A-Z])/g, '$1 $2')
-                .toLowerCase();
-              console.log(`    📝 Extracted from URI: "${readable}"`);
-              return readable;
-            }
-          }
-          
-          // Extract DOI number from URL if it's a DOI
-          if (value.includes('doi.org/')) {
-            const extracted = value.split('doi.org/')[1];
-            console.log(`    📄 Extracted DOI: ${extracted}`);
-            return extracted;
-          }
-          console.log(`    ✅ Using value: ${value}`);
-          return value;
-        }
-        console.warn(`    ⚠️ Placeholder ${placeholder} not found, keeping as is`);
-        return match;
-      });
-      
-      console.log('🏷️ Final label after pattern replacement:', label);
-    } else {
-      console.log('ℹ️ No label pattern, using template label:', label);
-    }
-    
-    // Basic metadata with template reference
-    statements.push(`  this: dct:created "${timestamp}"^^xsd:dateTime;`);
-    statements.push(`    dct:creator ${creatorRef};`);
-    statements.push(`    dct:license <https://creativecommons.org/licenses/by/4.0/>;`);
-    
-    // Nanopub types from template - IMPORTANT!
-    console.log('📝 Adding types to pubinfo:', this.template.types);
+    // Add nanopub types if present in template
     if (this.template.types && this.template.types.length > 0) {
-      const types = this.template.types.map(t => `<${t}>`).join(', ');
-      console.log('  ✅ Types formatted:', types);
-      statements.push(`    npx:hasNanopubType ${types};`);
-    } else {
-      console.warn('  ⚠️ No types to add!');
+      console.log('📝 Adding types to pubinfo:', this.template.types);
+      const typesFormatted = this.template.types.map(t => `<${t}>`).join(', ');
+      console.log('  ✅ Types formatted:', typesFormatted);
+      statements.push(`;
+    npx:hasNanopubType ${typesFormatted}`);
     }
     
-    // Optional: wasCreatedAt (your platform URL)
-    if (metadata.createdAt) {
-      statements.push(`    npx:wasCreatedAt <${metadata.createdAt}>;`);
+    // Add label if label pattern exists
+    if (this.template.labelPattern) {
+      const label = this.generateLabel();
+      statements.push(`;
+    rdfs:label "${label}"`);
     }
     
-    // Label (dynamic or from template)
-    statements.push(`    rdfs:label "${label}";`);
-    
-    // Template reference - CRITICAL for nanodash compatibility
+    // Add template URI if present
     if (this.templateUri) {
-      statements.push(`    nt:wasCreatedFromTemplate <${this.templateUri}> .`);
-    } else {
-      // Remove trailing semicolon if no template URI
-      const lastIdx = statements.length - 1;
-      statements[lastIdx] = statements[lastIdx].replace(/;$/, ' .');
+      statements.push(`;
+    nt:wasCreatedFromTemplate <${this.templateUri}>`);
     }
+    
+    statements.push(' .');
     
     return `sub:pubinfo {
 ${statements.join('\n')}
 }`;
+  }
+
+  /**
+   * Generate label from pattern by replacing placeholders with form data
+   */
+  generateLabel() {
+    if (!this.template.labelPattern) return 'Untitled';
+    
+    let label = this.template.labelPattern;
+    console.log('Applying label pattern:', label);
+    console.log('Form data for pattern:', this.formData);
+    
+    // Find all ${placeholder} patterns
+    const placeholderRegex = /\$\{(\w+)\}/g;
+    const matches = [...label.matchAll(placeholderRegex)];
+    
+    for (const match of matches) {
+      const placeholderName = match[1];
+      console.log(`  🔍 Looking for placeholder: "${placeholderName}"`);
+      
+      // Try to find value in formData
+      let value = null;
+      
+      // First try direct lookup
+      if (this.formData[placeholderName]) {
+        value = this.formData[placeholderName];
+        console.log(`    Direct lookup formData["${placeholderName}"]:`, value);
+      }
+      
+      // If not found, look in statement parts (st01_subject, st02_object, etc.)
+      if (!value) {
+        for (const [key, val] of Object.entries(this.formData)) {
+          console.log(`    Checking formData["${key}"] = ${val}`);
+          
+          // Check if this key is a statement part
+          const stMatch = key.match(/^(st\d+)_(subject|predicate|object)$/);
+          if (stMatch) {
+            const [, stId, part] = stMatch;
+            console.log(`      Statement ${stId} ${part} = "${placeholderName}"`);
+            
+            // Look up what this part refers to in the template
+            const statement = this.template.statements?.find(st => st.id === stId);
+            if (statement) {
+              // Check if this part matches our placeholder
+              if (statement[part] === placeholderName || statement[part] === `sub:${placeholderName}`) {
+                value = val;
+                console.log(`    ✅ Found ${placeholderName} in ${key}:`, value);
+                break;
+              }
+            }
+          }
+        }
+      }
+      
+      if (value) {
+        // Extract a readable label from the value
+        let displayValue = value;
+        
+        // If it's a URI, try to extract a meaningful part
+        if (value.startsWith('http://') || value.startsWith('https://')) {
+          // Try to get the last part of the URI
+          const uriParts = value.split('/');
+          const lastPart = uriParts[uriParts.length - 1];
+          
+          // If last part looks like an ID or has useful info, use it
+          if (lastPart && lastPart.length > 0) {
+            displayValue = lastPart;
+            console.log(`    📝 Extracted from URI: "${displayValue}"`);
+          }
+        }
+        
+        label = label.replace(match[0], displayValue);
+      }
+    }
+    
+    console.log('🏷️ Final label after pattern replacement:', label);
+    return label;
   }
 }
