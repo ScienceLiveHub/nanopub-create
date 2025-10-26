@@ -14,7 +14,7 @@ import init, { Nanopub, NpProfile, KeyPair } from '@nanopub/sign';
 class NanopubCreator {
   constructor(options = {}) {
     this.options = {
-      publishServer: options.publishServer || 'https://np.petapico.org/',
+      publishServer: options.publishServer || 'https://np.petapico.org',
       theme: options.theme || 'default',
       validateOnChange: options.validateOnChange !== false,
       showHelp: options.showHelp !== false,
@@ -107,18 +107,25 @@ class NanopubCreator {
       // Generate keys
       const keys = await this.generateKeys();
       
-      // Store profile and credentials
+      // Store profile with ORCID
       this.profile = {
         name,
         orcid: normalizedOrcid
       };
       
-      this.credentials = keys;
+      // Store credentials with both keys AND orcid
+      this.credentials = {
+        ...keys,
+        orcid: normalizedOrcid,  // Store ORCID here too!
+        name: name               // And name for convenience
+      };
       
       // Save to localStorage
       this.saveCredentials();
       
       console.log('✓ Profile setup complete');
+      console.log('  ORCID:', normalizedOrcid);
+      console.log('  Name:', name);
       return this.profile;
     } catch (error) {
       console.error('Profile setup failed:', error);
@@ -325,32 +332,60 @@ class NanopubCreator {
     }
 
     try {
-      // Create NpProfile for signing
+      // Get ORCID - try credentials first, then profile
+      const orcid = this.credentials.orcid || this.profile.orcid;
+      const name = this.credentials.name || this.profile.name;
+      
+      // Validate ORCID format
+      if (!orcid || !orcid.startsWith('https://orcid.org/')) {
+        throw new Error(`Invalid ORCID format: ${orcid}. Must start with https://orcid.org/`);
+      }
+      
+      console.log('🔐 Creating profile and signing...');
+      console.log('  ORCID:', orcid);
+      console.log('  Name:', name);
+      
+      // Create NpProfile with correct 3 parameters: privateKey, orcid, name
+      // (Public key is derived from private key automatically)
       const npProfile = new NpProfile(
         this.credentials.privateKey,
-        this.profile.orcid,
-        this.profile.name
+        orcid,
+        name
       );
 
-      // Create and sign nanopub
-      const nanopub = new Nanopub(trigContent);
-      const signedNp = nanopub.sign(npProfile);
+      console.log('✅ Profile created');
+      console.log('📝 Signing nanopub...');
 
-      // Publish
-      const result = await signedNp.publish(this.options.publishServer);
+      // Create Nanopub and sign it
+      const nanopub = new Nanopub(trigContent);
+      const signedNp = nanopub.sign(npProfile);  // Takes 1 param: profile
+
+      console.log('✅ Signed successfully');
+      console.log('  Signed type:', typeof signedNp);
+      console.log('📤 Publishing to network...');
+      console.log('   Server:', this.options.publishServer);
+
+      // publish() in Rust takes: publish(Option<profile>, Option<server_url>)
+      // In WASM/JS this becomes: publish(profile_or_null, server_or_null)
+      // Pass null for profile (already signed) and server URL string
+      const result = await signedNp.publish(null, this.options.publishServer);
       
-      // Parse result (it's a JSON string)
-      const publishInfo = JSON.parse(result);
+      console.log('✅ Published successfully!');
+      console.log('🌐 Result:', result);
+      
+      // Get the URI from result
+      const uri = typeof result === 'string' ? result : (result.uri || result.nanopub_uri);
       
       this.emit('publish', {
-        uri: publishInfo.uri || publishInfo.nanopub_uri,
-        signedContent: signedNp.to_string()
+        uri: uri,
+        signedContent: typeof signedNp === 'string' ? signedNp : signedNp.toString()
       });
 
-      return publishInfo;
+      return { uri: uri, nanopub_uri: uri };
 
     } catch (error) {
-      console.error('Publish failed:', error);
+      console.error('❌ Publish failed:', error);
+      console.error('Error details:', error.message);
       this.emit('error', { type: 'publish', error });
       throw error;
     }
