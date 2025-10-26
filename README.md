@@ -1,336 +1,357 @@
-# Nanopub Creator
+# nanopub-create
 
-A JavaScript library for creating nanopublications from templates with an intuitive form interface.
+> JavaScript library for creating and publishing nanopublications from templates with interactive forms
 
-## 🚀 Features
+Create nanopublications using templates from the [Knowledge Pixels network](https://knowledgepixels.com/) with an easy-to-use form interface. Built with vanilla JavaScript and powered by [nanopub-rs WASM](https://github.com/vemonet/nanopub-rs) for signing and publishing.
 
-- **Template Parsing**: Automatically parse nanopublication templates in TriG/Turtle format
-- **Dynamic Form Generation**: Generate user-friendly forms from template definitions
-- **Visual Grouping**: Intelligently groups related statements by subject
-- **Science Live Branding**: Beautiful UI with purple/magenta color palette
-- **Multiple Input Types**: Support for text, textarea, dropdowns, URIs, dates, and more
-- **Validation**: Built-in validation for required fields and data types
-- **Auto-generated Resources**: Smart handling of LocalResource and IntroducedResource placeholders
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node Version](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
 
-## 📦 Installation
+## ✨ Features
+
+- **Template-based creation** - Load any nanopub template by URI
+- **Auto-generated forms** - Dynamic forms from template placeholders
+- **Built-in signing** - RSA key generation and nanopub signing via WASM
+- **Network publishing** - Publish directly to nanopub network
+- **Type handling** - Automatically handles `nt:ASSERTION`, `nt:CREATOR`, and other special placeholders
+- **Smart labels** - Extracts human-readable labels from URIs and patterns
+- **Nanodash compatible** - Generates nanopubs matching nanodash output format
+
+## 🚀 Quick Start
+
+### Installation
 
 ```bash
-npm install nanopub-create
+git clone https://github.com/ScienceLiveHub/nanopub-create.git
+cd nanopub-create
+npm install
 ```
 
-Or include directly in your HTML:
+### Development
 
-```html
-<link rel="stylesheet" href="path/to/creator.css">
-<script type="module" src="path/to/index.js"></script>
+```bash
+# Start dev server
+npm run dev
+
+# Open browser to http://localhost:3000/demo/index.html
 ```
 
-## 🎯 Quick Start
+### Try It Out
 
-### Basic Usage
+1. **Setup Profile**
+   - Enter your name
+   - Add ORCID (optional)
+   - Click "Generate Keys & Save Profile"
+
+2. **Load a Template**
+   - Try: `https://w3id.org/np/RAX_4tWTyjFpO6nz63s14ucuejd64t2mK3IBlkwZ7jjLo`
+   - Click "Load Template"
+
+3. **Fill the Form**
+   - Enter values for all fields
+   - Click "Create Nanopublication"
+
+4. **Publish**
+   - Review the preview
+   - Click "Publish" to sign and publish to network
+
+## 📖 Usage
+
+### As a Library
 
 ```javascript
-import NanopubCreator from 'nanopub-create';
+import { NanopubCreator } from './src/index.js';
 
-// Create a creator instance
-const creator = new NanopubCreator({
-  publishServer: 'https://np.petapico.org/',
-  validateOnChange: true,
-  showHelp: true
-});
+// Initialize
+const creator = new NanopubCreator();
+await creator.init();
 
-// Render form from template URI
+// Setup profile
+await creator.setupProfile('Your Name', 'https://orcid.org/0000-0002-1234-5678');
+
+// Load template and render form
+const templateUri = 'https://w3id.org/np/RAX_4tWTyjFpO6nz63s14ucuejd64t2mK3IBlkwZ7jjLo';
 const container = document.getElementById('form-container');
-await creator.renderFromTemplateUri(
-  'https://w3id.org/np/RA...',
-  container
-);
+await creator.renderFromTemplateUri(templateUri, container);
 
-// Listen for form submission
-creator.on('submit', ({ trigContent, formData }) => {
-  console.log('Generated nanopublication:', trigContent);
-  console.log('Form data:', formData);
+// Listen for nanopub creation
+creator.on('create', ({ trigContent }) => {
+  console.log('Created nanopub:', trigContent);
 });
+
+// Publish
+await creator.publish(trigContent);
 ```
 
-### Complete Example
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Nanopub Creator Demo</title>
-  <link rel="stylesheet" href="./creator.css">
-</head>
-<body>
-  <div id="app"></div>
-
-  <script type="module">
-    import NanopubCreator from './index.js';
-    
-    const creator = new NanopubCreator({
-      publishServer: 'https://np.petapico.org/',
-      validateOnChange: true
-    });
-
-    // Handle events
-    creator.on('change', (data) => {
-      console.log('Form changed:', data);
-    });
-
-    creator.on('submit', ({ trigContent }) => {
-      console.log('Nanopublication created!');
-      downloadFile(trigContent, 'nanopub.trig');
-    });
-
-    creator.on('error', ({ type, error }) => {
-      console.error(`${type}:`, error);
-    });
-
-    // Load template
-    await creator.renderFromTemplateUri(
-      'https://w3id.org/np/RAX_4tWTyjFpO6nz63s14ucuejd64t2mK3IBlkwZ7jjLo',
-      document.getElementById('app')
-    );
-
-    function downloadFile(content, filename) {
-      const blob = new Blob([content], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-  </script>
-</body>
-</html>
-```
-
-## 🎨 Styling
-
-The library uses Science Live color palette. You can customize by overriding CSS variables:
-
-```css
-:root {
-  --primary: #BE2E78;          /* Magenta */
-  --primary-hover: #9e1e5e;    /* Darker magenta */
-  --secondary: #2b3456;         /* Navy blue */
-  --secondary-dark: #131d43;    /* Deep navy */
-  --pink-light: #f6d7e8;        /* Light pink background */
-  --pink-border: #be2e78;       /* Pink border */
-}
-```
-
-## 📚 API Reference
-
-### Constructor Options
+### Programmatic Creation
 
 ```javascript
-new NanopubCreator(options)
+// Create without form UI
+const template = await creator.loadTemplate(templateUri);
+const formData = {
+  'st01_subject': 'https://doi.org/10.1234/example',
+  'st02_predicate': 'http://purl.org/spar/cito/cites',
+  'st02_object': 'https://doi.org/10.5678/cited'
+};
+
+const trigContent = await creator.createNanopub(template, formData);
 ```
 
-**Options:**
-- `publishServer` (string): Nanopublication server URL. Default: `'https://np.petapico.org/'`
-- `validateOnChange` (boolean): Validate form on every change. Default: `false`
-- `showHelp` (boolean): Show help text for fields. Default: `true`
+## 🏗️ Project Structure
 
-### Methods
-
-#### `renderFromTemplateUri(uri, container)`
-Fetch and render a template from a URI.
-
-**Parameters:**
-- `uri` (string): Template nanopublication URI
-- `container` (HTMLElement): DOM element to render form into
-
-**Returns:** Promise<void>
-
-```javascript
-await creator.renderFromTemplateUri(
-  'https://w3id.org/np/RA...',
-  document.getElementById('form-container')
-);
+```
+nanopub-create/
+├── src/
+│   ├── core/
+│   │   ├── nanopubBuilder.js      # Generates TriG from templates
+│   │   ├── templateParser.js      # Parses nanopub templates
+│   │   └── formGenerator.js       # Creates HTML forms
+│   ├── utils/
+│   │   └── labelFetcher.js        # Fetches URI labels
+│   ├── styles/
+│   │   └── creator.css            # UI styling
+│   └── index.js                   # Main entry point
+├── demo/
+│   └── index.html                 # Demo page
+├── package.json
+├── vite.config.js
+├── LICENSE
+└── README.md
 ```
 
-#### `renderFromTemplate(template, container)`
-Render a form from a parsed template object.
+## 🔧 How It Works
 
-**Parameters:**
-- `template` (object): Parsed template object
-- `container` (HTMLElement): DOM element to render form into
-
+### 1. Template Parsing
 ```javascript
-const template = await parser.parse(trigContent);
-creator.renderFromTemplate(template, container);
+// Fetches and parses template
+const template = await templateParser.parse(templateContent);
+
+// Extracts:
+// - Placeholders (form fields)
+// - Statements (RDF structure)
+// - Metadata (types, labels, patterns)
 ```
 
-#### `on(event, callback)`
-Subscribe to events.
-
-**Events:**
-- `'change'`: Form data changed - `(data) => {}`
-- `'submit'`: Form submitted - `({ trigContent, formData }) => {}`
-- `'error'`: Error occurred - `({ type, error }) => {}`
-
+### 2. Form Generation
 ```javascript
-creator.on('submit', ({ trigContent, formData }) => {
-  console.log('Generated:', trigContent);
-});
+// Creates HTML form from placeholders
+formGenerator.render(template, container);
+
+// Supports:
+// - Text inputs (LiteralPlaceholder)
+// - Textareas (LongLiteralPlaceholder)
+// - Dropdowns (RestrictedChoicePlaceholder)
+// - URL inputs (ExternalUriPlaceholder)
 ```
 
-#### `destroy()`
-Clean up and remove form.
-
+### 3. Nanopub Building
 ```javascript
-creator.destroy();
+// Generates TriG format
+const trig = await nanopubBuilder.buildFromFormData(formData, metadata);
+
+// Handles:
+// - Special placeholders (nt:ASSERTION, nt:CREATOR)
+// - Label patterns (${placeholder} replacement)
+// - Multi-line strings (triple quotes)
+// - Type declarations (npx:hasNanopubType)
 ```
 
-## 🧩 Template Parser
-
-For advanced usage, you can use the template parser directly:
-
+### 4. Signing & Publishing
 ```javascript
-import { TemplateParser } from './core/templateParser.js';
+// Sign with WASM
+const signed = await nanopubSign.sign(trig, privateKey);
 
-const trigContent = `
-  @prefix this: <https://w3id.org/np/RA...> .
-  @prefix sub: <https://w3id.org/np/RA...#> .
-  @prefix nt: <https://w3id.org/np/o/ntemplate/> .
-  
-  sub:assertion {
-    # Your template definition
+// Publish to network
+const uri = await nanopubSign.publish(signed);
+```
+
+## 📝 Template Support
+
+Supports all standard nanopub template types:
+
+| Placeholder Type | Form Element | Example |
+|-----------------|--------------|---------|
+| `LiteralPlaceholder` | Text input | Short text |
+| `LongLiteralPlaceholder` | Textarea | Multi-line text |
+| `ExternalUriPlaceholder` | URL input | DOI, URL |
+| `UriPlaceholder` | URL input | Any URI |
+| `RestrictedChoicePlaceholder` | Dropdown | Predefined options |
+| `GuidedChoicePlaceholder` | Autocomplete | Search-based |
+| `IntroducedResource` | Text input | New resource |
+
+### Special Placeholders
+
+- `nt:ASSERTION` → Replaced with `sub:assertion`
+- `nt:CREATOR` → Replaced with user's ORCID
+
+### Label Patterns
+
+Templates can include dynamic labels:
+```turtle
+nt:hasNanopubLabelPattern "Citations for: ${article}"
+```
+
+Automatically extracts values and generates:
+```turtle
+rdfs:label "Citations for: 10.1145/3460210.3493546"
+```
+
+## 🎯 Example Templates
+
+### Citation Template
+```
+https://w3id.org/np/RAX_4tWTyjFpO6nz63s14ucuejd64t2mK3IBlkwZ7jjLo
+```
+Declare citations with CiTO - create citation relationships between papers.
+
+### Comment Template
+```
+https://w3id.org/np/RAVEpTdLrX5XrhNl_gnvTaBcjRRSDu_hhZix8gu2HO7jI
+```
+Comment on or evaluate papers - add quotes and commentary.
+
+### More Templates
+Browse available templates at [Nanodash](https://nanodash.knowledgepixels.com/)
+
+## 🔒 Profile Management
+
+### Generate Keys
+```javascript
+await creator.setupProfile('Your Name', 'https://orcid.org/0000-0002-1234-5678');
+```
+
+Keys are stored in browser `localStorage` and never leave your machine.
+
+### Export Profile
+```javascript
+const keys = creator.exportKeys();
+// Download as JSON for backup
+```
+
+### Import Profile
+```javascript
+creator.importKeys(profileData);
+// Restore from backup
+```
+
+## 🛠️ Development
+
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+
+### Commands
+
+```bash
+# Install dependencies
+npm install
+
+# Start dev server (http://localhost:3000)
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Clear cache and restart
+npx vite --force
+```
+
+### Configuration
+
+**vite.config.js:**
+```javascript
+import { defineConfig } from 'vite';
+import wasm from 'vite-plugin-wasm';
+import topLevelAwait from 'vite-plugin-top-level-await';
+
+export default defineConfig({
+  plugins: [wasm(), topLevelAwait()],
+  optimizeDeps: {
+    exclude: ['@nanopub/sign']  // CRITICAL for WASM
   }
-`;
-
-const parser = new TemplateParser(trigContent);
-const template = await parser.parse();
-
-console.log('Placeholders:', template.placeholders);
-console.log('Statements:', template.statements);
-console.log('Grouped statements:', template.groupedStatements);
+});
 ```
 
-## 📋 Supported Placeholder Types
+## 📦 Dependencies
 
-The library supports all standard nanopublication template placeholder types:
+### Runtime
+- `@nanopub/sign` - WASM library for signing/publishing
 
-| Type | Description | Input Type |
-|------|-------------|------------|
-| `LiteralPlaceholder` | Short text | Text input |
-| `LongLiteralPlaceholder` | Long text | Textarea |
-| `RestrictedChoicePlaceholder` | Predefined options | Dropdown |
-| `UriPlaceholder` | URI/URL | URL input |
-| `ExternalUriPlaceholder` | External URI | URL input |
-| `TrustyUriPlaceholder` | Trusty URI | URL input with validation |
-| `IntroducedResource` | Auto-generated resource | Read-only |
-| `LocalResource` | Auto-generated local resource | Read-only |
-| `ValuePlaceholder` | Generic value | Text input |
-| `AgentPlaceholder` | Agent (ORCID) | URL input |
-| `DatePlaceholder` | Date | Date input |
-
-## 🎯 Template Examples
-
-### Simple Citation Template
-
-```turtle
-sub:article a nt:ExternalUriPlaceholder;
-  rdfs:label "DOI or URL of the citing article" .
-
-sub:cites a nt:RestrictedChoicePlaceholder;
-  rdfs:label "Citation type";
-  nt:possibleValue cito:cites, cito:citesAsAuthority .
-
-sub:cited a nt:ExternalUriPlaceholder;
-  rdfs:label "DOI or URL of the cited article" .
-
-sub:st01 rdf:object sub:cites;
-  rdf:predicate sub:article;
-  rdf:subject sub:cited .
-```
-
-### With External Options
-
-```turtle
-sub:relation a nt:RestrictedChoicePlaceholder;
-  rdfs:label "choose relation";
-  nt:possibleValuesFrom <https://w3id.org/np/RAJb...> .
-```
-
-The parser will automatically fetch and populate the dropdown options.
-
-## 🔧 Advanced Features
-
-### Visual Grouping
-
-Statements with the same subject are automatically grouped together visually with a colored box:
-
-```turtle
-# These will be grouped together
-sub:st1 rdf:subject sub:annotation;
-  rdf:predicate rdf:type;
-  rdf:object oa:Annotation .
-
-sub:st2 rdf:subject sub:annotation;
-  rdf:predicate oa:hasBody;
-  rdf:object sub:body .
-```
-
-### Auto-generated Resources
-
-LocalResource and IntroducedResource placeholders are automatically handled and shown as "(auto-generated)":
-
-```turtle
-sub:annotation a nt:IntroducedResource, nt:LocalResource;
-  rdfs:label "this annotation" .
-```
-
-### Hidden Metadata Statements
-
-Statements that only describe URI types are automatically hidden from the form:
-
-```turtle
-# This is hidden (metadata only)
-sub:SamplePreparation rdf:type prov:Activity .
-```
-
-## 🐛 Troubleshooting
-
-### Form not rendering
-- Check console for errors
-- Verify template URI is accessible
-- Ensure CSS file is loaded
-
-### Dropdown showing URIs instead of labels
-- Check that labels are defined in template
-- Verify `nt:possibleValuesFrom` URL is accessible
-
-### Buttons have wrong colors
-- Ensure `creator.css` is loaded after other stylesheets
-- Check CSS variable values in browser dev tools
-
-## 📄 License
-
-MIT
+### Development
+- `vite` - Build tool and dev server
+- `vite-plugin-wasm` - WASM support
+- `vite-plugin-top-level-await` - Top-level await support
 
 ## 🤝 Contributing
 
-Contributions welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions welcome! Please:
 
-## 📞 Support
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-- Issues: [GitHub Issues](https://github.com/your-repo/nanopub-create/issues)
-- Discussions: [GitHub Discussions](https://github.com/your-repo/nanopub-create/discussions)
-- Email: support@sciencelive4all.org
+## 🐛 Troubleshooting
+
+### WASM Not Loading
+```bash
+# Clear cache and restart
+npx vite --force
+```
+
+### Types Not Showing
+Check that `templateParser.js` searches entire template:
+```javascript
+// Should be this.content, not assertionBlock
+const typesMatch = this.content.match(/nt:hasTargetNanopubType/);
+```
+
+### Label Pattern Not Working
+Verify pattern is being parsed:
+```javascript
+// Should search this.content
+const patternMatch = this.content.match(/nt:hasNanopubLabelPattern/);
+```
+
+### Prefixes Wrong
+Check `nanopubBuilder.js` uses slash not hash:
+```javascript
+`@prefix sub: <${baseUri}/> .`  // Correct
+`@prefix sub: <${baseUri}#> .`  // Wrong
+```
+
+## 📚 Resources
+
+- [Nanopub Documentation](https://nanopub.net/)
+- [Knowledge Pixels](https://knowledgepixels.com/)
+- [nanopub-rs WASM](https://github.com/vemonet/nanopub-rs)
+- [Nanodash](https://nanodash.knowledgepixels.com/)
+- [CiTO Ontology](https://sparontologies.github.io/cito/current/cito.html)
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file for details
+
+## 👥 Authors
+
+**ScienceLive Hub**
+- GitHub: [@ScienceLiveHub](https://github.com/ScienceLiveHub)
+- Website: [sciencelive4all.org](https://sciencelive4all.org)
 
 ## 🙏 Acknowledgments
 
-Built with support from:
-- [Nanopublication ecosystem](http://nanopub.org/)
-- [Knowledge Pixels](https://knowledgepixels.com/)
-- [Science Live](https://sciencelive4all.org/)
+- Built on [nanopub-rs](https://github.com/vemonet/nanopub-rs) by [@vemonet](https://github.com/vemonet)
+- Template system from [Knowledge Pixels](https://knowledgepixels.com/)
+- Compatible with [Nanodash](https://nanodash.knowledgepixels.com/)
+
+## 🌟 Star History
+
+If you find this project useful, please consider giving it a star! ⭐
 
 ---
 
-Made with 💜 by the Science Live team
+**Questions?** Open an issue or visit our [discussions](https://github.com/ScienceLiveHub/nanopub-create/discussions)
