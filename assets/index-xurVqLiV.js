@@ -40,11 +40,11 @@ class G {
     s ? (this.template.labelPattern = s[1], console.log(`\u2705 Found label pattern: "${s[1]}"`)) : console.warn("\u26A0\uFE0F No nt:hasNanopubLabelPattern found in template");
     const i = this.content.match(/nt:hasTag\s+"([^"]+)"/);
     i && (this.template.tags = [i[1]]);
-    const u = this.content.match(/nt:hasTargetNanopubType\s+(.+?)\s*[;.](?:\s|$)/s);
-    if (u) {
-      const a = u[1], p = /<([^>]+)>/g, b = [];
+    const p = this.content.match(/nt:hasTargetNanopubType\s+(.+?)\s*[;.](?:\s|$)/s);
+    if (p) {
+      const a = p[1], u = /<([^>]+)>/g, b = [];
       let c;
-      for (; (c = p.exec(a)) !== null; ) b.push(c[1]);
+      for (; (c = u.exec(a)) !== null; ) b.push(c[1]);
       this.template.types = b, console.log(`\u2705 Found ${b.length} target nanopub types:`, b);
     } else console.warn("\u26A0\uFE0F No nt:hasTargetNanopubType found in template");
   }
@@ -65,39 +65,39 @@ class G {
       let i = this.content.length;
       const a = this.content.substring(s).substring(1).search(/\n\s*(?:sub:[\w-]+\s+a\s+nt:|})/);
       a > 0 && (i = s + a + 1);
-      const p = this.content.substring(s, i);
+      const u = this.content.substring(s, i);
       console.log(`
---- Parsing ${r} ---`), console.log(`Block length: ${p.length} chars`), console.log(`Block preview: ${p.substring(0, 200)}...`);
-      const b = n.split(",").map((h) => h.trim()), c = b[0].replace(/^nt:/, ""), l = { id: this.cleanUri(r), type: c, isLocalResource: b.some((h) => h.includes("LocalResource")), isIntroducedResource: b.some((h) => h.includes("IntroducedResource")), label: this.extractLabel(p), description: this.extractDescription(p), validation: this.extractValidation(p), possibleValuesFrom: null, possibleValuesFromApi: null, options: [], prefix: null };
+--- Parsing ${r} ---`), console.log(`Block length: ${u.length} chars`), console.log(`Block preview: ${u.substring(0, 200)}...`);
+      const b = n.split(",").map((h) => h.trim()), c = b[0].replace(/^nt:/, ""), l = { id: this.cleanUri(r), type: c, isLocalResource: b.some((h) => h.includes("LocalResource")), isIntroducedResource: b.some((h) => h.includes("IntroducedResource")), label: this.extractLabel(u), description: this.extractDescription(u), validation: this.extractValidation(u), possibleValuesFrom: null, possibleValuesFromApi: null, options: [], prefix: null };
       if (c.includes("AutoEscapeUriPlaceholder")) {
-        const h = p.match(/nt:hasPrefix\s+"([^"]+)"/);
+        const h = u.match(/nt:hasPrefix\s+"([^"]+)"/);
         h && (l.prefix = h[1], console.log(`  \u2192 Found prefix for AutoEscapeUriPlaceholder: ${l.prefix}`));
       }
       if (c.includes("RestrictedChoice")) {
-        const h = p.match(/nt:possibleValuesFrom\s+(?:<([^>]+)>|([\w-]+:[\w-]+))/);
+        const h = u.match(/nt:possibleValuesFrom\s+(?:<([^>]+)>|([\w-]+:[\w-]+))/);
         if (h) {
           const v = h[1] || h[2];
           if (v && v.includes(":") && !v.startsWith("http")) {
-            const [C, N] = v.split(":"), R = this.content.match(new RegExp(`@prefix ${C}:\\s+<([^>]+)>`));
-            R ? l.possibleValuesFrom = R[1] + N : l.possibleValuesFrom = v;
+            const [C, I] = v.split(":"), N = this.content.match(new RegExp(`@prefix ${C}:\\s+<([^>]+)>`));
+            N ? l.possibleValuesFrom = N[1] + I : l.possibleValuesFrom = v;
           } else l.possibleValuesFrom = v;
           console.log(`  \u2192 Will fetch options from: ${l.possibleValuesFrom}`);
         }
-        const g = p.match(/nt:possibleValue\s+([\s\S]+?)(?:\s+\.(?:\s|$))/);
+        const g = u.match(/nt:possibleValue\s+([\s\S]+?)(?:\s+\.(?:\s|$))/);
         if (g) {
           const v = g[1];
           console.log(`  \u2192 Raw value text: ${v.substring(0, 100)}...`);
-          const C = [], N = /<([^>]+)>|([\w-]+:[\w-]+)/g;
-          let R;
-          for (; (R = N.exec(v)) !== null; ) C.push(R[1] || R[2]);
+          const C = [], I = /<([^>]+)>|([\w-]+:[\w-]+)/g;
+          let N;
+          for (; (N = I.exec(v)) !== null; ) C.push(N[1] || N[2]);
           C.length > 0 ? (l.options = C.map(($) => {
-            let S = this.template.labels[$];
-            return S || ($.startsWith("http") ? (S = $.replace(/^https?:\/\//, "").replace(/\/$/, ""), S = S.charAt(0).toUpperCase() + S.slice(1)) : $.includes(":") ? S = $.split(":")[1] : S = $), { value: $, label: S };
+            let P = this.template.labels[$];
+            return P || ($.startsWith("http") ? (P = $.replace(/^https?:\/\//, "").replace(/\/$/, ""), P = P.charAt(0).toUpperCase() + P.slice(1)) : $.includes(":") ? P = $.split(":")[1] : P = $), { value: $, label: P };
           }), console.log(`  \u2192 Found ${l.options.length} inline options:`, l.options.map(($) => $.label))) : console.warn("  \u2192 No values found in possibleValue text");
         }
       }
       if (c.includes("GuidedChoice")) {
-        const h = p.match(/nt:possibleValuesFromApi\s+"([^"]+)"/);
+        const h = u.match(/nt:possibleValuesFromApi\s+"([^"]+)"/);
         h && (l.possibleValuesFromApi = h[1]);
       }
       console.log(`Found placeholder: ${l.id} (${l.type})`), this.template.placeholders.push(l);
@@ -118,18 +118,18 @@ class G {
       let s = "";
       const i = n.match(/@prefix sub:\s+<([^>]+)>/);
       i && (s = i[1]);
-      const u = /<([^>]+)>\s+rdfs:label\s+"([^"]+)"/g, a = /(sub:[\w-]+)\s+rdfs:label\s+"([^"]+)"/g;
+      const p = /<([^>]+)>\s+rdfs:label\s+"([^"]+)"/g, a = /(sub:[\w-]+)\s+rdfs:label\s+"([^"]+)"/g;
       e.options = [];
-      let p = 0;
-      for (const b of n.matchAll(u)) {
-        p++;
+      let u = 0;
+      for (const b of n.matchAll(p)) {
+        u++;
         const c = b[1], l = b[2];
-        console.log(`  \u2192 Match ${p} (full URI): URI=${c}, Label="${l}"`), c.includes("#assertion") || c.includes("#Head") || c.includes("#provenance") || c.includes("#pubinfo") || c.includes("ntemplate") || c.includes("rdf-syntax") || c.includes("XMLSchema") || c.includes("rdfs#") || c.includes("dc/terms") || c.includes("foaf/0.1") || c.includes("nanopub/x/") || c.includes("nanopub.org/nschema") || l.includes("Template:") || l.includes("Making a statement") || l.includes("is a") || l.includes("has type") || e.options.push({ value: c, label: l });
+        console.log(`  \u2192 Match ${u} (full URI): URI=${c}, Label="${l}"`), c.includes("#assertion") || c.includes("#Head") || c.includes("#provenance") || c.includes("#pubinfo") || c.includes("ntemplate") || c.includes("rdf-syntax") || c.includes("XMLSchema") || c.includes("rdfs#") || c.includes("dc/terms") || c.includes("foaf/0.1") || c.includes("nanopub/x/") || c.includes("nanopub.org/nschema") || l.includes("Template:") || l.includes("Making a statement") || l.includes("is a") || l.includes("has type") || e.options.push({ value: c, label: l });
       }
       for (const b of n.matchAll(a)) {
-        p++;
+        u++;
         const c = b[1], l = b[2], h = c.replace("sub:", ""), g = s + h;
-        console.log(`  \u2192 Match ${p} (prefixed): ${c} -> ${g}, Label="${l}"`), e.options.push({ value: g, label: l });
+        console.log(`  \u2192 Match ${u} (prefixed): ${c} -> ${g}, Label="${l}"`), e.options.push({ value: g, label: l });
       }
       console.log(`  \u2192 Loaded ${e.options.length} options for ${e.id}`), e.options.length > 0 && console.log("  \u2192 First 3 options:", e.options.slice(0, 3).map((b) => b.label));
     } catch (t) {
@@ -168,12 +168,12 @@ class G {
   parseStatement(e) {
     const t = e.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), r = new RegExp(`${t}\\s+(?:a\\s+[^;]+;\\s*)?(rdf:[\\s\\S]*?)(?=\\n\\s*(?:sub:[\\w.-]+|<[^>]+>)\\s+|\\n\\s*}|$)`, "i"), n = this.content.match(r);
     if (!n) return console.warn(`Could not find statement block for ${e}`), null;
-    const s = n[1], i = s.match(/rdf:subject\s+(<[^>]+>|[\w:-]+)/), u = s.match(/rdf:predicate\s+(<[^>]+>|[\w:-]+)/), a = s.match(/rdf:object\s+(?:<([^>]+)>|([\w:-]+)|"([^"]+)")/);
-    if (!i || !u || !a) return console.warn(`Incomplete statement ${e}:`, { subjMatch: !!i, predMatch: !!u, objMatch: !!a }), null;
-    let p;
-    a[1] ? p = a[1] : a[2] ? p = a[2] : a[3] && (p = a[3]);
-    const c = n[0].match(/a\s+([^;.]+)/), l = c ? c[1].split(",").map((F) => F.trim()) : [], h = this.cleanUri(i[1]), g = this.cleanUri(u[1]), v = this.cleanUri(p), C = this.isPlaceholder(h), N = this.isPlaceholder(g), R = this.isPlaceholder(v) && !a[3], $ = C ? null : this.expandUri(i[1]), S = this.expandUri(u[1]), Q = R || a[3] ? null : this.expandUri(p);
-    return { id: this.cleanUri(e), subject: h, predicate: g, object: v, subjectIsPlaceholder: C, predicateIsPlaceholder: N, objectIsPlaceholder: R, subjectUri: $, predicateUri: S, objectUri: Q, isLiteralObject: !!a[3], repeatable: l.some((F) => F.includes("RepeatableStatement")), optional: l.some((F) => F.includes("OptionalStatement")), grouped: l.some((F) => F.includes("GroupedStatement")), types: l };
+    const s = n[1], i = s.match(/rdf:subject\s+(<[^>]+>|[\w:-]+)/), p = s.match(/rdf:predicate\s+(<[^>]+>|[\w:-]+)/), a = s.match(/rdf:object\s+(?:<([^>]+)>|([\w:-]+)|"([^"]+)")/);
+    if (!i || !p || !a) return console.warn(`Incomplete statement ${e}:`, { subjMatch: !!i, predMatch: !!p, objMatch: !!a }), null;
+    let u;
+    a[1] ? u = a[1] : a[2] ? u = a[2] : a[3] && (u = a[3]);
+    const c = n[0].match(/a\s+([^;.]+)/), l = c ? c[1].split(",").map((T) => T.trim()) : [], h = this.cleanUri(i[1]), g = this.cleanUri(p[1]), v = this.cleanUri(u), C = i[1] === "nt:CREATOR", I = u === "nt:CREATOR", N = !C && this.isPlaceholder(h), $ = this.isPlaceholder(g), P = !I && this.isPlaceholder(v) && !a[3], Q = C ? "nt:CREATOR" : N ? null : this.expandUri(i[1]), ee = this.expandUri(p[1]), te = I ? "nt:CREATOR" : P || a[3] ? null : this.expandUri(u);
+    return { id: this.cleanUri(e), subject: h, predicate: g, object: v, subjectIsPlaceholder: N, predicateIsPlaceholder: $, objectIsPlaceholder: P, subjectUri: Q, predicateUri: ee, objectUri: te, isLiteralObject: !!a[3], repeatable: l.some((T) => T.includes("RepeatableStatement")), optional: l.some((T) => T.includes("OptionalStatement")), grouped: l.some((T) => T.includes("GroupedStatement")), types: l };
   }
   cleanUri(e) {
     return e && e.replace(/^<|>$/g, "").replace(/^"|"$/g, "").replace(/^sub:/, "").trim();
@@ -227,7 +227,7 @@ class G {
     return await new G(n).parse();
   }
 }
-const ee = { LiteralPlaceholder: (o) => {
+const ne = { LiteralPlaceholder: (o) => {
   var _a;
   const e = document.createElement("input");
   return e.type = "text", e.className = "form-input", e.placeholder = o.label || "", ((_a = o.validation) == null ? void 0 : _a.regex) && (e.pattern = o.validation.regex), e;
@@ -270,7 +270,7 @@ const ee = { LiteralPlaceholder: (o) => {
   const e = document.createElement("input");
   return e.type = "url", e.className = "form-input", e.placeholder = o.label || "https://orcid.org/...", e;
 } };
-class te {
+class re {
   constructor(e, t = {}) {
     this.template = e, this.options = { validateOnChange: true, showHelp: true, ...t }, this.labels = t.labels || e.labels || {}, this.formData = {}, this.eventListeners = { change: [], submit: [], preview: [] }, this.formElement = null;
   }
@@ -336,18 +336,18 @@ class te {
     const t = /* @__PURE__ */ new Set(), r = /* @__PURE__ */ new Set();
     console.log("[renderFields] Processing statements...");
     let n = null, s = null;
-    this.template.statements.forEach((i, u) => {
+    this.template.statements.forEach((i, p) => {
       const a = this.template.groupedStatements.find((l) => l.statements.includes(i.id));
       if (console.log(`  ${i.id}: parentGroup=${a == null ? void 0 : a.id}, processed=${t.has(a == null ? void 0 : a.id)}, subject=${i.subject}`), a && t.has(a.id)) {
         console.log("    \u2192 Skipping (group already processed)");
         return;
       }
-      const p = this.findPlaceholder(i.subject), b = this.findPlaceholder(i.object), c = this.findPlaceholder(i.predicate);
-      if (!p && !b && !c) {
+      const u = this.findPlaceholder(i.subject), b = this.findPlaceholder(i.object), c = this.findPlaceholder(i.predicate);
+      if (!u && !b && !c) {
         console.log("    \u2192 Skipping (all fixed - auto-filled statement)");
         return;
       }
-      if (p && (p.type.includes("ExternalUriPlaceholder") || p.type.includes("UriPlaceholder")) && !c && !b) {
+      if (u && (u.type.includes("ExternalUriPlaceholder") || u.type.includes("UriPlaceholder")) && !c && !b) {
         console.log("    \u2192 Skipping (URI placeholder metadata statement)");
         return;
       }
@@ -363,8 +363,8 @@ class te {
             const C = this.renderInput(h);
             if (C !== null) C.name = `${i.id}_subject`, C.id = `field_${i.id}_subject`, g.appendChild(C);
             else {
-              const N = document.createElement("div");
-              N.className = "field-value auto-generated", N.textContent = "(auto-generated)", g.appendChild(N);
+              const I = document.createElement("div");
+              I.className = "field-value auto-generated", I.textContent = "(auto-generated)", g.appendChild(I);
             }
             n.appendChild(g), r.add(h.id);
           }
@@ -385,16 +385,16 @@ class te {
   renderGroupedStatement(e, t, r, n = /* @__PURE__ */ new Set()) {
     const s = document.createElement("div");
     s.className = "form-field-group", r.repeatable && s.classList.add("repeatable-group"), r.optional && s.classList.add("optional-group");
-    const i = t.statements.map((a) => this.template.statements.find((p) => p.id === a)).filter((a) => a), u = i[0];
-    if (u) {
-      const a = this.findPlaceholder(u.subject);
+    const i = t.statements.map((a) => this.template.statements.find((u) => u.id === a)).filter((a) => a), p = i[0];
+    if (p) {
+      const a = this.findPlaceholder(p.subject);
       if (a && !n.has(a.id)) {
-        const p = document.createElement("div");
-        p.className = "form-field";
+        const u = document.createElement("div");
+        u.className = "form-field";
         const b = document.createElement("label");
-        b.className = "field-label", b.textContent = a.label || this.getLabel(u.subject), p.appendChild(b);
+        b.className = "field-label", b.textContent = a.label || this.getLabel(p.subject), u.appendChild(b);
         const c = this.renderInput(a);
-        c.name = `${u.id}_subject`, c.id = `field_${u.id}_subject`, p.appendChild(c), s.appendChild(p), n.add(a.id);
+        c.name = `${p.id}_subject`, c.id = `field_${p.id}_subject`, u.appendChild(c), s.appendChild(u), n.add(a.id);
       }
     }
     i.forEach((a) => {
@@ -405,8 +405,8 @@ class te {
     console.log(`[renderStatementInGroup] ${t.id}:`, { predicate: t.predicate, object: t.object, isLiteralObject: t.isLiteralObject });
     const n = this.findPlaceholder(t.object), s = this.findPlaceholder(t.predicate);
     console.log("  objectPlaceholder:", n == null ? void 0 : n.id), console.log("  predicatePlaceholder:", s == null ? void 0 : s.id);
-    const i = s && !r.has(s.id), u = n && !r.has(n.id);
-    if (s && n && !i && !u) {
+    const i = s && !r.has(s.id), p = n && !r.has(n.id);
+    if (s && n && !i && !p) {
       console.log("  \u2192 SKIP (both placeholders already rendered)");
       return;
     }
@@ -421,43 +421,43 @@ class te {
       h.className = "field-value", h.textContent = t.object, c.appendChild(l), c.appendChild(h), e.appendChild(c);
       return;
     }
-    if (n && !u && !s) {
+    if (n && !p && !s) {
       console.log("  \u2192 SKIP (object placeholder already rendered)");
       return;
     }
     console.log("  \u2192 INPUT path");
-    const p = document.createElement("div");
-    p.className = "form-field", t.optional && p.classList.add("optional");
+    const u = document.createElement("div");
+    u.className = "form-field", t.optional && u.classList.add("optional");
     const b = document.createElement("label");
-    if (b.className = "field-label", b.textContent = a, p.appendChild(b), i) {
+    if (b.className = "field-label", b.textContent = a, u.appendChild(b), i) {
       const c = this.renderInput(s);
-      c.name = `${t.id}_predicate`, c.id = `field_${t.id}_predicate`, p.appendChild(c), r.add(s.id);
+      c.name = `${t.id}_predicate`, c.id = `field_${t.id}_predicate`, u.appendChild(c), r.add(s.id);
     }
-    if (u) {
+    if (p) {
       if (n.label) {
         const l = document.createElement("div");
-        l.className = "field-help", l.textContent = n.label, p.appendChild(l);
+        l.className = "field-help", l.textContent = n.label, u.appendChild(l);
       }
       const c = this.renderInput(n);
-      c.name = t.id, c.id = `field_${t.id}`, p.appendChild(c), r.add(n.id);
+      c.name = t.id, c.id = `field_${t.id}`, u.appendChild(c), r.add(n.id);
     } else if (!n) {
       const c = document.createElement("div");
-      c.className = "field-value", c.textContent = this.getLabel(t.object) || t.object, p.appendChild(c);
+      c.className = "field-value", c.textContent = this.getLabel(t.object) || t.object, u.appendChild(c);
     }
     if (t.optional) {
       const c = document.createElement("span");
       c.className = "optional-badge", c.textContent = "optional", b.appendChild(c);
     }
-    e.appendChild(p);
+    e.appendChild(u);
   }
   renderStatement(e, t, r = /* @__PURE__ */ new Set()) {
-    const n = this.findPlaceholder(t.subject), s = this.findPlaceholder(t.predicate), i = this.findPlaceholder(t.object), u = this.getLabel(t.predicate), a = n && !r.has(n.id), p = s && !r.has(s.id), b = i && !r.has(i.id);
-    if (!a && !p && !b && (s || i)) return;
+    const n = this.findPlaceholder(t.subject), s = this.findPlaceholder(t.predicate), i = this.findPlaceholder(t.object), p = this.getLabel(t.predicate), a = n && !r.has(n.id), u = s && !r.has(s.id), b = i && !r.has(i.id);
+    if (!a && !u && !b && (s || i)) return;
     if (!s && !i && !a) {
       const l = document.createElement("div");
       l.className = "form-field readonly-field";
       const h = document.createElement("label");
-      h.className = "field-label", h.textContent = u;
+      h.className = "field-label", h.textContent = p;
       const g = document.createElement("div");
       g.className = "field-value", g.textContent = this.getLabel(t.object) || t.object, l.appendChild(h), l.appendChild(g), e.appendChild(l);
       return;
@@ -474,14 +474,14 @@ class te {
       }
       r.add(n.id);
     }
-    if (p) {
+    if (u) {
       const l = document.createElement("label");
-      l.className = "field-label", l.textContent = s.label || u, c.appendChild(l);
+      l.className = "field-label", l.textContent = s.label || p, c.appendChild(l);
       const h = this.renderInput(s);
       h.name = `${t.id}_predicate`, h.id = `field_${t.id}_predicate`, t.optional || (h.required = true), c.appendChild(h), r.add(s.id);
     } else if (!s) {
       const l = document.createElement("label");
-      if (l.className = "field-label", l.textContent = u, t.optional) {
+      if (l.className = "field-label", l.textContent = p, t.optional) {
         const h = document.createElement("span");
         h.className = "optional-badge", h.textContent = "optional", l.appendChild(h);
       }
@@ -509,7 +509,7 @@ class te {
   renderInput(e) {
     const t = e.type.split(",").map((n) => n.trim().replace(/^nt:/, ""));
     for (const n of t) {
-      const s = ee[n];
+      const s = ne[n];
       if (s) return console.log(`Using component ${n} for placeholder ${e.id}`), s(e, this.options);
     }
     console.warn(`No component for types: ${e.type}`);
@@ -530,7 +530,7 @@ class te {
   buildRepeatableField(e, t, r) {
     const n = document.createElement("div");
     n.className = "repeatable-field-group";
-    const s = this.findPlaceholder(e.subject), i = this.findPlaceholder(e.predicate), u = this.findPlaceholder(e.object);
+    const s = this.findPlaceholder(e.subject), i = this.findPlaceholder(e.predicate), p = this.findPlaceholder(e.object);
     let a = false;
     if (s) {
       const b = this.template.statements.filter((c) => c.subject === e.subject);
@@ -552,23 +552,23 @@ class te {
       const l = this.renderInput(i);
       l.name = `${e.id}_predicate_${r}`, l.id = `field_${e.id}_predicate_${r}`, b.appendChild(l), n.appendChild(b);
     }
-    if (u) {
+    if (p) {
       const b = document.createElement("div");
       if (b.className = "repeatable-field", !i) {
         const l = document.createElement("label");
         l.className = "field-label", l.textContent = this.getLabel(e.predicate), b.appendChild(l);
       }
-      if (u.label) {
+      if (p.label) {
         const l = document.createElement("div");
-        l.className = "field-help", l.textContent = u.label, b.appendChild(l);
+        l.className = "field-help", l.textContent = p.label, b.appendChild(l);
       }
-      const c = this.renderInput(u);
+      const c = this.renderInput(p);
       c.name = `${e.id}_object_${r}`, c.id = `field_${e.id}_object_${r}`, b.appendChild(c), n.appendChild(b);
     }
-    const p = document.createElement("button");
-    return p.type = "button", p.className = "btn-remove-field", p.textContent = "\xD7 Remove", p.onclick = () => {
+    const u = document.createElement("button");
+    return u.type = "button", u.className = "btn-remove-field", u.textContent = "\xD7 Remove", u.onclick = () => {
       n.remove(), this.emit("change", this.collectFormData());
-    }, n.appendChild(p), n;
+    }, n.appendChild(u), n;
   }
   buildControls() {
     const e = document.createElement("div");
@@ -633,23 +633,23 @@ class te {
     this.formElement && this.formElement.remove(), this.formElement = null, this.formData = {};
   }
 }
-class ne {
+class oe {
   constructor(e) {
     var _a, _b;
     this.template = e, console.log("NanopubBuilder initialized with:", { uri: e.uri, labelPattern: e.labelPattern, types: ((_a = e.types) == null ? void 0 : _a.length) || 0, statements: ((_b = e.statements) == null ? void 0 : _b.length) || 0 });
   }
   async buildFromFormData(e, t = {}) {
     this.formData = e, this.metadata = t;
-    const r = (/* @__PURE__ */ new Date()).toISOString(), n = this.generateRandomId(), s = this.buildPrefixes(n), i = this.buildHead(), u = this.buildAssertion(), a = this.buildProvenance(), p = this.buildPubinfo(r);
+    const r = (/* @__PURE__ */ new Date()).toISOString(), n = this.generateRandomId(), s = this.buildPrefixes(n), i = this.buildHead(), p = this.buildAssertion(), a = this.buildProvenance(), u = this.buildPubinfo(r);
     return `${s}
 
 ${i}
 
-${u}
+${p}
 
 ${a}
 
-${p}
+${u}
 `;
   }
   generateRandomId() {
@@ -679,8 +679,8 @@ ${p}
       if (!n) continue;
       const s = this.getStatementInstances(n);
       for (const i of s) {
-        const u = this.buildTriple(n, i);
-        u && e.push(u);
+        const p = this.buildTriple(n, i);
+        p && e.push(p);
       }
     }
     return `sub:assertion {
@@ -700,19 +700,19 @@ ${e.join(`
   getInstanceData(e, t) {
     const r = t ? `_${t}` : "", n = { subject: this.formData[`${e.id}_subject${r}`], predicate: this.formData[`${e.id}_predicate${r}`], object: this.formData[`${e.id}_object${r}`] };
     if (!n.subject && e.subjectIsPlaceholder) {
-      const u = e.subject;
+      const p = e.subject;
       for (const a of this.template.statements) {
-        if (a.subjectIsPlaceholder && a.subject === u) {
-          const p = this.formData[`${a.id}_subject`];
-          if (p) {
-            n.subject = p;
+        if (a.subjectIsPlaceholder && a.subject === p) {
+          const u = this.formData[`${a.id}_subject`];
+          if (u) {
+            n.subject = u;
             break;
           }
         }
-        if (a.objectIsPlaceholder && a.object === u) {
-          const p = this.formData[`${a.id}_object`];
-          if (p) {
-            n.subject = p;
+        if (a.objectIsPlaceholder && a.object === p) {
+          const u = this.formData[`${a.id}_object`];
+          if (u) {
+            n.subject = u;
             break;
           }
         }
@@ -723,12 +723,17 @@ ${e.join(`
     return e.optional && !i || !e.optional && (e.objectIsPlaceholder && !i || e.predicateIsPlaceholder && !s) ? null : n;
   }
   buildTriple(e, t) {
-    const r = t.subject || e.subject, n = e.subjectIsPlaceholder ? this.resolveValue(r, e.subject) : this.formatUri(e.subjectUri), s = t.predicate || e.predicate, i = e.predicateIsPlaceholder ? this.resolveValue(s, e.predicate) : this.formatUri(e.predicateUri), u = t.object || e.object, a = e.objectIsPlaceholder ? this.resolveValue(u, e.object) : this.formatUri(e.objectUri);
-    return !n || !i || !a || n.startsWith("<") && n.endsWith(">") && !n.includes("://") || a.startsWith("<") && a.endsWith(">") && !a.includes("://") ? null : e.predicateUri === "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" || i === "rdf:type" || i === "a" ? `  ${n} a ${a} .` : `  ${n} ${i} ${a} .`;
+    const r = this.metadata.creator || "https://orcid.org/0000-0000-0000-0000";
+    let n = t.subject || e.subject, s;
+    e.subjectUri === "nt:CREATOR" ? s = `<${r}>` : s = e.subjectIsPlaceholder ? this.resolveValue(n, e.subject) : this.formatUri(e.subjectUri);
+    const i = t.predicate || e.predicate, p = e.predicateIsPlaceholder ? this.resolveValue(i, e.predicate) : this.formatUri(e.predicateUri);
+    let a = t.object || e.object, u;
+    return e.objectUri === "nt:CREATOR" ? u = `<${r}>` : u = e.objectIsPlaceholder ? this.resolveValue(a, e.object) : this.formatUri(e.objectUri), !s || !p || !u || s.startsWith("<") && s.endsWith(">") && !s.includes("://") || u.startsWith("<") && u.endsWith(">") && !u.includes("://") ? null : e.predicateUri === "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" || p === "rdf:type" || p === "a" ? `  ${s} a ${u} .` : `  ${s} ${p} ${u} .`;
   }
   resolveValue(e, t) {
     var _a;
     if (!e || e === "") return null;
+    if (e === "nt:CREATOR" || e === "CREATOR" || t === "nt:CREATOR" || t === "CREATOR") return `<${this.metadata.creator || "https://orcid.org/0000-0000-0000-0000"}>`;
     const r = t.replace("sub:", "");
     if (e === r || e === `sub:${r}`) return null;
     const n = (_a = this.template.placeholders) == null ? void 0 : _a.find((s) => s.id === r);
@@ -758,9 +763,9 @@ ${e.join(`
     for (const s of this.template.placeholders || []) if (s.isIntroducedResource && s.prefix) {
       const i = this.findPlaceholderValue(s.id);
       if (i) {
-        const u = encodeURIComponent(i).replace(/%20/g, "+");
+        const p = encodeURIComponent(i).replace(/%20/g, "+");
         n.push(`;
-    npx:introduces <${s.prefix}${u}>`);
+    npx:introduces <${s.prefix}${p}>`);
       }
     }
     if (this.template.labelPattern) {
@@ -814,66 +819,66 @@ let M = null;
 function D() {
   return (M === null || M.byteLength === 0) && (M = new Uint8Array(d.memory.buffer)), M;
 }
-function I(o, e) {
+function L(o, e) {
   return o = o >>> 0, Y.decode(D().subarray(o, o + e));
 }
-const P = new Array(128).fill(void 0);
-P.push(void 0, null, true, false);
-let A = P.length;
+const S = new Array(128).fill(void 0);
+S.push(void 0, null, true, false);
+let A = S.length;
 function m(o) {
-  A === P.length && P.push(P.length + 1);
+  A === S.length && S.push(S.length + 1);
   const e = A;
-  return A = P[e], P[e] = o, e;
+  return A = S[e], S[e] = o, e;
 }
 function f(o) {
-  return P[o];
+  return S[o];
 }
-function re(o) {
-  o < 132 || (P[o] = A, A = o);
+function se(o) {
+  o < 132 || (S[o] = A, A = o);
 }
 function y(o) {
   const e = f(o);
-  return re(o), e;
+  return se(o), e;
 }
-let E = 0;
+let j = 0;
 const B = typeof TextEncoder < "u" ? new TextEncoder("utf-8") : { encode: () => {
   throw Error("TextEncoder not available");
-} }, oe = typeof B.encodeInto == "function" ? function(o, e) {
+} }, ie = typeof B.encodeInto == "function" ? function(o, e) {
   return B.encodeInto(o, e);
 } : function(o, e) {
   const t = B.encode(o);
   return e.set(t), { read: o.length, written: t.length };
 };
-function L(o, e, t) {
+function R(o, e, t) {
   if (t === void 0) {
-    const u = B.encode(o), a = e(u.length, 1) >>> 0;
-    return D().subarray(a, a + u.length).set(u), E = u.length, a;
+    const p = B.encode(o), a = e(p.length, 1) >>> 0;
+    return D().subarray(a, a + p.length).set(p), j = p.length, a;
   }
   let r = o.length, n = e(r, 1) >>> 0;
   const s = D();
   let i = 0;
   for (; i < r; i++) {
-    const u = o.charCodeAt(i);
-    if (u > 127) break;
-    s[n + i] = u;
+    const p = o.charCodeAt(i);
+    if (p > 127) break;
+    s[n + i] = p;
   }
   if (i !== r) {
     i !== 0 && (o = o.slice(i)), n = t(n, r, r = i + o.length * 3, 1) >>> 0;
-    const u = D().subarray(n + i, n + r), a = oe(o, u);
+    const p = D().subarray(n + i, n + r), a = ie(o, p);
     i += a.written, n = t(n, r, i, 1) >>> 0;
   }
-  return E = i, n;
+  return j = i, n;
 }
-function k(o) {
+function F(o) {
   return o == null;
 }
-let U = null;
-function _() {
-  return (U === null || U.byteLength === 0) && (U = new Int32Array(d.memory.buffer)), U;
-}
 let O = null;
-function se() {
-  return (O === null || O.byteLength === 0) && (O = new Float64Array(d.memory.buffer)), O;
+function _() {
+  return (O === null || O.byteLength === 0) && (O = new Int32Array(d.memory.buffer)), O;
+}
+let U = null;
+function ae() {
+  return (U === null || U.byteLength === 0) && (U = new Float64Array(d.memory.buffer)), U;
 }
 function z(o) {
   const e = typeof o;
@@ -911,20 +916,20 @@ const q = typeof FinalizationRegistry > "u" ? { register: () => {
 } } : new FinalizationRegistry((o) => {
   d.__wbindgen_export_2.get(o.dtor)(o.a, o.b);
 });
-function ie(o, e, t, r) {
+function le(o, e, t, r) {
   const n = { a: o, b: e, cnt: 1, dtor: t }, s = (...i) => {
     n.cnt++;
-    const u = n.a;
+    const p = n.a;
     n.a = 0;
     try {
-      return r(u, n.b, ...i);
+      return r(p, n.b, ...i);
     } finally {
-      --n.cnt === 0 ? (d.__wbindgen_export_2.get(n.dtor)(u, n.b), q.unregister(n)) : n.a = u;
+      --n.cnt === 0 ? (d.__wbindgen_export_2.get(n.dtor)(p, n.b), q.unregister(n)) : n.a = p;
     }
   };
   return s.original = n, q.register(s, n, n), s;
 }
-function ae(o, e, t) {
+function ce(o, e, t) {
   d._dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__h15d348a8f539de58(o, e, m(t));
 }
 function w(o, e) {
@@ -934,7 +939,7 @@ function w(o, e) {
     d.__wbindgen_exn_store(m(t));
   }
 }
-function le(o, e, t, r) {
+function de(o, e, t, r) {
   d.wasm_bindgen__convert__closures__invoke2_mut__h2c289313db95095e(o, e, m(t), m(r));
 }
 function J(o, e) {
@@ -942,17 +947,17 @@ function J(o, e) {
   return o.ptr;
 }
 let W = 128;
-function ce(o) {
+function ue(o) {
   if (W == 1) throw new Error("out of js stack");
-  return P[--W] = o, W;
+  return S[--W] = o, W;
 }
-const de = typeof FinalizationRegistry > "u" ? { register: () => {
+const pe = typeof FinalizationRegistry > "u" ? { register: () => {
 }, unregister: () => {
 } } : new FinalizationRegistry((o) => d.__wbg_keypair_free(o >>> 0));
-class ue {
+class fe {
   __destroy_into_raw() {
     const e = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, de.unregister(this), e;
+    return this.__wbg_ptr = 0, pe.unregister(this), e;
   }
   free() {
     const e = this.__destroy_into_raw();
@@ -984,10 +989,10 @@ class ue {
 const X = typeof FinalizationRegistry > "u" ? { register: () => {
 }, unregister: () => {
 } } : new FinalizationRegistry((o) => d.__wbg_nanopub_free(o >>> 0));
-class T {
+class k {
   static __wrap(e) {
     e = e >>> 0;
-    const t = Object.create(T.prototype);
+    const t = Object.create(k.prototype);
     return t.__wbg_ptr = e, X.register(t, t.__wbg_ptr, t), t;
   }
   __destroy_into_raw() {
@@ -1015,7 +1020,7 @@ class T {
       d.nanopub_check(s, n);
       var e = _()[s / 4 + 0], t = _()[s / 4 + 1], r = _()[s / 4 + 2];
       if (r) throw y(t);
-      return T.__wrap(e);
+      return k.__wrap(e);
     } finally {
       d.__wbindgen_add_to_stack_pointer(16);
     }
@@ -1026,7 +1031,7 @@ class T {
       J(e, K), d.nanopub_sign(i, s, e.__wbg_ptr);
       var t = _()[i / 4 + 0], r = _()[i / 4 + 1], n = _()[i / 4 + 2];
       if (n) throw y(r);
-      return T.__wrap(t);
+      return k.__wrap(t);
     } finally {
       d.__wbindgen_add_to_stack_pointer(16);
     }
@@ -1034,30 +1039,30 @@ class T {
   publish(e, t) {
     try {
       const s = this.__destroy_into_raw();
-      var r = k(t) ? 0 : L(t, d.__wbindgen_malloc, d.__wbindgen_realloc), n = E;
-      const i = d.nanopub_publish(s, ce(e), r, n);
+      var r = F(t) ? 0 : R(t, d.__wbindgen_malloc, d.__wbindgen_realloc), n = j;
+      const i = d.nanopub_publish(s, ue(e), r, n);
       return y(i);
     } finally {
-      P[W++] = void 0;
+      S[W++] = void 0;
     }
   }
   static fetch(e) {
-    const t = L(e, d.__wbindgen_malloc, d.__wbindgen_realloc), r = E, n = d.nanopub_fetch(t, r);
+    const t = R(e, d.__wbindgen_malloc, d.__wbindgen_realloc), r = j, n = d.nanopub_fetch(t, r);
     return y(n);
   }
   static publish_intro(e, t) {
     J(e, K);
-    const r = L(t, d.__wbindgen_malloc, d.__wbindgen_realloc), n = E, s = d.nanopub_publish_intro(e.__wbg_ptr, r, n);
+    const r = R(t, d.__wbindgen_malloc, d.__wbindgen_realloc), n = j, s = d.nanopub_publish_intro(e.__wbg_ptr, r, n);
     return y(s);
   }
   rdf() {
     let e, t;
     try {
-      const p = d.__wbindgen_add_to_stack_pointer(-16);
-      d.nanopub_rdf(p, this.__wbg_ptr);
-      var r = _()[p / 4 + 0], n = _()[p / 4 + 1], s = _()[p / 4 + 2], i = _()[p / 4 + 3], u = r, a = n;
-      if (i) throw u = 0, a = 0, y(s);
-      return e = u, t = a, I(u, a);
+      const u = d.__wbindgen_add_to_stack_pointer(-16);
+      d.nanopub_rdf(u, this.__wbg_ptr);
+      var r = _()[u / 4 + 0], n = _()[u / 4 + 1], s = _()[u / 4 + 2], i = _()[u / 4 + 3], p = r, a = n;
+      if (i) throw p = 0, a = 0, y(s);
+      return e = p, t = a, L(p, a);
     } finally {
       d.__wbindgen_add_to_stack_pointer(16), d.__wbindgen_free(e, t, 1);
     }
@@ -1079,19 +1084,19 @@ class T {
       const s = d.__wbindgen_add_to_stack_pointer(-16);
       d.nanopub_toString(s, this.__wbg_ptr);
       var r = _()[s / 4 + 0], n = _()[s / 4 + 1];
-      return e = r, t = n, I(r, n);
+      return e = r, t = n, L(r, n);
     } finally {
       d.__wbindgen_add_to_stack_pointer(16), d.__wbindgen_free(e, t, 1);
     }
   }
 }
-const pe = typeof FinalizationRegistry > "u" ? { register: () => {
+const he = typeof FinalizationRegistry > "u" ? { register: () => {
 }, unregister: () => {
 } } : new FinalizationRegistry((o) => d.__wbg_npprofile_free(o >>> 0));
 class K {
   __destroy_into_raw() {
     const e = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, pe.unregister(this), e;
+    return this.__wbg_ptr = 0, he.unregister(this), e;
   }
   free() {
     const e = this.__destroy_into_raw();
@@ -1103,16 +1108,16 @@ class K {
       const s = d.__wbindgen_add_to_stack_pointer(-16);
       d.npprofile___getClassname(s, this.__wbg_ptr);
       var r = _()[s / 4 + 0], n = _()[s / 4 + 1];
-      return e = r, t = n, I(r, n);
+      return e = r, t = n, L(r, n);
     } finally {
       d.__wbindgen_add_to_stack_pointer(16), d.__wbindgen_free(e, t, 1);
     }
   }
   constructor(e, t, r, n) {
     try {
-      const g = d.__wbindgen_add_to_stack_pointer(-16), v = L(e, d.__wbindgen_malloc, d.__wbindgen_realloc), C = E;
-      var s = k(t) ? 0 : L(t, d.__wbindgen_malloc, d.__wbindgen_realloc), i = E, u = k(r) ? 0 : L(r, d.__wbindgen_malloc, d.__wbindgen_realloc), a = E, p = k(n) ? 0 : L(n, d.__wbindgen_malloc, d.__wbindgen_realloc), b = E;
-      d.npprofile_new(g, v, C, s, i, u, a, p, b);
+      const g = d.__wbindgen_add_to_stack_pointer(-16), v = R(e, d.__wbindgen_malloc, d.__wbindgen_realloc), C = j;
+      var s = F(t) ? 0 : R(t, d.__wbindgen_malloc, d.__wbindgen_realloc), i = j, p = F(r) ? 0 : R(r, d.__wbindgen_malloc, d.__wbindgen_realloc), a = j, u = F(n) ? 0 : R(n, d.__wbindgen_malloc, d.__wbindgen_realloc), b = j;
+      d.npprofile_new(g, v, C, s, i, p, a, u, b);
       var c = _()[g / 4 + 0], l = _()[g / 4 + 1], h = _()[g / 4 + 2];
       if (h) throw y(l);
       return this.__wbg_ptr = c >>> 0, this;
@@ -1126,7 +1131,7 @@ class K {
       const s = d.__wbindgen_add_to_stack_pointer(-16);
       d.npprofile_toString(s, this.__wbg_ptr);
       var r = _()[s / 4 + 0], n = _()[s / 4 + 1];
-      return e = r, t = n, I(r, n);
+      return e = r, t = n, L(r, n);
     } finally {
       d.__wbindgen_add_to_stack_pointer(16), d.__wbindgen_free(e, t, 1);
     }
@@ -1143,7 +1148,7 @@ class K {
     }
   }
 }
-async function fe(o, e) {
+async function be(o, e) {
   if (typeof Response == "function" && o instanceof Response) {
     if (typeof WebAssembly.instantiateStreaming == "function") try {
       return await WebAssembly.instantiateStreaming(o, e);
@@ -1158,13 +1163,13 @@ async function fe(o, e) {
     return t instanceof WebAssembly.Instance ? { instance: t, module: o } : t;
   }
 }
-function he() {
+function me() {
   const o = {};
   return o.wbg = {}, o.wbg.__wbg_nanopub_new = function(e) {
-    const t = T.__wrap(e);
+    const t = k.__wrap(e);
     return m(t);
   }, o.wbg.__wbindgen_string_new = function(e, t) {
-    const r = I(e, t);
+    const r = L(e, t);
     return m(r);
   }, o.wbg.__wbg_call_b3ca7c6051f9bec1 = function() {
     return w(function(e, t, r) {
@@ -1200,7 +1205,7 @@ function he() {
     return m(t);
   }, o.wbg.__wbg_append_7bfcb4937d1d5e29 = function() {
     return w(function(e, t, r, n, s) {
-      f(e).append(I(t, r), I(n, s));
+      f(e).append(L(t, r), L(n, s));
     }, arguments);
   }, o.wbg.__wbg_instanceof_Response_849eb93e75734b6e = function(e) {
     let t;
@@ -1213,7 +1218,7 @@ function he() {
   }, o.wbg.__wbg_status_61a01141acd3cf74 = function(e) {
     return f(e).status;
   }, o.wbg.__wbg_url_5f6dc4009ac5f99d = function(e, t) {
-    const r = f(t).url, n = L(r, d.__wbindgen_malloc, d.__wbindgen_realloc), s = E;
+    const r = f(t).url, n = R(r, d.__wbindgen_malloc, d.__wbindgen_realloc), s = j;
     _()[e / 4 + 1] = s, _()[e / 4 + 0] = n;
   }, o.wbg.__wbg_headers_9620bfada380764a = function(e) {
     const t = f(e).headers;
@@ -1255,7 +1260,7 @@ function he() {
     }, arguments);
   }, o.wbg.__wbindgen_string_get = function(e, t) {
     const r = f(t), n = typeof r == "string" ? r : void 0;
-    var s = k(n) ? 0 : L(n, d.__wbindgen_malloc, d.__wbindgen_realloc), i = E;
+    var s = F(n) ? 0 : R(n, d.__wbindgen_malloc, d.__wbindgen_realloc), i = j;
     _()[e / 4 + 1] = i, _()[e / 4 + 0] = s;
   }, o.wbg.__wbg_text_450a059667fd91fd = function() {
     return w(function(e) {
@@ -1339,7 +1344,7 @@ function he() {
   }, o.wbg.__wbindgen_is_undefined = function(e) {
     return f(e) === void 0;
   }, o.wbg.__wbg_newnoargs_e258087cd0daa0ea = function(e, t) {
-    const r = new Function(I(e, t));
+    const r = new Function(L(e, t));
     return m(r);
   }, o.wbg.__wbg_new_16b304a2cfa7ff4a = function() {
     const e = new Array();
@@ -1351,14 +1356,14 @@ function he() {
     }, arguments);
   }, o.wbg.__wbindgen_number_get = function(e, t) {
     const r = f(t), n = typeof r == "number" ? r : void 0;
-    se()[e / 8 + 1] = k(n) ? 0 : n, _()[e / 4 + 0] = !k(n);
+    ae()[e / 8 + 1] = F(n) ? 0 : n, _()[e / 4 + 0] = !F(n);
   }, o.wbg.__wbg_new_81740750da40724f = function(e, t) {
     try {
-      var r = { a: e, b: t }, n = (i, u) => {
+      var r = { a: e, b: t }, n = (i, p) => {
         const a = r.a;
         r.a = 0;
         try {
-          return le(a, r.b, i, u);
+          return de(a, r.b, i, p);
         } finally {
           r.a = a;
         }
@@ -1384,10 +1389,10 @@ function he() {
     const r = f(e).fetch(f(t));
     return m(r);
   }, o.wbg.__wbindgen_debug_string = function(e, t) {
-    const r = z(f(t)), n = L(r, d.__wbindgen_malloc, d.__wbindgen_realloc), s = E;
+    const r = z(f(t)), n = R(r, d.__wbindgen_malloc, d.__wbindgen_realloc), s = j;
     _()[e / 4 + 1] = s, _()[e / 4 + 0] = n;
   }, o.wbg.__wbindgen_throw = function(e, t) {
-    throw new Error(I(e, t));
+    throw new Error(L(e, t));
   }, o.wbg.__wbg_then_0c86a60e8fcfe9f6 = function(e, t) {
     const r = f(e).then(f(t));
     return m(r);
@@ -1404,26 +1409,26 @@ function he() {
     return m(t);
   }, o.wbg.__wbg_newwithstrandinit_3fd6fba4083ff2d0 = function() {
     return w(function(e, t, r) {
-      const n = new Request(I(e, t), f(r));
+      const n = new Request(L(e, t), f(r));
       return m(n);
     }, arguments);
   }, o.wbg.__wbindgen_closure_wrapper3118 = function(e, t, r) {
-    const n = ie(e, t, 173, ae);
+    const n = le(e, t, 173, ce);
     return m(n);
   }, o;
 }
-function be(o, e) {
-  return d = o.exports, Z.__wbindgen_wasm_module = e, O = null, U = null, M = null, d.__wbindgen_start(), d;
+function _e(o, e) {
+  return d = o.exports, Z.__wbindgen_wasm_module = e, U = null, O = null, M = null, d.__wbindgen_start(), d;
 }
 async function Z(o) {
   if (d !== void 0) return d;
   typeof o > "u" && (o = new URL("/nanopub-create/assets/web_bg-CaMmR8bt.wasm", import.meta.url));
-  const e = he();
+  const e = me();
   (typeof o == "string" || typeof Request == "function" && o instanceof Request || typeof URL == "function" && o instanceof URL) && (o = fetch(o));
-  const { instance: t, module: r } = await fe(await o, e);
-  return be(t, r);
+  const { instance: t, module: r } = await be(await o, e);
+  return _e(t, r);
 }
-class me {
+class ge {
   constructor(e = {}) {
     this.options = { publishServer: e.publishServer || "https://np.petapico.org", theme: e.theme || "default", validateOnChange: e.validateOnChange !== false, showHelp: e.showHelp !== false, ...e }, this.template = null, this.formGenerator = null, this.builder = null, this.formData = {}, this.container = null, this.wasmInitialized = false, this.profile = null, this.credentials = null, this.listeners = { change: [], submit: [], error: [], publish: [], profileNeeded: [] }, this.initWasm(), this.loadCredentials();
   }
@@ -1440,7 +1445,7 @@ class me {
   async generateKeys() {
     await this.ensureWasm();
     try {
-      const t = new ue().toJs();
+      const t = new fe().toJs();
       return { privateKey: t.private, publicKey: t.public };
     } catch (e) {
       throw console.error("Key generation failed:", e), new Error("Failed to generate RSA keys");
@@ -1504,7 +1509,7 @@ class me {
   async renderFromTemplateUri(e, t) {
     this.container = t;
     try {
-      this.template = await G.fetchAndParse(e), this.template.uri = this.template.uri || e, this.formGenerator = new te(this.template, { validateOnChange: this.options.validateOnChange, showHelp: this.options.showHelp, labels: this.template.labels }), this.formGenerator.on("change", (r) => {
+      this.template = await G.fetchAndParse(e), this.template.uri = this.template.uri || e, this.formGenerator = new re(this.template, { validateOnChange: this.options.validateOnChange, showHelp: this.options.showHelp, labels: this.template.labels }), this.formGenerator.on("change", (r) => {
         this.formData = r, this.emit("change", r);
       }), this.formGenerator.on("submit", async (r) => {
         if (this.formData = r.formData || r, !this.hasProfile()) {
@@ -1517,7 +1522,7 @@ class me {
         } catch (n) {
           this.emit("error", { type: "generation", error: n });
         }
-      }), this.formGenerator.renderForm(t), this.builder = new ne(this.template);
+      }), this.formGenerator.renderForm(t), this.builder = new oe(this.template);
     } catch (r) {
       throw this.emit("error", { type: "template", error: r }), r;
     }
@@ -1535,15 +1540,15 @@ class me {
       console.log("\u{1F510} Creating profile and signing..."), console.log("  ORCID:", t), console.log("  Name:", r);
       const n = new K(this.credentials.privateKey, t, r);
       console.log("\u2705 Profile created"), console.log("\u{1F4DD} Signing nanopub...");
-      const i = new T(e).sign(n);
+      const i = new k(e).sign(n);
       console.log("\u2705 Signed successfully"), console.log("  Signed type:", typeof i);
-      const u = i.rdf();
-      if (!this.options.publishServer) return console.log("\u{1F4E5} Download-only mode (no publish server configured)"), this.emit("publish", { uri: null, signedContent: u, downloadOnly: true }), { signedContent: u, downloadOnly: true };
+      const p = i.rdf();
+      if (!this.options.publishServer) return console.log("\u{1F4E5} Download-only mode (no publish server configured)"), this.emit("publish", { uri: null, signedContent: p, downloadOnly: true }), { signedContent: p, downloadOnly: true };
       console.log("\u{1F4E4} Publishing to network..."), console.log("   Server:", this.options.publishServer);
       const a = await i.publish(n, this.options.publishServer);
       console.log("\u2705 Published successfully!"), console.log("\u{1F310} Result:", a);
-      const p = typeof a == "string" ? a : a.uri || a.nanopub_uri;
-      return this.emit("publish", { uri: p, signedContent: u }), { uri: p, nanopub_uri: p, signedContent: u };
+      const u = typeof a == "string" ? a : a.uri || a.nanopub_uri;
+      return this.emit("publish", { uri: u, signedContent: p }), { uri: u, nanopub_uri: u, signedContent: p };
     } catch (t) {
       throw console.error("\u274C Sign/Publish failed:", t), console.error("Error details:", t.message), this.emit("error", { type: "publish", error: t }), t;
     }
@@ -1556,19 +1561,19 @@ class me {
   }
 }
 let x = null, H = "";
-async function _e() {
+async function we() {
   try {
-    x = new me({ publishServer: null }), x.on("change", (o) => {
+    x = new ge({ publishServer: null }), x.on("change", (o) => {
       console.log("Form data changed:", o);
     }), x.on("submit", (o) => {
-      console.log("Generated nanopub:", o.trigContent), H = o.trigContent, ge(o.trigContent);
+      console.log("Generated nanopub:", o.trigContent), H = o.trigContent, ye(o.trigContent);
     }), x.on("error", (o) => {
-      console.error("Error:", o.type, o.error), j(`Error (${o.type}): ${o.error.message}`, "error");
+      console.error("Error:", o.type, o.error), E(`Error (${o.type}): ${o.error.message}`, "error");
     }), x.on("profileNeeded", () => {
-      j("Please setup your profile first to sign nanopublications", "warning");
+      E("Please setup your profile first to sign nanopublications", "warning");
     }), console.log("\u2713 Creator initialized successfully"), V();
   } catch (o) {
-    console.error("Failed to initialize:", o), j("Failed to initialize: " + o.message, "error");
+    console.error("Failed to initialize:", o), E("Failed to initialize: " + o.message, "error");
   }
 }
 function V() {
@@ -1616,13 +1621,13 @@ document.getElementById("import-file").addEventListener("change", async (o) => {
 document.getElementById("export-btn").addEventListener("click", () => {
   try {
     const o = x.getProfile(), e = x.exportKeys(), t = { name: o.name, orcid: o.orcid, privateKey: e.privateKey, publicKey: e.publicKey, exportedAt: (/* @__PURE__ */ new Date()).toISOString() }, r = new Blob([JSON.stringify(t, null, 2)], { type: "application/json" }), n = URL.createObjectURL(r), s = document.createElement("a");
-    s.href = n, s.download = `nanopub-profile-${o.name.replace(/\s+/g, "-").toLowerCase()}.json`, s.click(), URL.revokeObjectURL(n), j("\u2713 Profile exported!", "success");
+    s.href = n, s.download = `nanopub-profile-${o.name.replace(/\s+/g, "-").toLowerCase()}.json`, s.click(), URL.revokeObjectURL(n), E("\u2713 Profile exported!", "success");
   } catch (o) {
-    console.error("Export failed:", o), j("Export failed: " + o.message, "error");
+    console.error("Export failed:", o), E("Export failed: " + o.message, "error");
   }
 });
 document.getElementById("clear-btn").addEventListener("click", () => {
-  confirm("Are you sure you want to clear your profile and keys? Make sure to export first if you want to keep them.") && (x.clearCredentials(), V(), j("Profile cleared", "info"));
+  confirm("Are you sure you want to clear your profile and keys? Make sure to export first if you want to keep them.") && (x.clearCredentials(), V(), E("Profile cleared", "info"));
 });
 document.getElementById("load-template-btn").addEventListener("click", async () => {
   const o = document.getElementById("template-uri").value.trim(), e = document.getElementById("template-container"), t = document.getElementById("template-message"), r = document.getElementById("load-template-btn");
@@ -1640,43 +1645,43 @@ document.getElementById("load-template-btn").addEventListener("click", async () 
     r.disabled = false, r.textContent = "Load Template";
   }
 });
-function ge(o) {
+function ye(o) {
   document.getElementById("preview-text").textContent = o, document.getElementById("preview-section").classList.remove("hidden");
 }
 document.getElementById("copy-btn").addEventListener("click", () => {
   const o = document.getElementById("preview-text").textContent;
   navigator.clipboard.writeText(o).then(() => {
-    j("\u2713 Copied to clipboard!", "success");
+    E("\u2713 Copied to clipboard!", "success");
   });
 });
 document.getElementById("sign-download-btn").addEventListener("click", () => {
-  we();
+  ve();
 });
-async function we() {
+async function ve() {
   if (!H) {
-    j("No nanopublication to sign", "warning");
+    E("No nanopublication to sign", "warning");
     return;
   }
   if (!x.hasProfile()) {
-    j("Please setup your profile first", "warning");
+    E("Please setup your profile first", "warning");
     return;
   }
   const o = document.getElementById("sign-download-btn");
   try {
-    o.disabled = true, o.textContent = "Signing...", j("\u{1F510} Signing nanopublication...", "info");
+    o.disabled = true, o.textContent = "Signing...", E("\u{1F510} Signing nanopublication...", "info");
     let t = (await x.publish(H)).signedContent.replace(/##/g, "#");
-    const r = x.getProfile(), s = `nanopub-signed-${(/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-")}.trig`, i = new Blob([t], { type: "application/trig" }), u = URL.createObjectURL(i), a = document.createElement("a");
-    a.href = u, a.download = s, a.click(), URL.revokeObjectURL(u), j("\u2705 Signed nanopub downloaded!", "success"), document.getElementById("preview-text").textContent = t;
+    const r = x.getProfile(), s = `nanopub-signed-${(/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-")}.trig`, i = new Blob([t], { type: "application/trig" }), p = URL.createObjectURL(i), a = document.createElement("a");
+    a.href = p, a.download = s, a.click(), URL.revokeObjectURL(p), E("\u2705 Signed nanopub downloaded!", "success"), document.getElementById("preview-text").textContent = t;
   } catch (e) {
-    console.error("Sign failed:", e), j(`Sign failed: ${e.message}`, "error");
+    console.error("Sign failed:", e), E(`Sign failed: ${e.message}`, "error");
   } finally {
     o.disabled = false, o.textContent = "Sign & Download";
   }
 }
-function j(o, e = "info") {
+function E(o, e = "info") {
   const t = document.getElementById("messages"), r = document.createElement("div");
   r.className = `${e}-message`, r.textContent = o, r.style.marginBottom = "10px", r.style.animation = "slideIn 0.3s ease", t.appendChild(r), setTimeout(() => {
     r.style.animation = "slideOut 0.3s ease", setTimeout(() => r.remove(), 300);
   }, 5e3);
 }
-_e();
+we();
