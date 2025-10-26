@@ -33,7 +33,7 @@ npm install
 # Start dev server
 npm run dev
 
-# Open browser to http://localhost:3000/demo/index.html
+# Open browser to http://localhost:3000/nanopub-create/demo/index.html 
 ```
 
 ### Try It Out
