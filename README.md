@@ -38,6 +38,8 @@ npm run dev
 
 ### Try It Out
 
+#### Using the Demo
+
 1. **Setup Profile**
    - Enter your name
    - Add ORCID (optional)
@@ -51,9 +53,43 @@ npm run dev
    - Enter values for all fields
    - Click "Create Nanopublication"
 
-4. **Publish**
-   - Review the preview
-   - Click "Publish" to sign and publish to network
+4. **Sign & Download**
+   - Review the preview (unsigned nanopub in TriG format)
+   - Click "Sign & Download" to sign and download the nanopublication
+
+#### Publishing Your Signed Nanopublication
+
+After downloading your signed nanopublication file (e.g., `nanopub-signed-2025-10-26T16-03-01-925Z.trig`), you can publish it to the nanopub network:
+
+**Using curl:**
+```bash
+curl -X POST https://np.knowledgepixels.com/ \
+  -H "Content-Type: application/trig" \
+  --data-binary @nanopub-signed-2025-10-26T16-03-01-925Z.trig
+```
+
+**Using nanopub-rs CLI:**
+```bash
+# Install nanopub CLI (if not already installed)
+cargo install nanopub
+
+# Publish your signed nanopub
+nanopub publish nanopub-signed-2025-10-26T16-03-01-925Z.trig
+```
+
+**Viewing Your Published Nanopub:**
+
+After successful publication, you'll receive a nanopub URI like:
+```
+https://w3id.org/np/RAbc123...
+```
+
+View it in Nanodash:
+```
+https://nanodash.knowledgepixels.com/explore?id=https://w3id.org/np/RAbc123...
+```
+
+Or search for your nanopubs by ORCID at [Nanodash](https://nanodash.knowledgepixels.com/)
 
 ## 📖 Usage
 
@@ -297,6 +333,18 @@ Contributions welcome! Please:
 
 ## 🐛 Troubleshooting
 
+### Double Hash `##` in Signed URIs
+
+There's a known issue with `@nanopub/sign` WASM where signed nanopubs contain `##` instead of `#` in graph URIs. This causes publishing to fail with "Invalid IRI" errors.
+
+**Workaround in `index.html`:**
+```javascript
+// In signAndDownload() function around line 701
+let signedContent = result.signedContent.replace(/##/g, '#');
+```
+
+This fix is already applied in the demo. See [GitHub issue](https://github.com/vemonet/nanopub-rs/issues) for status.
+
 ### WASM Not Loading
 ```bash
 # Clear cache and restart
@@ -317,11 +365,10 @@ Verify pattern is being parsed:
 const patternMatch = this.content.match(/nt:hasNanopubLabelPattern/);
 ```
 
-### Prefixes Wrong
-Check `nanopubBuilder.js` uses slash not hash:
+### Correct Prefix Format
+The `sub:` prefix should have `#` at the end (this is correct):
 ```javascript
-`@prefix sub: <${baseUri}/> .`  // Correct
-`@prefix sub: <${baseUri}#> .`  // Wrong
+`@prefix sub: <${baseUri}#> .`  // ✓ Correct - matches nanodash format
 ```
 
 ## 📚 Resources

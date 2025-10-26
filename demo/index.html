@@ -697,8 +697,9 @@
         // Since publishServer is null, it will just sign without publishing
         const result = await creator.publish(currentTrigContent);
         
-        // Get signed content
-        const signedContent = result.signedContent;
+        // @annefou - 26 October 2025
+        // Get signed content and fix double hash bug from nanopub-rs (not sure it is a bug)
+        let signedContent = result.signedContent.replace(/##/g, '#');
         
         // Download the signed nanopub
         const profile = creator.getProfile();
