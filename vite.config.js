@@ -3,6 +3,12 @@ import wasm from 'vite-plugin-wasm';
 import topLevelAwait from 'vite-plugin-top-level-await';
 
 export default defineConfig({
+  base: '/nanopub-create/',
+  build: {
+    rollupOptions: {
+      input: './demo/index.html'
+    }
+  },
   plugins: [
     wasm(),
     topLevelAwait()
