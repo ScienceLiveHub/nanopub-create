@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nanopub Creator - Demo</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    
+    h1 {
+      color: #BE2E78;
+      margin-bottom: 10px;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    
+    .demo-notice {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .demo-notice h3 {
+      margin: 0 0 10px 0;
+      color: #856404;
+    }
+    
+    .demo-notice p {
+      margin: 5px 0;
+      color: #856404;
+    }
+    
+    .section {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .section h2 {
+      margin-top: 0;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.85em;
+      font-weight: 500;
+    }
+    
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .status.warning {
+      background: #fff3cd;
+      color: #856404;
+    }
+    
+    .status.loading {
+      background: #cce5ff;
+      color: #004085;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #333;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.95em;
+      box-sizing: border-box;
+    }
+    
+    .form-group input:focus {
+      border-color: #BE2E78;
+      outline: none;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.95em;
+      transition: all 0.2s;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .btn-primary {
+      background: #BE2E78;
+      color: white;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background: #9d2563;
+    }
+    
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+    
+    .btn-secondary:hover:not(:disabled) {
+      background: #545b62;
+    }
+    
+    .btn-outline {
+      background: white;
+      border: 2px solid #6c757d;
+      color: #6c757d;
+    }
+    
+    .btn-outline:hover:not(:disabled) {
+      background: #6c757d;
+      color: white;
+    }
+    
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    .help-text {
+      font-size: 0.85em;
+      color: #666;
+      margin-top: 5px;
+    }
+    
+    .badge {
+      font-size: 0.7em;
+      padding: 3px 8px;
+      border-radius: 10px;
+      background: #17a2b8;
+      color: white;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .badge-wasm {
+      background: #6f42c1;
+    }
+    
+    .success-message, .error-message, .info-message, .warning-message {
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 10px;
+    }
+    
+    .success-message {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .info-message {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    
+    .warning-message {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeaa7;
+    }
+    
+    .file-input-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .file-input-wrapper input[type=file] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+    
+    .profile-info {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+    }
+    
+    .profile-info p {
+      margin: 8px 0;
+    }
+    
+    .profile-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .key-preview {
+      background: #282c34;
+      color: #abb2bf;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.8em;
+      word-break: break-all;
+      margin-top: 10px;
+    }
+    
+    .loading {
+      text-align: center;
+      color: #666;
+      padding: 40px;
+      font-style: italic;
+    }
+    
+    #messages {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      max-width: 400px;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+    }
+    
+    .download-info {
+      background: #e7f3ff;
+      padding: 15px;
+      border-radius: 6px;
+      border-left: 4px solid #0066cc;
+      margin-top: 15px;
+    }
+    
+    .download-info h4 {
+      margin: 0 0 10px 0;
+      color: #0066cc;
+    }
+    
+    .download-info ol {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    
+    .download-info code {
+      background: #f5f5f5;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+    }
+  </style>
+  <script type="module" crossorigin src="/nanopub-create/assets/index-BFJC0oxO.js"></script>
+  <link rel="stylesheet" crossorigin href="/nanopub-create/assets/index-BPOJsaoy.css">
+</head>
+<body>
+  <h1>Nanopub Creator <span class="badge badge-wasm">WASM</span> <span class="badge">Demo</span></h1>
+  <p class="subtitle">Create and sign nanopublications using nanopub-rs WASM</p>
+
+  <div class="demo-notice">
+    <h3>📌 GitHub Pages Demo Mode</h3>
+    <p>This demo will <strong>sign your nanopublication</strong> and download it as a <code>.trig</code> file.</p>
+    <p>To publish to the nanopub network, you'll need to upload it manually or use the library in a platform with a backend (like Science Live or Zotero).</p>
+  </div>
+
+  <div id="messages"></div>
+
+  <!-- Profile Section -->
+  <div class="section">
+    <h2>
+      👤 Profile 
+      <span id="profile-status" class="status warning">Not configured</span>
+    </h2>
+    
+    <div id="profile-setup">
+      <p>Setup your profile to create and sign nanopublications:</p>
+      <div class="form-group">
+        <label>Name:</label>
+        <input type="text" id="name-input" placeholder="Your Name" />
+      </div>
+      <div class="form-group">
+        <label>ORCID (optional):</label>
+        <input type="text" id="orcid-input" placeholder="0000-0002-1234-5678 or https://orcid.org/0000-0002-1234-5678" />
+        <div class="help-text">Enter your ORCID identifier (with or without URL prefix)</div>
+      </div>
+      <button id="setup-btn" class="btn btn-primary">Generate Keys & Save Profile</button>
+      <div id="setup-message"></div>
+      
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #dee2e6;">
+        <p style="margin-bottom: 10px;"><strong>Or import existing profile:</strong></p>
+        <div class="file-input-wrapper">
+          <button class="btn btn-secondary">Import Profile JSON</button>
+          <input type="file" id="import-file" accept=".json" />
+        </div>
+        <div class="help-text">Load a previously exported profile with keys</div>
+      </div>
+    </div>
+    
+    <div id="profile-info" class="hidden">
+      <div class="profile-info">
+        <p><strong>Name:</strong> <span id="profile-name"></span></p>
+        <p><strong>ORCID:</strong> <a id="profile-orcid" href="#" target="_blank"></a></p>
+        <p><strong>Keys:</strong> <span style="color: #155724;">✓ Generated and stored</span></p>
+        <details style="margin-top: 10px;">
+          <summary style="cursor: pointer; color: #666;">Show public key</summary>
+          <div id="public-key-preview" class="key-preview"></div>
+        </details>
+      </div>
+      <div class="profile-actions">
+        <button id="export-btn" class="btn btn-secondary">Export Profile</button>
+        <button id="clear-btn" class="btn btn-outline">Clear Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Template Section -->
+  <div class="section">
+    <h2>📄 Nanopublication Template</h2>
+    <div id="template-section">
+      <div class="form-group">
+        <label>Template URI:</label>
+        <input 
+          type="text" 
+          id="template-uri" 
+          placeholder="https://w3id.org/np/..." 
+          value="https://w3id.org/np/RAX_4tWTyjFpO6nz63s14ucuejd64t2mK3IBlkwZ7jjLo"
+        />
+        <div class="help-text">CiTO Citation template (default)</div>
+      </div>
+      <button id="load-template-btn" class="btn btn-primary">Load Template</button>
+      <div id="template-message"></div>
+    </div>
+  </div>
+
+  <!-- Form Section -->
+  <div class="section">
+    <h2>✏️ Create Nanopublication</h2>
+    <div id="template-container">
+      <div class="loading">Load a template to get started...</div>
+    </div>
+  </div>
+
+  <!-- Preview Section -->
+  <div class="section hidden" id="preview-section">
+    <h2>
+      👁️ Preview
+      <div style="margin-left: auto; display: flex; gap: 10px;">
+        <button id="copy-btn" class="btn btn-secondary">Copy to Clipboard</button>
+        <button id="sign-download-btn" class="btn btn-primary">Sign & Download</button>
+      </div>
+    </h2>
+    <pre id="preview-text" style="background: #f5f5f5; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 0.85em; max-height: 400px;"></pre>
+    
+    <div class="download-info">
+      <h4>📥 What happens next?</h4>
+      <p>When you click "Sign & Download":</p>
+      <ol>
+        <li>Your nanopub will be signed with your private key</li>
+        <li>A <code>.trig</code> file will be downloaded to your computer</li>
+        <li>You can then upload it to the nanopub network</li>
+      </ol>
+      <p><strong>To publish manually:</strong></p>
+      <ol>
+        <li>Visit <a href="https://nanodash.knowledgepixels.com/" target="_blank">Nanodash</a></li>
+        <li>Go to "Publish" → "Upload Signed Nanopub"</li>
+        <li>Upload your downloaded <code>.trig</code> file</li>
+      </ol>
+    </div>
+  </div>
+
+</body>
+</html>
