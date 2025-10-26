@@ -862,7 +862,7 @@ export class FormGenerator {
 
   /**
    * Build repeatable field instance
-   * Now handles multiple placeholders (subject, predicate, object)
+   * Logic: Only repeat placeholders that are UNIQUE to this repeatable statement
    */
   buildRepeatableField(statement, placeholder, index) {
     const wrapper = document.createElement('div');
@@ -873,10 +873,36 @@ export class FormGenerator {
     const predicatePlaceholder = this.findPlaceholder(statement.predicate);
     const objectPlaceholder = this.findPlaceholder(statement.object);
     
-    // Build field for each placeholder position
+    // Determine if subject should be repeated
+    // Subject should be repeated ONLY if it's unique to this repeatable statement
+    // If the subject appears in other (non-repeatable) statements, it's SHARED and shouldn't repeat
+    let shouldRepeatSubject = false;
     if (subjectPlaceholder) {
+      // Count how many statements use this subject
+      const statementsWithThisSubject = this.template.statements.filter(
+        s => s.subject === statement.subject
+      );
+      
+      // If subject ONLY appears in this one repeatable statement, then repeat it
+      // If subject appears in multiple statements, it's shared - don't repeat
+      shouldRepeatSubject = statementsWithThisSubject.length === 1;
+      
+      console.log(`[buildRepeatableField] Subject ${statement.subject}:`, {
+        occurrences: statementsWithThisSubject.length,
+        shouldRepeat: shouldRepeatSubject
+      });
+    }
+    
+    // Create subject field if needed
+    if (subjectPlaceholder && shouldRepeatSubject) {
       const field = document.createElement('div');
       field.className = 'repeatable-field';
+      
+      const label = document.createElement('label');
+      label.className = 'field-label';
+      label.textContent = subjectPlaceholder.label || this.getLabel(statement.subject);
+      field.appendChild(label);
+      
       const input = this.renderInput(subjectPlaceholder);
       input.name = `${statement.id}_subject_${index}`;
       input.id = `field_${statement.id}_subject_${index}`;
@@ -884,9 +910,16 @@ export class FormGenerator {
       wrapper.appendChild(field);
     }
     
+    // Create predicate field if it's a placeholder
     if (predicatePlaceholder) {
       const field = document.createElement('div');
       field.className = 'repeatable-field';
+      
+      const label = document.createElement('label');
+      label.className = 'field-label';
+      label.textContent = predicatePlaceholder.label || this.getLabel(statement.predicate);
+      field.appendChild(label);
+      
       const input = this.renderInput(predicatePlaceholder);
       input.name = `${statement.id}_predicate_${index}`;
       input.id = `field_${statement.id}_predicate_${index}`;
@@ -894,9 +927,26 @@ export class FormGenerator {
       wrapper.appendChild(field);
     }
     
+    // Create object field if it's a placeholder
     if (objectPlaceholder) {
       const field = document.createElement('div');
       field.className = 'repeatable-field';
+      
+      // Show predicate label if predicate is fixed
+      if (!predicatePlaceholder) {
+        const label = document.createElement('label');
+        label.className = 'field-label';
+        label.textContent = this.getLabel(statement.predicate);
+        field.appendChild(label);
+      }
+      
+      if (objectPlaceholder.label) {
+        const helpText = document.createElement('div');
+        helpText.className = 'field-help';
+        helpText.textContent = objectPlaceholder.label;
+        field.appendChild(helpText);
+      }
+      
       const input = this.renderInput(objectPlaceholder);
       input.name = `${statement.id}_object_${index}`;
       input.id = `field_${statement.id}_object_${index}`;
@@ -904,11 +954,15 @@ export class FormGenerator {
       wrapper.appendChild(field);
     }
     
+    // Add remove button
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
     removeBtn.className = 'btn-remove-field';
     removeBtn.textContent = '× Remove';
-    removeBtn.onclick = () => wrapper.remove();
+    removeBtn.onclick = () => {
+      wrapper.remove();
+      this.emit('change', this.collectFormData());
+    };
     wrapper.appendChild(removeBtn);
     
     return wrapper;

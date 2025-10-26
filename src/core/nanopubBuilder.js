@@ -1,48 +1,34 @@
 /**
- * NanopubBuilder - Builds nanopublications from templates and form data
- * Following the nanodash approach to generate proper TriG format
+ * NanopubBuilder - Builds nanopubs from complete template structure
+ * FINAL VERSION - properly handles empty instances and optional fields
  */
 
 export class NanopubBuilder {
   constructor(template) {
     this.template = template;
-    // Try to get URI from template - could be in uri, id, or templateUri field
-    this.templateUri = template.uri || template.id || template.templateUri || null;
-    
-    // Extract label pattern if present (might be in different places)
-    this.template.labelPattern = template.labelPattern || template.nanopubLabelPattern || null;
-    
-    // Extract types if present
-    this.template.types = template.types || template.nanopubTypes || [];
-    
-    console.log('NanopubBuilder initialized with template URI:', this.templateUri);
-    console.log('Label pattern:', this.template.labelPattern);
-    console.log('Types from template:', this.template.types);
-    console.log('Types array length:', this.template.types?.length || 0);
+    console.log('NanopubBuilder initialized with:', {
+      uri: template.uri,
+      labelPattern: template.labelPattern,
+      types: template.types?.length || 0,
+      statements: template.statements?.length || 0
+    });
   }
 
-  /**
-   * Build nanopublication from form data
-   */
   async buildFromFormData(formData, metadata = {}) {
-    this.formData = formData; // Store for use in label pattern
-    this.metadata = metadata; // Store for use in resolveValue
+    this.formData = formData;
+    this.metadata = metadata;
     
     const timestamp = new Date().toISOString();
-    // IMPORTANT: Use the exact temp URI format that nanopub-rs expects
-    // This MUST be "http://purl.org/nanopub/temp/" not "https://w3id.org/np/temp-..."
     const tempId = this.generateRandomId();
     const baseUri = `http://purl.org/nanopub/temp/${tempId}`;
     
-    // Build the nanopub structure
     const prefixes = this.buildPrefixes(tempId);
-    const head = this.buildHead(baseUri, tempId);
-    const assertion = this.buildAssertion(baseUri, formData, tempId);
-    const provenance = this.buildProvenance(baseUri, formData, metadata);
-    const pubinfo = this.buildPubinfo(baseUri, timestamp, metadata);
+    const head = this.buildHead();
+    const assertion = this.buildAssertion();
+    const provenance = this.buildProvenance();
+    const pubinfo = this.buildPubinfo(timestamp);
     
-    // Combine into TriG format
-    const trig = `${prefixes}
+    return `${prefixes}
 
 ${head}
 
@@ -52,20 +38,12 @@ ${provenance}
 
 ${pubinfo}
 `;
-    
-    return trig;
   }
 
-  /**
-   * Generate random ID for temporary nanopub URI
-   */
   generateRandomId() {
     return Math.random().toString(36).substring(2, 15);
   }
 
-  /**
-   * Build prefix declarations
-   */
   buildPrefixes(tempId) {
     const baseUri = `http://purl.org/nanopub/temp/${tempId}`;
     
@@ -84,7 +62,6 @@ ${pubinfo}
       '@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .'
     ];
     
-    // Add template-specific prefixes
     if (this.template.prefixes) {
       for (const [prefix, uri] of Object.entries(this.template.prefixes)) {
         if (!prefixes.some(p => p.includes(`@prefix ${prefix}:`))) {
@@ -96,10 +73,7 @@ ${pubinfo}
     return prefixes.join('\n');
   }
 
-  /**
-   * Build head graph
-   */
-  buildHead(baseUri, tempId) {
+  buildHead() {
     return `sub:Head {
   this: a np:Nanopublication ;
     np:hasAssertion sub:assertion ;
@@ -108,234 +82,325 @@ ${pubinfo}
 }`;
   }
 
-  /**
-   * Build assertion graph from form data
-   */
-  buildAssertion(baseUri, formData, tempId) {
-    const statements = this.buildStatements(formData);
+  buildAssertion() {
+    const triples = [];
+    
+    // Sort statements by ID
+    const stmtIds = this.template.statements
+      .map(s => s.id)
+      .sort((a, b) => {
+        const numA = parseInt(a.replace(/\D/g, ''));
+        const numB = parseInt(b.replace(/\D/g, ''));
+        return numA - numB;
+      });
+    
+    for (const stmtId of stmtIds) {
+      const stmt = this.template.statements.find(s => s.id === stmtId);
+      if (!stmt) continue;
+      
+      const instances = this.getStatementInstances(stmt);
+      
+      for (const instance of instances) {
+        const triple = this.buildTriple(stmt, instance);
+        if (triple) {
+          triples.push(triple);
+        }
+      }
+    }
     
     return `sub:assertion {
-${statements.join('\n')}
+${triples.join('\n')}
 }`;
   }
 
   /**
-   * Build individual RDF statements from form data
+   * Get all valid instances of a statement from form data
    */
-  buildStatements(formData) {
-    const statements = [];
+  getStatementInstances(stmt) {
+    const instances = [];
     
-    // Group form data by statement prefix (st01, st02, etc.)
-    const statementsData = {};
-    for (const [key, value] of Object.entries(formData)) {
-      if (!value) continue; // Skip empty values
-      
-      // Extract statement ID and part (st01_subject, st01_predicate, etc.)
-      const match = key.match(/^(st\d+)_(subject|predicate|object)$/);
-      if (match) {
-        const [, stId, part] = match;
-        if (!statementsData[stId]) {
-          statementsData[stId] = {};
-        }
-        statementsData[stId][part] = value;
-      }
+    // Check base instance (no suffix)
+    const baseInstance = this.getInstanceData(stmt, null);
+    if (baseInstance) {
+      instances.push(baseInstance);
     }
     
-    // Build each statement
-    for (const [stId, parts] of Object.entries(statementsData)) {
-      if (parts.subject && parts.predicate && parts.object) {
-        const subject = this.formatValue(parts.subject, 'subject');
-        const predicate = this.formatValue(parts.predicate, 'predicate');
-        const object = this.formatValue(parts.object, 'object');
-        
-        // Check if this statement has a type (from template)
-        const hasType = this.hasStatementType(stId);
-        
-        if (hasType) {
-          // Multi-line format with type
-          statements.push(`  ${subject} a ${hasType};`);
-          statements.push(`    ${predicate} ${object} .`);
+    // Check numbered instances (for repeatable statements)
+    if (stmt.repeatable) {
+      for (let i = 1; i < 10; i++) {
+        const instance = this.getInstanceData(stmt, i);
+        if (instance) {
+          instances.push(instance);
         } else {
-          // Single-line format
-          statements.push(`  ${subject} ${predicate} ${object} .`);
+          break; // Stop at first missing instance
         }
       }
     }
     
-    return statements;
+    return instances;
   }
 
   /**
-   * Check if a statement has a type declaration in the template
+   * Get data for one instance - returns null if no valid data
    */
-  hasStatementType(stId) {
-    if (!this.template.statements) return null;
+  getInstanceData(stmt, instanceNum) {
+    const suffix = instanceNum ? `_${instanceNum}` : '';
     
-    const statement = this.template.statements.find(st => st.id === stId);
-    if (!statement || !statement.subjectType) return null;
+    // Get form data for this instance
+    const data = {
+      subject: this.formData[`${stmt.id}_subject${suffix}`],
+      predicate: this.formData[`${stmt.id}_predicate${suffix}`],
+      object: this.formData[`${stmt.id}_object${suffix}`]
+    };
     
-    return this.formatValue(statement.subjectType, 'type');
+    // If subject is a placeholder but not in form data, try to find it
+    if (!data.subject && stmt.subjectIsPlaceholder) {
+      const subjectId = stmt.subject;
+      for (const otherStmt of this.template.statements) {
+        if (otherStmt.subjectIsPlaceholder && otherStmt.subject === subjectId) {
+          const val = this.formData[`${otherStmt.id}_subject`];
+          if (val) {
+            data.subject = val;
+            break;
+          }
+        }
+        if (otherStmt.objectIsPlaceholder && otherStmt.object === subjectId) {
+          const val = this.formData[`${otherStmt.id}_object`];
+          if (val) {
+            data.subject = val;
+            break;
+          }
+        }
+      }
+    }
+    
+    // Check if we have actual data
+    const hasSubject = data.subject && data.subject !== '';
+    const hasPredicate = data.predicate && data.predicate !== '';
+    const hasObject = data.object && data.object !== '';
+    
+    // For optional statements, skip if no object data
+    if (stmt.optional && !hasObject) {
+      return null;
+    }
+    
+    // For non-optional, we need data for editable fields
+    if (!stmt.optional) {
+      if (stmt.objectIsPlaceholder && !hasObject) {
+        return null;
+      }
+      if (stmt.predicateIsPlaceholder && !hasPredicate) {
+        return null;
+      }
+    }
+    
+    return data;
   }
 
   /**
-   * Format a value for RDF (URI or literal)
+   * Build a single RDF triple
    */
-  formatValue(value, position = 'any') {
-    if (!value) return '""';
+  buildTriple(stmt, instanceData) {
+    // Get subject
+    const subjectValue = instanceData.subject || stmt.subject;
+    const subject = stmt.subjectIsPlaceholder
+      ? this.resolveValue(subjectValue, stmt.subject)
+      : this.formatUri(stmt.subjectUri);
     
-    // Check if it's a URI (starts with http:// or https://)
-    if (value.startsWith('http://') || value.startsWith('https://')) {
+    // Get predicate
+    const predicateValue = instanceData.predicate || stmt.predicate;
+    const predicate = stmt.predicateIsPlaceholder
+      ? this.resolveValue(predicateValue, stmt.predicate)
+      : this.formatUri(stmt.predicateUri);
+    
+    // Get object
+    const objectValue = instanceData.object || stmt.object;
+    const object = stmt.objectIsPlaceholder
+      ? this.resolveValue(objectValue, stmt.object)
+      : this.formatUri(stmt.objectUri);
+    
+    // Skip if any part is missing or is just a placeholder name
+    if (!subject || !predicate || !object) {
+      return null;
+    }
+    
+    // Skip if any part is still an unresolved placeholder reference
+    if (subject.startsWith('<') && subject.endsWith('>') && !subject.includes('://')) {
+      return null;
+    }
+    if (object.startsWith('<') && object.endsWith('>') && !object.includes('://')) {
+      return null;
+    }
+    
+    // Format based on whether it's a type declaration
+    const isTypeDeclaration = stmt.predicateUri === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' ||
+                              predicate === 'rdf:type' ||
+                              predicate === 'a';
+    
+    if (isTypeDeclaration) {
+      return `  ${subject} a ${object} .`;
+    }
+    
+    return `  ${subject} ${predicate} ${object} .`;
+  }
+
+  /**
+   * Resolve a placeholder value to RDF format
+   */
+  resolveValue(value, placeholderRef) {
+    if (!value || value === '') return null;
+    
+    // CRITICAL: If value is just the placeholder name (not actual data), return null
+    // This happens when form data is missing for an instance
+    const placeholderId = placeholderRef.replace('sub:', '');
+    if (value === placeholderId || value === `sub:${placeholderId}`) {
+      return null;
+    }
+    
+    // Get placeholder metadata
+    const placeholder = this.template.placeholders?.find(p => p.id === placeholderId);
+    
+    // Handle AutoEscapeUriPlaceholder
+    if (placeholder?.type === 'AutoEscapeUriPlaceholder' && placeholder.prefix) {
+      const encoded = encodeURIComponent(value).replace(/%20/g, '+');
+      return `<${placeholder.prefix}${encoded}>`;
+    }
+    
+    // Handle URI placeholders
+    if (placeholder?.type === 'UriPlaceholder' || 
+        placeholder?.type === 'GuidedChoicePlaceholder' ||
+        placeholder?.type === 'ExternalUriPlaceholder' ||
+        value.startsWith('http://') || 
+        value.startsWith('https://')) {
       return `<${value}>`;
     }
     
-    // Check if it's a prefixed name (contains : but not http://)
-    if (value.includes(':') && !value.includes('://')) {
-      return value; // Already prefixed
-    }
-    
-    // Check if value is a URI in angle brackets already
-    if (value.startsWith('<') && value.endsWith('>')) {
-      return value;
-    }
-    
-    // For objects, check if it should be a literal with triple quotes
-    if (position === 'object' && (value.includes('\n') || value.length > 100)) {
+    // Handle literals
+    if (value.includes('\n') || value.length > 100) {
       return `"""${value}"""`;
     }
     
-    // Otherwise, it's a literal string
     return `"${value}"`;
   }
 
-  /**
-   * Build provenance graph
-   */
-  buildProvenance(baseUri, formData, metadata) {
-    const creator = metadata.creator || 'https://orcid.org/0000-0000-0000-0000';
+  formatUri(uri) {
+    if (!uri) return null;
+    if (uri.includes(':') && !uri.includes('://')) {
+      return uri; // Already prefixed
+    }
+    return `<${uri}>`;
+  }
+
+  buildProvenance() {
+    const creator = this.metadata.creator || 'https://orcid.org/0000-0000-0000-0000';
     
     return `sub:provenance {
-  sub:assertion prov:wasAttributedTo ${this.formatValue(creator)} .
+  sub:assertion prov:wasAttributedTo <${creator}> .
 }`;
   }
 
-  /**
-   * Build publication info graph
-   */
-  buildPubinfo(baseUri, timestamp, metadata) {
-    const creator = metadata.creator || 'https://orcid.org/0000-0000-0000-0000';
-    const creatorName = metadata.creatorName || 'Unknown';
+  buildPubinfo(timestamp) {
+    const creator = this.metadata.creator || 'https://orcid.org/0000-0000-0000-0000';
+    const creatorName = this.metadata.creatorName || 'Unknown';
     
-    const statements = [
-      `  ${this.formatValue(creator)} foaf:name "${creatorName}" .`,
+    const lines = [
+      `  <${creator}> foaf:name "${creatorName}" .`,
       '',
       `  this: dct:created "${timestamp}"^^xsd:dateTime;`,
-      `    dct:creator ${this.formatValue(creator)};`,
+      `    dct:creator <${creator}>;`,
       `    dct:license <https://creativecommons.org/licenses/by/4.0/>`
     ];
     
-    // Add nanopub types if present in template
-    if (this.template.types && this.template.types.length > 0) {
-      console.log('📝 Adding types to pubinfo:', this.template.types);
+    // Add types
+    if (this.template.types?.length > 0) {
       const typesFormatted = this.template.types.map(t => `<${t}>`).join(', ');
-      console.log('  ✅ Types formatted:', typesFormatted);
-      statements.push(`;
+      lines.push(`;
     npx:hasNanopubType ${typesFormatted}`);
     }
     
-    // Add label if label pattern exists
+    // Add npx:introduces for introduced resources
+    for (const placeholder of this.template.placeholders || []) {
+      if (placeholder.isIntroducedResource && placeholder.prefix) {
+        const value = this.findPlaceholderValue(placeholder.id);
+        if (value) {
+          const encoded = encodeURIComponent(value).replace(/%20/g, '+');
+          lines.push(`;
+    npx:introduces <${placeholder.prefix}${encoded}>`);
+        }
+      }
+    }
+    
+    // Add label
     if (this.template.labelPattern) {
       const label = this.generateLabel();
-      statements.push(`;
+      lines.push(`;
     rdfs:label "${label}"`);
     }
     
-    // Add template URI if present
-    if (this.templateUri) {
-      statements.push(`;
-    nt:wasCreatedFromTemplate <${this.templateUri}>`);
+    // Add template URI
+    if (this.template.uri) {
+      lines.push(`;
+    nt:wasCreatedFromTemplate <${this.template.uri}>`);
     }
     
-    statements.push(' .');
+    lines.push(' .');
     
     return `sub:pubinfo {
-${statements.join('\n')}
+${lines.join('\n')}
 }`;
   }
 
   /**
-   * Generate label from pattern by replacing placeholders with form data
+   * Find value for a placeholder in form data
+   */
+  findPlaceholderValue(placeholderId) {
+    for (const stmt of this.template.statements || []) {
+      if (stmt.subject === placeholderId || stmt.subject === `sub:${placeholderId}`) {
+        const value = this.formData[`${stmt.id}_subject`];
+        if (value) return value;
+        
+        if (stmt.repeatable) {
+          for (let i = 1; i < 10; i++) {
+            const val = this.formData[`${stmt.id}_subject_${i}`];
+            if (val) return val;
+          }
+        }
+      }
+      
+      if (stmt.object === placeholderId || stmt.object === `sub:${placeholderId}`) {
+        const value = this.formData[`${stmt.id}_object`];
+        if (value) return value;
+        
+        if (stmt.repeatable) {
+          for (let i = 1; i < 10; i++) {
+            const val = this.formData[`${stmt.id}_object_${i}`];
+            if (val) return val;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Generate label from pattern
    */
   generateLabel() {
-    if (!this.template.labelPattern) return 'Untitled';
+    let label = this.template.labelPattern || 'Untitled';
     
-    let label = this.template.labelPattern;
-    console.log('Applying label pattern:', label);
-    console.log('Form data for pattern:', this.formData);
-    
-    // Find all ${placeholder} patterns
-    const placeholderRegex = /\$\{(\w+)\}/g;
-    const matches = [...label.matchAll(placeholderRegex)];
+    const matches = [...label.matchAll(/\$\{(\w+)\}/g)];
     
     for (const match of matches) {
-      const placeholderName = match[1];
-      console.log(`  🔍 Looking for placeholder: "${placeholderName}"`);
-      
-      // Try to find value in formData
-      let value = null;
-      
-      // First try direct lookup
-      if (this.formData[placeholderName]) {
-        value = this.formData[placeholderName];
-        console.log(`    Direct lookup formData["${placeholderName}"]:`, value);
-      }
-      
-      // If not found, look in statement parts (st01_subject, st02_object, etc.)
-      if (!value) {
-        for (const [key, val] of Object.entries(this.formData)) {
-          console.log(`    Checking formData["${key}"] = ${val}`);
-          
-          // Check if this key is a statement part
-          const stMatch = key.match(/^(st\d+)_(subject|predicate|object)$/);
-          if (stMatch) {
-            const [, stId, part] = stMatch;
-            console.log(`      Statement ${stId} ${part} = "${placeholderName}"`);
-            
-            // Look up what this part refers to in the template
-            const statement = this.template.statements?.find(st => st.id === stId);
-            if (statement) {
-              // Check if this part matches our placeholder
-              if (statement[part] === placeholderName || statement[part] === `sub:${placeholderName}`) {
-                value = val;
-                console.log(`    ✅ Found ${placeholderName} in ${key}:`, value);
-                break;
-              }
-            }
-          }
-        }
-      }
+      const placeholderId = match[1];
+      const value = this.findPlaceholderValue(placeholderId);
       
       if (value) {
-        // Extract a readable label from the value
-        let displayValue = value;
-        
-        // If it's a URI, try to extract a meaningful part
-        if (value.startsWith('http://') || value.startsWith('https://')) {
-          // Try to get the last part of the URI
-          const uriParts = value.split('/');
-          const lastPart = uriParts[uriParts.length - 1];
-          
-          // If last part looks like an ID or has useful info, use it
-          if (lastPart && lastPart.length > 0) {
-            displayValue = lastPart;
-            console.log(`    📝 Extracted from URI: "${displayValue}"`);
-          }
-        }
-        
-        label = label.replace(match[0], displayValue);
+        label = label.replace(match[0], value);
+      } else {
+        label = label.replace(match[0], '');
       }
     }
     
-    console.log('🏷️ Final label after pattern replacement:', label);
-    return label;
+    return label.trim();
   }
 }

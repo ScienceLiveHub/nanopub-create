@@ -155,13 +155,24 @@ export class TemplateParser {
         id: this.cleanUri(id),
         type: primaryType,
         isLocalResource: types.some(t => t.includes('LocalResource')),
+        isIntroducedResource: types.some(t => t.includes('IntroducedResource')),
         label: this.extractLabel(block),
         description: this.extractDescription(block),
         validation: this.extractValidation(block),
         possibleValuesFrom: null,
         possibleValuesFromApi: null,
-        options: []
+        options: [],
+        prefix: null  // For AutoEscapeUriPlaceholder
       };
+
+      // Extract prefix for AutoEscapeUriPlaceholder
+      if (primaryType.includes('AutoEscapeUriPlaceholder')) {
+        const prefixMatch = block.match(/nt:hasPrefix\s+"([^"]+)"/);
+        if (prefixMatch) {
+          placeholder.prefix = prefixMatch[1];
+          console.log(`  → Found prefix for AutoEscapeUriPlaceholder: ${placeholder.prefix}`);
+        }
+      }
 
       // Handle RestrictedChoicePlaceholder
       if (primaryType.includes('RestrictedChoice')) {
@@ -450,12 +461,39 @@ export class TemplateParser {
     const typeMatch = fullBlock.match(/a\s+([^;.]+)/);
     const types = typeMatch ? typeMatch[1].split(',').map(t => t.trim()) : [];
     
+    // Clean URIs
+    const cleanSubj = this.cleanUri(subjMatch[1]);
+    const cleanPred = this.cleanUri(predMatch[1]);
+    const cleanObj = this.cleanUri(objectValue);
+    
+    // Determine what's editable vs fixed
+    const subjectIsPlaceholder = this.isPlaceholder(cleanSubj);
+    const predicateIsPlaceholder = this.isPlaceholder(cleanPred);
+    const objectIsPlaceholder = this.isPlaceholder(cleanObj) && !objMatch[3];
+    
+    // Expand URIs for fixed parts
+    const subjectUri = subjectIsPlaceholder ? null : this.expandUri(subjMatch[1]);
+    const predicateUri = this.expandUri(predMatch[1]);
+    const objectUri = objectIsPlaceholder ? null : (objMatch[3] ? null : this.expandUri(objectValue));
+    
     return {
       id: this.cleanUri(stmtId),
-      subject: this.cleanUri(subjMatch[1]),
-      predicate: this.cleanUri(predMatch[1]),
-      object: objectValue,
-      isLiteralObject: !!objMatch[3],  // Mark if it's a literal
+      subject: cleanSubj,
+      predicate: cleanPred,
+      object: cleanObj,
+      
+      // What's editable?
+      subjectIsPlaceholder,
+      predicateIsPlaceholder,
+      objectIsPlaceholder,
+      
+      // Expanded URIs for fixed parts
+      subjectUri,
+      predicateUri,
+      objectUri,
+      
+      // Metadata
+      isLiteralObject: !!objMatch[3],
       repeatable: types.some(t => t.includes('RepeatableStatement')),
       optional: types.some(t => t.includes('OptionalStatement')),
       grouped: types.some(t => t.includes('GroupedStatement')),
@@ -469,6 +507,52 @@ export class TemplateParser {
               .replace(/^"|"$/g, '')
               .replace(/^sub:/, '')
               .trim();
+  }
+
+  /**
+   * Check if an ID refers to a placeholder
+   */
+  isPlaceholder(id) {
+    return this.template.placeholders.some(p => p.id === id);
+  }
+
+  /**
+   * Get placeholder by ID
+   */
+  getPlaceholder(id) {
+    return this.template.placeholders.find(p => p.id === id);
+  }
+
+  /**
+   * Get statement by ID
+   */
+  getStatement(id) {
+    return this.template.statements.find(s => s.id === id);
+  }
+
+  /**
+   * Expand a URI (handle prefixes)
+   */
+  expandUri(uri) {
+    if (!uri) return null;
+    
+    // Remove brackets if present
+    uri = uri.replace(/^<|>$/g, '');
+    
+    // Already a full URI
+    if (uri.startsWith('http://') || uri.startsWith('https://')) {
+      return uri;
+    }
+    
+    // Handle prefixed URIs
+    if (uri.includes(':')) {
+      const [prefix, localName] = uri.split(':', 2);
+      if (this.template.prefixes[prefix]) {
+        return this.template.prefixes[prefix] + localName;
+      }
+    }
+    
+    return uri;
   }
 
   identifyRepeatablePlaceholders() {
