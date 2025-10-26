@@ -17,7 +17,8 @@ export class NanopubBuilder {
     
     console.log('NanopubBuilder initialized with template URI:', this.templateUri);
     console.log('Label pattern:', this.template.labelPattern);
-    console.log('Types:', this.template.types);
+    console.log('Types from template:', this.template.types);
+    console.log('Types array length:', this.template.types?.length || 0);
   }
 
   /**
@@ -25,6 +26,7 @@ export class NanopubBuilder {
    */
   async buildFromFormData(formData, metadata = {}) {
     this.formData = formData; // Store for use in label pattern
+    this.metadata = metadata; // Store for use in resolveValue
     
     const timestamp = new Date().toISOString();
     const tempId = `temp-${Date.now()}-${this.generateRandomId()}`;
@@ -67,7 +69,7 @@ ${pubinfo}
     
     const prefixes = [
       `@prefix this: <${baseUri}> .`,
-      `@prefix sub: <${baseUri}#> .`,
+      `@prefix sub: <${baseUri}/> .`,
       '@prefix np: <http://www.nanopub.org/nschema#> .',
       '@prefix dct: <http://purl.org/dc/terms/> .',
       '@prefix nt: <https://w3id.org/np/o/ntemplate/> .',
@@ -133,9 +135,9 @@ ${pubinfo}
     const grouped = {};
     
     for (const statement of this.template.statements) {
-      const subject = this.resolveValue(statement.subject, formData, 'subject');
-      const predicate = this.resolveValue(statement.predicate, formData, 'predicate');
-      const object = this.resolveValue(statement.object, formData, 'object');
+      const subject = this.resolveValue(statement.subject, formData, 'subject', this.metadata);
+      const predicate = this.resolveValue(statement.predicate, formData, 'predicate', this.metadata);
+      const object = this.resolveValue(statement.object, formData, 'object', this.metadata);
       
       if (!subject || !predicate || !object) {
         console.warn('Incomplete triple:', statement);
@@ -206,10 +208,25 @@ ${output.join('\n')}
   /**
    * Resolve a value - either from form data (placeholder) or as literal
    */
-  resolveValue(value, formData, role = null) {
+  resolveValue(value, formData, role = null, metadata = {}) {
     if (!value) return null;
     
     console.log(`    [resolveValue] value="${value}", role="${role}"`);
+    
+    // Handle special template placeholders
+    if (value === 'nt:ASSERTION') {
+      console.log(`    [resolveValue] ✅ Replacing nt:ASSERTION with sub:assertion`);
+      return 'sub:assertion';
+    }
+    
+    if (value === 'nt:CREATOR') {
+      const creator = metadata.creator || this.metadata?.creator || 'orcid:0000-0000-0000-0000';
+      const creatorRef = creator.startsWith('https://orcid.org/') 
+        ? 'orcid:' + creator.split('/').pop()
+        : creator;
+      console.log(`    [resolveValue] ✅ Replacing nt:CREATOR with ${creatorRef}`);
+      return creatorRef;
+    }
     
     // Check if it's a placeholder reference (like sub:article, sub:cited, sub:cites)
     const cleanValue = value.replace(/^sub:/, '');
@@ -313,6 +330,10 @@ ${output.join('\n')}
     }
     
     // Otherwise it's a string literal
+    // Use triple quotes for multi-line strings
+    if (value.includes('\n')) {
+      return `"""${value}"""`;
+    }
     return `"${value}"`;
   }
 
@@ -336,6 +357,9 @@ ${output.join('\n')}
    * Build publication info graph
    */
   buildPubinfo(baseUri, timestamp, metadata) {
+    console.log('🏗️ Building pubinfo with formData keys:', Object.keys(this.formData || {}));
+    console.log('   Full formData:', this.formData);
+    
     const creator = metadata.creator || 'orcid:0000-0000-0000-0000';
     const creatorName = metadata.creatorName || 'Unknown';
     
@@ -358,51 +382,81 @@ ${output.join('\n')}
       
       // Replace ${placeholder} with actual values from form data
       label = this.template.labelPattern.replace(/\$\{(\w+)\}/g, (match, placeholder) => {
-        console.log(`Looking for placeholder: ${placeholder}`);
+        console.log(`  🔍 Looking for placeholder: "${placeholder}"`);
         
-        // Try direct lookup first
+        // Try direct lookup first (e.g., formData["article"])
         let value = this.formData?.[placeholder];
+        console.log(`    Direct lookup formData["${placeholder}"]:`, value);
         
-        // If not found, look in statement-based keys (e.g., st02_subject for "article")
+        // If not found, check if any formData key contains this placeholder name
         if (!value) {
-          // Find which statement uses this placeholder
-          for (const stmt of this.template.statements || []) {
-            const stmtSubject = stmt.subject?.replace(/^sub:/, '');
-            const stmtPredicate = stmt.predicate?.replace(/^sub:/, '');
-            const stmtObject = stmt.object?.replace(/^sub:/, '');
+          // Look for keys like "st01_subject" where subject refers to "article"
+          for (const [key, val] of Object.entries(this.formData || {})) {
+            console.log(`    Checking formData["${key}"] = ${val}`);
             
-            const stmtId = stmt.id?.replace(/^sub:/, '');
-            
-            if (stmtSubject === placeholder && this.formData[`${stmtId}_subject`]) {
-              value = this.formData[`${stmtId}_subject`];
-              console.log(`Found ${placeholder} in ${stmtId}_subject:`, value);
-              break;
-            } else if (stmtPredicate === placeholder && this.formData[`${stmtId}_predicate`]) {
-              value = this.formData[`${stmtId}_predicate`];
-              console.log(`Found ${placeholder} in ${stmtId}_predicate:`, value);
-              break;
-            } else if (stmtObject === placeholder && this.formData[`${stmtId}_object`]) {
-              value = this.formData[`${stmtId}_object`];
-              console.log(`Found ${placeholder} in ${stmtId}_object:`, value);
-              break;
+            // Check if this key's statement uses the placeholder
+            const parts = key.split('_'); // e.g., ["st01", "subject"]
+            if (parts.length === 2) {
+              const stmtId = parts[0]; // "st01"
+              const role = parts[1];   // "subject"
+              
+              // Find the statement
+              const stmt = this.template.statements?.find(s => s.id?.replace(/^sub:/, '') === stmtId);
+              if (stmt) {
+                const stmtValue = stmt[role]?.replace(/^sub:/, '');
+                console.log(`      Statement ${stmtId} ${role} = "${stmtValue}"`);
+                
+                if (stmtValue === placeholder) {
+                  value = val;
+                  console.log(`    ✅ Found ${placeholder} in ${key}:`, value);
+                  break;
+                }
+              }
             }
           }
         }
         
         if (value) {
+          // If it's a URI, try to get a human-readable label
+          if (value.startsWith('http://') || value.startsWith('https://')) {
+            // Try to find label from template
+            const label = this.template.labels?.[value];
+            if (label) {
+              console.log(`    🏷️ Found label for URI: "${label}"`);
+              // Extract just the first part before " - " if present
+              const shortLabel = label.split(' - ')[0].trim();
+              return shortLabel;
+            }
+            
+            // Extract from URI path as fallback
+            const parts = value.split(/[#\/]/);
+            const lastPart = parts[parts.length - 1] || parts[parts.length - 2];
+            if (lastPart) {
+              // Convert camelCase to spaces
+              const readable = lastPart
+                .replace(/([a-z])([A-Z])/g, '$1 $2')
+                .toLowerCase();
+              console.log(`    📝 Extracted from URI: "${readable}"`);
+              return readable;
+            }
+          }
+          
           // Extract DOI number from URL if it's a DOI
           if (value.includes('doi.org/')) {
             const extracted = value.split('doi.org/')[1];
-            console.log(`Extracted DOI: ${extracted}`);
+            console.log(`    📄 Extracted DOI: ${extracted}`);
             return extracted;
           }
+          console.log(`    ✅ Using value: ${value}`);
           return value;
         }
-        console.log(`Placeholder ${placeholder} not found, keeping as is`);
+        console.warn(`    ⚠️ Placeholder ${placeholder} not found, keeping as is`);
         return match;
       });
       
-      console.log('Final label:', label);
+      console.log('🏷️ Final label after pattern replacement:', label);
+    } else {
+      console.log('ℹ️ No label pattern, using template label:', label);
     }
     
     // Basic metadata with template reference
@@ -411,9 +465,13 @@ ${output.join('\n')}
     statements.push(`    dct:license <https://creativecommons.org/licenses/by/4.0/>;`);
     
     // Nanopub types from template - IMPORTANT!
+    console.log('📝 Adding types to pubinfo:', this.template.types);
     if (this.template.types && this.template.types.length > 0) {
       const types = this.template.types.map(t => `<${t}>`).join(', ');
+      console.log('  ✅ Types formatted:', types);
       statements.push(`    npx:hasNanopubType ${types};`);
+    } else {
+      console.warn('  ⚠️ No types to add!');
     }
     
     // Optional: wasCreatedAt (your platform URL)

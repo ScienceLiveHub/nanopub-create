@@ -69,24 +69,26 @@ export class TemplateParser {
       this.template.label = labelMatch[1];
     }
 
-    const descMatch = assertionBlock.match(/dct:description\s+"([^"]+)"/);
+    const descMatch = this.content.match(/dct:description\s+"([^"]+)"/);
     if (descMatch) {
       this.template.description = descMatch[1];
     }
 
-    const patternMatch = assertionBlock.match(/nt:hasNanopubLabelPattern\s+"([^"]+)"/);
+    const patternMatch = this.content.match(/nt:hasNanopubLabelPattern\s+"([^"]+)"/);
     if (patternMatch) {
       this.template.labelPattern = patternMatch[1];
+      console.log(`✅ Found label pattern: "${patternMatch[1]}"`);
+    } else {
+      console.warn('⚠️ No nt:hasNanopubLabelPattern found in template');
     }
 
-    const tagMatch = assertionBlock.match(/nt:hasTag\s+"([^"]+)"/);
+    const tagMatch = this.content.match(/nt:hasTag\s+"([^"]+)"/);
     if (tagMatch) {
       this.template.tags = [tagMatch[1]];
     }
 
-    // Parse nt:hasTargetNanopubType - can be comma-separated list
-    // Need to match everything until we hit a period or semicolon at the END (not inside URIs)
-    const typesMatch = assertionBlock.match(/nt:hasTargetNanopubType\s+(.+?)\s*[;.](?:\s|$)/);
+    // Parse nt:hasTargetNanopubType - search ENTIRE content, not just assertion
+    const typesMatch = this.content.match(/nt:hasTargetNanopubType\s+(.+?)\s*[;.](?:\s|$)/s);
     if (typesMatch) {
       const typesStr = typesMatch[1];
       // Extract URIs in angle brackets: <http://...>, <http://...>
@@ -98,7 +100,9 @@ export class TemplateParser {
       }
       this.template.types = types;
       
-      console.log(`Found ${types.length} nanopub types:`, types);
+      console.log(`✅ Found ${types.length} target nanopub types:`, types);
+    } else {
+      console.warn('⚠️ No nt:hasTargetNanopubType found in template');
     }
   }
 

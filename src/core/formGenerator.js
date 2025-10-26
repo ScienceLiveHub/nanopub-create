@@ -921,18 +921,11 @@ export class FormGenerator {
     const controls = document.createElement('div');
     controls.className = 'form-controls';
     
-    const previewBtn = document.createElement('button');
-    previewBtn.type = 'button';
-    previewBtn.className = 'btn btn-secondary';
-    previewBtn.textContent = 'Preview';
-    previewBtn.onclick = () => this.handlePreview();
-    
     const submitBtn = document.createElement('button');
     submitBtn.type = 'submit';
     submitBtn.className = 'btn btn-primary';
     submitBtn.textContent = 'Create Nanopublication';
     
-    controls.appendChild(previewBtn);
     controls.appendChild(submitBtn);
     
     return controls;
