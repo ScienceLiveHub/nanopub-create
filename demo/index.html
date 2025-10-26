@@ -419,14 +419,21 @@
       <ol>
         <li>Your nanopub will be signed with your private key</li>
         <li>A <code>.trig</code> file will be downloaded to your computer</li>
-        <li>You can then upload it to the nanopub network</li>
+        <li>You can then publish it to the nanopub network</li>
       </ol>
-      <p><strong>To publish manually:</strong></p>
-      <ol>
-        <li>Visit <a href="https://nanodash.knowledgepixels.com/" target="_blank">Nanodash</a></li>
-        <li>Go to "Publish" → "Upload Signed Nanopub"</li>
-        <li>Upload your downloaded <code>.trig</code> file</li>
-      </ol>
+      
+      <p><strong>📤 To publish your signed nanopub:</strong></p>
+      
+      <p>Open your terminal and run:</p>
+      <pre style="background: #2d2d2d; color: #f8f8f2; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 0.9em;">curl -X POST https://np.knowledgepixels.com/ \
+  -H "Content-Type: application/trig" \
+  --data-binary @nanopub-signed-YYYY-MM-DD.trig</pre>
+      
+      <p style="margin-top: 15px;">
+        <strong>🔍 After publishing:</strong> Your nanopub will get a permanent URI like 
+        <code>https://w3id.org/np/RAbc123...</code> that you can view at 
+        <a href="https://nanodash.knowledgepixels.com/explore" target="_blank">Nanodash Explore</a>
+      </p>
     </div>
   </div>
 
