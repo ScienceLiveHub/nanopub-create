@@ -1,6 +1,7 @@
 /**
  * NanopubBuilder - Builds nanopubs from complete template structure
  * FINAL VERSION - properly handles empty instances and optional fields
+ * FIXED: Handles nt:CREATOR placeholder
  */
 
 export class NanopubBuilder {
@@ -201,11 +202,19 @@ ${triples.join('\n')}
    * Build a single RDF triple
    */
   buildTriple(stmt, instanceData) {
-    // Get subject
-    const subjectValue = instanceData.subject || stmt.subject;
-    const subject = stmt.subjectIsPlaceholder
-      ? this.resolveValue(subjectValue, stmt.subject)
-      : this.formatUri(stmt.subjectUri);
+    const creator = this.metadata.creator || 'https://orcid.org/0000-0000-0000-0000';
+    
+    // Get subject - check if it's the special nt:CREATOR marker
+    let subjectValue = instanceData.subject || stmt.subject;
+    let subject;
+    
+    if (stmt.subjectUri === 'nt:CREATOR') {
+      subject = `<${creator}>`;
+    } else {
+      subject = stmt.subjectIsPlaceholder
+        ? this.resolveValue(subjectValue, stmt.subject)
+        : this.formatUri(stmt.subjectUri);
+    }
     
     // Get predicate
     const predicateValue = instanceData.predicate || stmt.predicate;
@@ -213,11 +222,17 @@ ${triples.join('\n')}
       ? this.resolveValue(predicateValue, stmt.predicate)
       : this.formatUri(stmt.predicateUri);
     
-    // Get object
-    const objectValue = instanceData.object || stmt.object;
-    const object = stmt.objectIsPlaceholder
-      ? this.resolveValue(objectValue, stmt.object)
-      : this.formatUri(stmt.objectUri);
+    // Get object - check if it's the special nt:CREATOR marker
+    let objectValue = instanceData.object || stmt.object;
+    let object;
+    
+    if (stmt.objectUri === 'nt:CREATOR') {
+      object = `<${creator}>`;
+    } else {
+      object = stmt.objectIsPlaceholder
+        ? this.resolveValue(objectValue, stmt.object)
+        : this.formatUri(stmt.objectUri);
+    }
     
     // Skip if any part is missing or is just a placeholder name
     if (!subject || !predicate || !object) {
@@ -249,6 +264,13 @@ ${triples.join('\n')}
    */
   resolveValue(value, placeholderRef) {
     if (!value || value === '') return null;
+    
+    // CRITICAL FIX: Handle nt:CREATOR special placeholder
+    if (value === 'nt:CREATOR' || value === 'CREATOR' || 
+        placeholderRef === 'nt:CREATOR' || placeholderRef === 'CREATOR') {
+      const creator = this.metadata.creator || 'https://orcid.org/0000-0000-0000-0000';
+      return `<${creator}>`;
+    }
     
     // CRITICAL: If value is just the placeholder name (not actual data), return null
     // This happens when form data is missing for an instance

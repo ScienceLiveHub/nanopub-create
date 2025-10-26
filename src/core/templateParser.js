@@ -466,15 +466,19 @@ export class TemplateParser {
     const cleanPred = this.cleanUri(predMatch[1]);
     const cleanObj = this.cleanUri(objectValue);
     
-    // Determine what's editable vs fixed
-    const subjectIsPlaceholder = this.isPlaceholder(cleanSubj);
-    const predicateIsPlaceholder = this.isPlaceholder(cleanPred);
-    const objectIsPlaceholder = this.isPlaceholder(cleanObj) && !objMatch[3];
+    // Check for nt:CREATOR special placeholder
+    const subjectIsCreator = subjMatch[1] === 'nt:CREATOR';
+    const objectIsCreator = objectValue === 'nt:CREATOR';
     
-    // Expand URIs for fixed parts
-    const subjectUri = subjectIsPlaceholder ? null : this.expandUri(subjMatch[1]);
+    // Determine what's editable vs fixed
+    const subjectIsPlaceholder = !subjectIsCreator && this.isPlaceholder(cleanSubj);
+    const predicateIsPlaceholder = this.isPlaceholder(cleanPred);
+    const objectIsPlaceholder = !objectIsCreator && this.isPlaceholder(cleanObj) && !objMatch[3];
+    
+    // Expand URIs for fixed parts (but keep nt:CREATOR as-is)
+    const subjectUri = subjectIsCreator ? 'nt:CREATOR' : (subjectIsPlaceholder ? null : this.expandUri(subjMatch[1]));
     const predicateUri = this.expandUri(predMatch[1]);
-    const objectUri = objectIsPlaceholder ? null : (objMatch[3] ? null : this.expandUri(objectValue));
+    const objectUri = objectIsCreator ? 'nt:CREATOR' : (objectIsPlaceholder ? null : (objMatch[3] ? null : this.expandUri(objectValue)));
     
     return {
       id: this.cleanUri(stmtId),
