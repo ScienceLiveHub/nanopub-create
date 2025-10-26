@@ -1,14 +1,7 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import dts from 'vite-plugin-dts';
 
 export default defineConfig({
-  plugins: [
-    dts({
-      include: ['src/**/*.ts', 'src/**/*.tsx'],
-      exclude: ['src/**/*.test.ts', 'src/**/*.test.tsx']
-    })
-  ],
   build: {
     lib: {
       entry: {
@@ -25,14 +18,13 @@ export default defineConfig({
       formats: ['es', 'umd']
     },
     rollupOptions: {
-      // Externalize deps that shouldn't be bundled
-      external: ['react', 'react-dom'],
+      external: ['react', 'react-dom', '@nanopub/sign'],
       output: {
         globals: {
           react: 'React',
-          'react-dom': 'ReactDOM'
+          'react-dom': 'ReactDOM',
+          '@nanopub/sign': 'NanopubSign'
         },
-        // Separate CSS file
         assetFileNames: (assetInfo) => {
           if (assetInfo.name === 'style.css') {
             return 'creator.css';
@@ -41,14 +33,11 @@ export default defineConfig({
         }
       }
     },
-    // Generate sourcemaps
     sourcemap: true,
-    // Minify in production
     minify: 'esbuild'
   },
   css: {
     modules: {
-      // Don't use CSS modules, keep class names as-is
       localsConvention: 'camelCase'
     }
   },
@@ -56,5 +45,32 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname, 'src')
     }
-  }
+  },
+  server: {
+    port: 3000,
+    fs: {
+      strict: false
+    }
+  },
+  // CRITICAL: Exclude @nanopub/sign from optimization
+  optimizeDeps: {
+    exclude: ['@nanopub/sign'],
+    esbuildOptions: {
+      target: 'esnext'
+    }
+  },
+  // CRITICAL: Add WASM MIME type plugin
+  plugins: [
+    {
+      name: 'configure-server',
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          if (req.url && req.url.endsWith('.wasm')) {
+            res.setHeader('Content-Type', 'application/wasm');
+          }
+          next();
+        });
+      }
+    }
+  ]
 });

@@ -3,221 +3,644 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nanopub Creator Demo</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="./demo.css">
+  <title>Nanopub Creator - WASM Demo</title>
+  <link rel="stylesheet" href="../src/styles/creator.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    
+    h1 {
+      color: #BE2E78;
+      margin-bottom: 10px;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    
+    .section {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .section h2 {
+      margin-top: 0;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.85em;
+      font-weight: 500;
+    }
+    
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .status.warning {
+      background: #fff3cd;
+      color: #856404;
+    }
+    
+    .status.loading {
+      background: #cce5ff;
+      color: #004085;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #333;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.95em;
+      box-sizing: border-box;
+    }
+    
+    .form-group input:focus {
+      border-color: #BE2E78;
+      outline: none;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.95em;
+      transition: all 0.2s;
+      margin-right: 10px;
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .btn-primary {
+      background: #BE2E78;
+      color: white;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background: #9e2664;
+    }
+    
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+    
+    .btn-secondary:hover:not(:disabled) {
+      background: #5a6268;
+    }
+    
+    .btn-outline {
+      background: white;
+      color: #BE2E78;
+      border: 2px solid #BE2E78;
+    }
+    
+    .btn-outline:hover:not(:disabled) {
+      background: #BE2E78;
+      color: white;
+    }
+    
+    .profile-info {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 15px;
+    }
+    
+    .profile-info p {
+      margin: 8px 0;
+    }
+    
+    .profile-actions {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .help-text {
+      font-size: 0.85em;
+      color: #666;
+      margin-top: 5px;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+    
+    #template-container {
+      min-height: 200px;
+    }
+    
+    .template-loaded {
+      border-left: 4px solid #BE2E78;
+      padding-left: 16px;
+    }
+    
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 10px 0;
+    }
+    
+    .success-message {
+      background: #d4edda;
+      color: #155724;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 10px 0;
+    }
+    
+    .info-message {
+      background: #d1ecf1;
+      color: #0c5460;
+      padding: 12px;
+      border-radius: 6px;
+      margin: 10px 0;
+    }
+    
+    .key-preview {
+      font-family: monospace;
+      font-size: 0.75em;
+      background: #f8f9fa;
+      padding: 8px;
+      border-radius: 4px;
+      margin-top: 5px;
+      word-break: break-all;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.75em;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+
+    .badge-wasm {
+      background: #e7f3ff;
+      color: #0066cc;
+    }
+
+    .file-input-wrapper {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+    }
+
+    .file-input-wrapper input[type=file] {
+      position: absolute;
+      left: -9999px;
+    }
+
+    #messages {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      max-width: 400px;
+      z-index: 2000;
+    }
+  </style>
 </head>
 <body>
-  <div class="demo-header">
-    <h1>Nanopub Creator Demo</h1>
-    <p>Create nanopublications from templates</p>
+  <h1>🧬 Nanopub Creator <span class="badge badge-wasm">WASM</span></h1>
+  <p class="subtitle">Create, sign, and publish nanopublications using nanopub-rs WASM</p>
+
+  <div id="messages"></div>
+
+  <!-- Profile Section -->
+  <div class="section">
+    <h2>
+      👤 Profile 
+      <span id="profile-status" class="status warning">Not configured</span>
+    </h2>
+    
+    <div id="profile-setup">
+      <p>Setup your profile to create and sign nanopublications:</p>
+      <div class="form-group">
+        <label>Name:</label>
+        <input type="text" id="name-input" placeholder="Your Name" />
+      </div>
+      <div class="form-group">
+        <label>ORCID (optional):</label>
+        <input type="text" id="orcid-input" placeholder="0000-0002-1234-5678 or https://orcid.org/0000-0002-1234-5678" />
+        <div class="help-text">Enter your ORCID identifier (with or without URL prefix)</div>
+      </div>
+      <button id="setup-btn" class="btn btn-primary">Generate Keys & Save Profile</button>
+      <div id="setup-message"></div>
+      
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #dee2e6;">
+        <p style="margin-bottom: 10px;"><strong>Or import existing profile:</strong></p>
+        <div class="file-input-wrapper">
+          <button class="btn btn-secondary">Import Profile JSON</button>
+          <input type="file" id="import-file" accept=".json" />
+        </div>
+        <div class="help-text">Load a previously exported profile with keys</div>
+      </div>
+    </div>
+    
+    <div id="profile-info" class="hidden">
+      <div class="profile-info">
+        <p><strong>Name:</strong> <span id="profile-name"></span></p>
+        <p><strong>ORCID:</strong> <a id="profile-orcid" href="#" target="_blank"></a></p>
+        <p><strong>Keys:</strong> <span style="color: #155724;">✓ Generated and stored</span></p>
+        <details style="margin-top: 10px;">
+          <summary style="cursor: pointer; color: #666;">Show public key</summary>
+          <div id="public-key-preview" class="key-preview"></div>
+        </details>
+      </div>
+      <div class="profile-actions">
+        <button id="export-btn" class="btn btn-secondary">Export Profile</button>
+        <button id="clear-btn" class="btn btn-outline">Clear Profile</button>
+      </div>
+    </div>
   </div>
 
-  <div class="demo-container">
-    <!-- Template Selection -->
-    <div class="template-selection">
-      <h2><i class="fas fa-layer-group"></i> Select or Load Template</h2>
-      
-      <!-- Custom Template URL Input -->
-      <div class="custom-template-section">
-        <label for="template-url-input">Or load from URL:</label>
-        <div class="url-input-group">
-          <input 
-            type="url" 
-            id="template-url-input" 
-            placeholder="https://w3id.org/np/RA..." 
-            class="template-url-input"
-          />
-          <button id="load-template-btn" class="btn-load">
-            <i class="fas fa-download"></i> Load
-          </button>
-        </div>
+  <!-- Template Section -->
+  <div class="section">
+    <h2>📄 Nanopublication Template</h2>
+    <div id="template-section">
+      <div class="form-group">
+        <label>Template URI:</label>
+        <input 
+          type="text" 
+          id="template-uri" 
+          placeholder="https://w3id.org/np/..." 
+          value="https://w3id.org/np/RAX_4tWTyjFpO6nz63s14ucuejd64t2mK3IBlkwZ7jjLo"
+        />
+        <div class="help-text">CiTO Citation template (default)</div>
       </div>
-
-      <p>Or choose from examples:</p>
-      <div class="template-grid" id="template-grid"></div>
+      <button id="load-template-btn" class="btn btn-primary">Load Template</button>
+      <div id="template-message"></div>
     </div>
+  </div>
 
-    <!-- Creator Form -->
-    <div id="creator-container">
-      <div class="empty-state">
-        <h3>Select a Template to Begin</h3>
-        <p>Click on any template card above or enter a template URL</p>
-      </div>
+  <!-- Form Section -->
+  <div class="section">
+    <h2>✏️ Create Nanopublication</h2>
+    <div id="template-container">
+      <div class="loading">Load a template to get started...</div>
     </div>
+  </div>
 
-    <!-- Output Section -->
-    <div class="output-section" id="output-section" style="display: none;">
-      <h2><i class="fas fa-code"></i> Generated Nanopublication</h2>
-      <div class="output-content empty" id="output-content">
-        Submit the form to see the generated nanopublication here...
+  <!-- Preview Section -->
+  <div class="section hidden" id="preview-section">
+    <h2>
+      👁️ Preview
+      <div style="margin-left: auto; display: flex; gap: 10px;">
+        <button id="copy-btn" class="btn btn-secondary">Copy to Clipboard</button>
+        <button id="publish-btn" class="btn btn-primary">Sign & Publish</button>
       </div>
-      <div class="output-actions" style="display: none;" id="output-actions">
-        <button class="btn-copy" onclick="copyOutput()">
-          <i class="fas fa-copy"></i> Copy
-        </button>
-        <button class="btn-download" onclick="downloadOutput()">
-          <i class="fas fa-download"></i> Download
-        </button>
-      </div>
-    </div>
-
-    <!-- Event Log -->
-    <div class="event-log-section">
-      <h2><i class="fas fa-bell"></i> Event Log</h2>
-      <div class="event-log" id="event-log">
-        <div class="event-log-item">
-          <span class="event-time">--:--:--</span>
-          <span class="event-type change">INFO</span>
-          <span class="event-message">Demo initialized</span>
-        </div>
-      </div>
-    </div>
+    </h2>
+    <pre id="preview-text" style="background: #f5f5f5; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 0.85em; max-height: 400px;"></pre>
   </div>
 
   <script type="module">
     import NanopubCreator from '../src/index.js';
-    import '../src/styles/creator.css';
-
-    const templates = [
-      {
-        uri: 'https://w3id.org/np/RA24onqmqTMsraJ7ypYFOuckmNWpo4Zv5gsLqhXt7xYPU',
-        name: 'Annotate a paper quotation',
-        description: 'Annotating a paper quotation with personal interpretation',
-        tags: ['citation', 'research']
-      },
-      {
-        uri: 'https://w3id.org/np/RAX_4tWTyjFpO6nz63s14ucuejd64t2mK3IBlkwZ7jjLo',
-        name: 'Declare Citation (CiTO)',
-        description: 'Declare citations using Citation Typing Ontology',
-        tags: ['citation', 'CiTO']
-      },
-      {
-        uri: 'https://w3id.org/np/RAtoyEeCmsTWoUG2BsE7PxjabWTkYwRcoBSG1CPPNcwNk',
-        name: 'Scholarly work metadata',
-        description: 'Describe a scholarly work with detailed metadata',
-        tags: ['metadata', 'publication']
-      }
-    ];
-
+    
     let creator = null;
     let currentTrigContent = '';
 
-    function initTemplateGrid() {
-      const grid = document.getElementById('template-grid');
-      
-      templates.forEach(template => {
-        const card = document.createElement('div');
-        card.className = 'template-card';
-        card.innerHTML = `
-          <h3>${template.name}</h3>
-          <p>${template.description}</p>
-          <div class="template-tags">
-            ${template.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
-          </div>
-        `;
-        card.addEventListener('click', () => loadTemplate(template.uri));
-        grid.appendChild(card);
-      });
-    }
-
-    async function loadTemplate(uri) {
-      logEvent('INFO', `Loading template: ${uri}`);
-      const container = document.getElementById('creator-container');
-      container.innerHTML = '<div class="loading">Loading template...</div>';
-
+    // Initialize creator
+    async function initCreator() {
       try {
-        if (creator) {
-          creator.destroy?.();
-        }
+        const statusEl = document.getElementById('profile-status');
+        statusEl.textContent = 'Initializing WASM...';
+        statusEl.className = 'status loading';
 
         creator = new NanopubCreator({
-          publishServer: 'https://np.petapico.org/',
-          validateOnChange: true,
-          showHelp: true
+          publishServer: 'https://np.petapico.org/'
         });
 
-        creator.on('change', (data) => {
-          logEvent('CHANGE', 'Form data updated');
-        });
+        // Wait for WASM to initialize
+        await creator.ensureWasm();
 
+        // Setup event handlers
         creator.on('submit', ({ trigContent, formData }) => {
-          logEvent('SUCCESS', 'Nanopublication generated');
-          displayOutput(trigContent);
+          console.log('Generated nanopub:', trigContent);
+          currentTrigContent = trigContent;
+          
+          showToast('✓ Nanopublication created!', 'success');
+          
+          // Show preview section
+          showPreview(trigContent);
+          
+          // Scroll to preview
+          document.getElementById('preview-section').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        creator.on('publish', ({ uri, signedContent }) => {
+          showToast(`✓ Published successfully! URI: ${uri}`, 'success');
+          console.log('Published at:', uri);
+          console.log('Signed content:', signedContent);
+          
+          setTimeout(() => {
+            if (confirm('Open published nanopublication in new tab?')) {
+              window.open(uri, '_blank');
+            }
+          }, 500);
         });
 
         creator.on('error', ({ type, error }) => {
-          logEvent('ERROR', `${type}: ${error.message}`);
+          console.error('Error:', type, error);
+          showToast(`Error (${type}): ${error.message}`, 'error');
         });
 
-        await creator.renderFromTemplateUri(uri, container);
-        logEvent('SUCCESS', 'Template loaded successfully');
+        creator.on('profileNeeded', () => {
+          showToast('Please setup your profile first to sign nanopublications!', 'warning');
+          document.getElementById('profile-setup').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Check profile status
+        updateProfileStatus();
+        
+        console.log('✓ Creator initialized successfully');
+        
       } catch (error) {
-        logEvent('ERROR', `Failed to load template: ${error.message}`);
-        container.innerHTML = `<div class="error-state"><p>Error: ${error.message}</p></div>`;
+        console.error('Initialization failed:', error);
+        showToast(`Failed to initialize: ${error.message}`, 'error');
       }
     }
 
-    function displayOutput(trigContent) {
-      currentTrigContent = trigContent;
-      const outputSection = document.getElementById('output-section');
-      const outputContent = document.getElementById('output-content');
-      const outputActions = document.getElementById('output-actions');
-
-      outputSection.style.display = 'block';
-      outputContent.classList.remove('empty');
-      outputContent.textContent = trigContent;
-      outputActions.style.display = 'flex';
+    // Update profile status
+    function updateProfileStatus() {
+      const statusEl = document.getElementById('profile-status');
+      const setupDiv = document.getElementById('profile-setup');
+      const infoDiv = document.getElementById('profile-info');
+      
+      if (creator && creator.hasProfile()) {
+        const profile = creator.getProfile();
+        
+        statusEl.textContent = 'Configured ✓';
+        statusEl.className = 'status success';
+        
+        setupDiv.classList.add('hidden');
+        infoDiv.classList.remove('hidden');
+        
+        document.getElementById('profile-name').textContent = profile.name;
+        const orcidEl = document.getElementById('profile-orcid');
+        if (profile.orcid) {
+          orcidEl.textContent = profile.orcid;
+          orcidEl.href = profile.orcid;
+        } else {
+          orcidEl.textContent = 'Not provided';
+          orcidEl.href = '#';
+        }
+        
+        // Show public key preview
+        const keys = creator.exportKeys();
+        document.getElementById('public-key-preview').textContent = keys.publicKey;
+        
+      } else {
+        statusEl.textContent = 'Not configured';
+        statusEl.className = 'status warning';
+        
+        setupDiv.classList.remove('hidden');
+        infoDiv.classList.add('hidden');
+      }
     }
 
-    function logEvent(type, message) {
-      const log = document.getElementById('event-log');
-      const time = new Date().toLocaleTimeString();
-      const item = document.createElement('div');
-      item.className = 'event-log-item';
-      item.innerHTML = `
-        <span class="event-time">${time}</span>
-        <span class="event-type ${type.toLowerCase()}">${type}</span>
-        <span class="event-message">${message}</span>
-      `;
-      log.insertBefore(item, log.firstChild);
-    }
+    // Setup profile
+    document.getElementById('setup-btn').addEventListener('click', async () => {
+      const name = document.getElementById('name-input').value.trim();
+      const orcid = document.getElementById('orcid-input').value.trim();
+      const messageEl = document.getElementById('setup-message');
+      const btn = document.getElementById('setup-btn');
+      
+      if (!name) {
+        messageEl.innerHTML = '<div class="error-message">Please enter your name</div>';
+        return;
+      }
 
-    window.copyOutput = function() {
-      navigator.clipboard.writeText(currentTrigContent);
-      logEvent('INFO', 'Copied to clipboard');
-    };
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Generating keys...';
+        messageEl.innerHTML = '<div class="info-message">⚙️ Generating RSA keypair with nanopub-rs WASM...<br>This may take a few seconds.</div>';
+        
+        await creator.setupProfile(name, orcid || null);
+        
+        messageEl.innerHTML = '<div class="success-message">Profile created successfully! Your keys are stored in this browser.</div>';
+        updateProfileStatus();
+        
+        setTimeout(() => {
+          messageEl.innerHTML = '';
+        }, 5000);
+        
+      } catch (error) {
+        console.error('Profile setup failed:', error);
+        messageEl.innerHTML = `<div class="error-message">Failed: ${error.message}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Generate Keys & Save Profile';
+      }
+    });
 
-    window.downloadOutput = function() {
-      const blob = new Blob([currentTrigContent], { type: 'text/plain' });
+    // Import profile
+    document.getElementById('import-file').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const messageEl = document.getElementById('setup-message');
+      
+      try {
+        const text = await file.text();
+        const profileData = JSON.parse(text);
+        
+        // Validate data
+        if (!profileData.privateKey || !profileData.publicKey || !profileData.name) {
+          throw new Error('Invalid profile file format');
+        }
+        
+        creator.importKeys(profileData);
+        updateProfileStatus();
+        messageEl.innerHTML = '<div class="success-message">Profile imported successfully!</div>';
+        
+        setTimeout(() => {
+          messageEl.innerHTML = '';
+        }, 3000);
+        
+      } catch (error) {
+        console.error('Import failed:', error);
+        messageEl.innerHTML = `<div class="error-message">Failed to import: ${error.message}</div>`;
+      }
+      
+      // Reset file input
+      e.target.value = '';
+    });
+
+    // Export keys
+    document.getElementById('export-btn').addEventListener('click', () => {
+      const keys = creator.exportKeys();
+      const profile = creator.getProfile();
+      
+      const exportData = {
+        name: profile.name,
+        orcid: profile.orcid,
+        privateKey: keys.privateKey,
+        publicKey: keys.publicKey,
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+      };
+      
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'nanopublication.trig';
+      a.download = `nanopub-profile-${Date.now()}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      logEvent('INFO', 'Downloaded nanopublication');
-    };
+      
+      showToast('✓ Profile exported!', 'success');
+    });
 
-    // Custom URL loading
-    document.getElementById('load-template-btn').addEventListener('click', () => {
-      const input = document.getElementById('template-url-input');
-      const url = input.value.trim();
-      if (url) {
-        loadTemplate(url);
+    // Clear profile
+    document.getElementById('clear-btn').addEventListener('click', () => {
+      if (confirm('⚠️ Are you sure? This will delete your keys from this browser.\n\nMake sure you have exported your profile first if you want to keep it!')) {
+        creator.clearCredentials();
+        updateProfileStatus();
+        showToast('Profile cleared from browser.', 'info');
       }
     });
 
-    document.getElementById('template-url-input').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        const url = e.target.value.trim();
-        if (url) {
-          loadTemplate(url);
-        }
+    // Load template
+    document.getElementById('load-template-btn').addEventListener('click', async () => {
+      const uri = document.getElementById('template-uri').value.trim();
+      const messageEl = document.getElementById('template-message');
+      const container = document.getElementById('template-container');
+      const btn = document.getElementById('load-template-btn');
+      
+      if (!uri) {
+        messageEl.innerHTML = '<div class="error-message">Please enter a template URI</div>';
+        return;
+      }
+
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+        container.innerHTML = '<div class="loading">⏳ Loading template from network...</div>';
+        messageEl.innerHTML = '';
+        
+        await creator.renderFromTemplateUri(uri, container);
+        
+        messageEl.innerHTML = '<div class="success-message">✓ Template loaded successfully!</div>';
+        container.classList.add('template-loaded');
+        
+        setTimeout(() => {
+          messageEl.innerHTML = '';
+        }, 3000);
+        
+      } catch (error) {
+        console.error('Template load failed:', error);
+        messageEl.innerHTML = `<div class="error-message">Failed to load template: ${error.message}</div>`;
+        container.innerHTML = '<div class="error-message">Failed to load template. Check console for details.</div>';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Load Template';
       }
     });
 
-    initTemplateGrid();
+    // Preview section
+    function showPreview(trigContent) {
+      document.getElementById('preview-text').textContent = trigContent;
+      document.getElementById('preview-section').classList.remove('hidden');
+    }
+
+    document.getElementById('copy-btn').addEventListener('click', () => {
+      const text = document.getElementById('preview-text').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('✓ Copied to clipboard!', 'success');
+      });
+    });
+
+    document.getElementById('publish-btn').addEventListener('click', () => {
+      publishNanopub();
+    });
+
+    // Publish nanopub
+    async function publishNanopub() {
+      if (!currentTrigContent) {
+        showToast('No nanopublication to publish', 'warning');
+        return;
+      }
+
+      if (!creator.hasProfile()) {
+        showToast('Please setup your profile first', 'warning');
+        return;
+      }
+
+      try {
+        showToast('Signing and publishing...', 'info');
+        await creator.publish(currentTrigContent);
+      } catch (error) {
+        console.error('Publish failed:', error);
+        showToast(`Publish failed: ${error.message}`, 'error');
+      }
+    }
+
+    // Toast notifications
+    function showToast(message, type = 'info') {
+      const messagesContainer = document.getElementById('messages');
+      const toast = document.createElement('div');
+      toast.className = `${type}-message`;
+      toast.textContent = message;
+      toast.style.marginBottom = '10px';
+      toast.style.animation = 'slideIn 0.3s ease';
+      
+      messagesContainer.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 5000);
+    }
+
+    // Initialize on load
+    initCreator();
   </script>
 </body>
 </html>

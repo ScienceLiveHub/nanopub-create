@@ -15,6 +15,7 @@ export class TemplateParser {
       description: null,
       labelPattern: null,
       tags: [],
+      types: [],  // Nanopub types from nt:hasTargetNanopubType
       prefixes: {},
       placeholders: [],
       statements: [],
@@ -39,6 +40,8 @@ export class TemplateParser {
     
     console.log('✅ Template parsed:', {
       label: this.template.label,
+      labelPattern: this.template.labelPattern,
+      types: this.template.types.length,
       placeholders: this.template.placeholders.length,
       statements: this.template.statements.length
     });
@@ -79,6 +82,23 @@ export class TemplateParser {
     const tagMatch = assertionBlock.match(/nt:hasTag\s+"([^"]+)"/);
     if (tagMatch) {
       this.template.tags = [tagMatch[1]];
+    }
+
+    // Parse nt:hasTargetNanopubType - can be comma-separated list
+    // Need to match everything until we hit a period or semicolon at the END (not inside URIs)
+    const typesMatch = assertionBlock.match(/nt:hasTargetNanopubType\s+(.+?)\s*[;.](?:\s|$)/);
+    if (typesMatch) {
+      const typesStr = typesMatch[1];
+      // Extract URIs in angle brackets: <http://...>, <http://...>
+      const uriRegex = /<([^>]+)>/g;
+      const types = [];
+      let uriMatch;
+      while ((uriMatch = uriRegex.exec(typesStr)) !== null) {
+        types.push(uriMatch[1]);
+      }
+      this.template.types = types;
+      
+      console.log(`Found ${types.length} nanopub types:`, types);
     }
   }
 
