@@ -1,7 +1,7 @@
 /**
  * NanopubBuilder - Builds nanopubs from complete template structure
- * FINAL VERSION - properly handles empty instances and optional fields
- * FIXED: Handles nt:CREATOR placeholder
+ * properly handles empty instances and optional fields
+ * Handles nt:CREATOR placeholder
  */
 
 export class NanopubBuilder {
@@ -22,6 +22,9 @@ export class NanopubBuilder {
     const timestamp = new Date().toISOString();
     const tempId = this.generateRandomId();
     const baseUri = `http://purl.org/nanopub/temp/${tempId}`;
+    
+    // Store base URI for IntroducedResource resolution
+    this.currentNanopubBaseUri = baseUri;
     
     const prefixes = this.buildPrefixes(tempId);
     const head = this.buildHead();
@@ -154,24 +157,32 @@ ${triples.join('\n')}
       object: this.formData[`${stmt.id}_object${suffix}`]
     };
     
-    // If subject is a placeholder but not in form data, try to find it
+    // Check if subject/object are IntroducedResource or LocalResource
+    const subjectPlaceholder = this.template.placeholders?.find(p => p.id === stmt.subject);
+    const objectPlaceholder = this.template.placeholders?.find(p => p.id === stmt.object);
+    
+    const subjectIsResource = subjectPlaceholder && 
+      (subjectPlaceholder.isIntroducedResource || subjectPlaceholder.isLocalResource);
+    const objectIsResource = objectPlaceholder && 
+      (objectPlaceholder.isIntroducedResource || objectPlaceholder.isLocalResource);
+    
+    // If subject is IntroducedResource/LocalResource and we don't have form data for it,
+    // look for it in other statements (shared resource across multiple statements)
     if (!data.subject && stmt.subjectIsPlaceholder) {
       const subjectId = stmt.subject;
-      for (const otherStmt of this.template.statements) {
-        if (otherStmt.subjectIsPlaceholder && otherStmt.subject === subjectId) {
-          const val = this.formData[`${otherStmt.id}_subject`];
-          if (val) {
-            data.subject = val;
-            break;
-          }
-        }
-        if (otherStmt.objectIsPlaceholder && otherStmt.object === subjectId) {
-          const val = this.formData[`${otherStmt.id}_object`];
-          if (val) {
-            data.subject = val;
-            break;
-          }
-        }
+      const foundValue = this.findPlaceholderValue(subjectId);
+      if (foundValue) {
+        data.subject = foundValue;
+      }
+    }
+    
+    // If object is IntroducedResource/LocalResource and we don't have form data for it,
+    // look for it in other statements
+    if (!data.object && stmt.objectIsPlaceholder) {
+      const objectId = stmt.object;
+      const foundValue = this.findPlaceholderValue(objectId);
+      if (foundValue) {
+        data.object = foundValue;
       }
     }
     
@@ -180,12 +191,14 @@ ${triples.join('\n')}
     const hasPredicate = data.predicate && data.predicate !== '';
     const hasObject = data.object && data.object !== '';
     
-    // For optional statements, skip if no object data
-    if (stmt.optional && !hasObject) {
+    // For optional statements, skip if no object data (unless object is a resource type)
+    if (stmt.optional && !hasObject && !objectIsResource) {
       return null;
     }
     
-    // For non-optional, we need data for editable fields
+    // For non-optional statements:
+    // - If both subject and object placeholders are empty, skip
+    // - Otherwise, proceed
     if (!stmt.optional) {
       if (stmt.objectIsPlaceholder && !hasObject) {
         return null;
@@ -282,6 +295,13 @@ ${triples.join('\n')}
     // Get placeholder metadata
     const placeholder = this.template.placeholders?.find(p => p.id === placeholderId);
     
+    // Handle IntroducedResource/LocalResource - these create new URIs based on current nanopub
+    if (placeholder && (placeholder.isIntroducedResource || placeholder.isLocalResource)) {
+      // Use the current nanopub's base URI + the user's input as suffix
+      const baseUri = this.currentNanopubBaseUri || 'http://purl.org/nanopub/temp/unknown';
+      return `<${baseUri}/${value}>`;
+    }
+    
     // Handle AutoEscapeUriPlaceholder
     if (placeholder?.type === 'AutoEscapeUriPlaceholder' && placeholder.prefix) {
       const encoded = encodeURIComponent(value).replace(/%20/g, '+');
@@ -341,15 +361,20 @@ ${triples.join('\n')}
     }
     
     // Add npx:introduces for introduced resources
+    const introducedUris = [];
     for (const placeholder of this.template.placeholders || []) {
-      if (placeholder.isIntroducedResource && placeholder.prefix) {
+      if (placeholder.isIntroducedResource) {
         const value = this.findPlaceholderValue(placeholder.id);
         if (value) {
-          const encoded = encodeURIComponent(value).replace(/%20/g, '+');
-          lines.push(`;
-    npx:introduces <${placeholder.prefix}${encoded}>`);
+          const uri = `${this.currentNanopubBaseUri}/${value}`;
+          introducedUris.push(`<${uri}>`);
         }
       }
+    }
+    
+    if (introducedUris.length > 0) {
+      lines.push(`;
+    npx:introduces ${introducedUris.join(', ')}`);
     }
     
     // Add label
@@ -376,7 +401,9 @@ ${lines.join('\n')}
    * Find value for a placeholder in form data
    */
   findPlaceholderValue(placeholderId) {
+    // Check all statements for this placeholder in either subject or object position
     for (const stmt of this.template.statements || []) {
+      // Check if placeholder is the subject
       if (stmt.subject === placeholderId || stmt.subject === `sub:${placeholderId}`) {
         const value = this.formData[`${stmt.id}_subject`];
         if (value) return value;
@@ -389,6 +416,7 @@ ${lines.join('\n')}
         }
       }
       
+      // Check if placeholder is the object
       if (stmt.object === placeholderId || stmt.object === `sub:${placeholderId}`) {
         const value = this.formData[`${stmt.id}_object`];
         if (value) return value;

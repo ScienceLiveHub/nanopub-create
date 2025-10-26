@@ -100,19 +100,16 @@ const FieldComponents = {
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'form-input';
-    input.placeholder = placeholder.label || '';
+    input.placeholder = placeholder.label || 'Enter identifier';
     return input;
   },
   
   'LocalResource': (placeholder) => {
-    // LocalResource is auto-generated, should not render as input
-    // Return a hidden input or null - handled specially in renderStatement
-    return null;
-  },
-  
-  'IntroducedResource': (placeholder) => {
-    // IntroducedResource is auto-generated, should not render as input
-    return null;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'form-input';
+    input.placeholder = placeholder.label || 'Enter identifier';
+    return input;
   },
   
   'ValuePlaceholder': (placeholder) => {
