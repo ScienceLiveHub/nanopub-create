@@ -12,6 +12,15 @@ export class StorageAdapter {
     }
   }
 
+  createInMemoryStorage() { 
+    const memoryStore = {};
+    return {
+      getItem: (key) => memoryStore[key] || null,
+      setItem: (key, value) => { memoryStore[key] = value; },
+      removeItem: (key) => { delete memoryStore[key]; }
+    };
+  }
+
   getItem(key) {
     return this.storage.getItem(key);
   }
