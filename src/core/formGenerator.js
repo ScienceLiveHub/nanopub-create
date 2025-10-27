@@ -473,7 +473,7 @@ export class FormGenerator {
   /**
    * Render a statement within a group (no separate labels for subject)
    */
-  renderStatementInGroup(container, statement, renderedPlaceholders = new Set()) {
+  renderStatementInGroup(container, statement, renderedPlaceholders = new Set(), isInsideSemanticGroup = false) {
     console.log(`[renderStatementInGroup] ${statement.id}:`, {
       predicate: statement.predicate,
       object: statement.object,
@@ -534,9 +534,12 @@ export class FormGenerator {
     
     if (statement.optional) {
       field.classList.add('optional');
-      setTimeout(() => {
-        makeOptionalCollapsible(field, predicateLabel);
-      }, 0);
+      // Only make individual fields collapsible if NOT inside a semantic group
+      if (!isInsideSemanticGroup) {
+        setTimeout(() => {
+          makeOptionalCollapsible(field, predicateLabel);
+        }, 0);
+      }
     }
     
     // Show predicate label first
@@ -590,7 +593,7 @@ export class FormGenerator {
   /**
    * Render a single statement as a form field
    */
-  renderStatement(container, statement, renderedPlaceholders = new Set()) {
+  renderStatement(container, statement, renderedPlaceholders = new Set(), isInsideSemanticGroup = false) {
     const subjectPlaceholder = this.findPlaceholder(statement.subject);
     const predicatePlaceholder = this.findPlaceholder(statement.predicate);
     const objectPlaceholder = this.findPlaceholder(statement.object);
@@ -636,12 +639,15 @@ export class FormGenerator {
     }
     if (statement.optional) {
       field.classList.add('optional');
-      setTimeout(() => {
-        const label = predicatePlaceholder ? 
-          (predicatePlaceholder.label || predicateLabel) : 
-          predicateLabel;
-        makeOptionalCollapsible(field, label);
-      }, 0);
+      // Only make individual fields collapsible if NOT inside a semantic group
+      if (!isInsideSemanticGroup) {
+        setTimeout(() => {
+          const label = predicatePlaceholder ? 
+            (predicatePlaceholder.label || predicateLabel) : 
+            predicateLabel;
+          makeOptionalCollapsible(field, label);
+        }, 0);
+      }
     }
     
     // 1. SUBJECT - render first if not already rendered
@@ -1076,7 +1082,8 @@ export class FormGenerator {
       const statement = this.template.statements.find(s => s.id === stmtId);
       if (!statement) return;
       
-      this.renderStatement(groupContainer, statement, renderedPlaceholders);
+      // Pass true for isInsideSemanticGroup to prevent double collapsibility
+      this.renderStatement(groupContainer, statement, renderedPlaceholders, true);
     });
     
     // Make the entire group collapsible if specified
