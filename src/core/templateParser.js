@@ -162,7 +162,8 @@ export class TemplateParser {
         possibleValuesFrom: null,
         possibleValuesFromApi: null,
         options: [],
-        prefix: null  // For AutoEscapeUriPlaceholder
+        prefix: null,  // For AutoEscapeUriPlaceholder
+        hasDatatype: null  // For typed literals
       };
 
       // Extract prefix for AutoEscapeUriPlaceholder
@@ -172,6 +173,13 @@ export class TemplateParser {
           placeholder.prefix = prefixMatch[1];
           console.log(`  → Found prefix for AutoEscapeUriPlaceholder: ${placeholder.prefix}`);
         }
+      }
+
+      // Extract datatype for typed literals (e.g., WKT, dates, etc.)
+      const datatypeMatch = block.match(/nt:hasDatatype\s+<([^>]+)>/);
+      if (datatypeMatch) {
+        placeholder.hasDatatype = datatypeMatch[1];
+        console.log(`  → Found datatype: ${placeholder.hasDatatype}`);
       }
 
       // Handle RestrictedChoicePlaceholder

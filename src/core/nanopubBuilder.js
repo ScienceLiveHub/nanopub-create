@@ -222,7 +222,7 @@ ${triples.join('\n')}
     let subject;
     
     if (stmt.subjectUri === 'nt:CREATOR') {
-      subject = `<${creator}>`;
+      subject = creator.startsWith('orcid:') ? creator : `orcid:${creator.split('/').pop()}`;
     } else {
       subject = stmt.subjectIsPlaceholder
         ? this.resolveValue(subjectValue, stmt.subject)
@@ -240,7 +240,7 @@ ${triples.join('\n')}
     let object;
     
     if (stmt.objectUri === 'nt:CREATOR') {
-      object = `<${creator}>`;
+      object = creator.startsWith('orcid:') ? creator : `orcid:${creator.split('/').pop()}`;
     } else {
       object = stmt.objectIsPlaceholder
         ? this.resolveValue(objectValue, stmt.object)
@@ -282,7 +282,7 @@ ${triples.join('\n')}
     if (value === 'nt:CREATOR' || value === 'CREATOR' || 
         placeholderRef === 'nt:CREATOR' || placeholderRef === 'CREATOR') {
       const creator = this.metadata.creator || 'https://orcid.org/0000-0000-0000-0000';
-      return `<${creator}>`;
+      return creator.startsWith('orcid:') ? creator : `orcid:${creator.split('/').pop()}`;
     }
     
     // CRITICAL: If value is just the placeholder name (not actual data), return null
@@ -317,12 +317,35 @@ ${triples.join('\n')}
       return `<${value}>`;
     }
     
-    // Handle literals
-    if (value.includes('\n') || value.length > 100) {
-      return `"""${value}"""`;
+    // Handle literals with datatype
+    if (placeholder?.hasDatatype) {
+      // For typed literals, don't escape quotes (WKT, dates, etc. don't contain quotes)
+      return `"${value}"^^<${placeholder.hasDatatype}>`;
     }
     
-    return `"${value}"`;
+    // Handle regular literals - escape properly for TriG/Turtle
+    // Use triple quotes for multi-line text, single quotes otherwise
+    const hasNewlines = value.includes('\n');
+    
+    if (hasNewlines) {
+      // Use triple quotes for multi-line text
+      // In triple-quoted strings, only """ needs escaping
+      let escaped = value.replace(/"""/g, '\\"""');
+      
+      // CRITICAL: Prevent collision with closing """
+      // If text ends with one or two quotes, they'll merge with closing """
+      if (escaped.endsWith('""')) {
+        escaped = escaped.slice(0, -2) + '\\"\\""';  // Escape the last two
+      } else if (escaped.endsWith('"')) {
+        escaped = escaped.slice(0, -1) + '\\"';  // Escape the last one
+      }
+      
+      return `"""${escaped}"""`;
+    } else {
+      // Single-line text: use single quotes with escaped quotes
+      const escaped = value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      return `"${escaped}"`;
+    }
   }
 
   formatUri(uri) {
@@ -334,22 +357,24 @@ ${triples.join('\n')}
   }
 
   buildProvenance() {
-    const creator = this.metadata.creator || 'https://orcid.org/0000-0000-0000-0000';
+    const creator = this.metadata.creator || 'https://orcid.org/0000-0002-1784-2920';
+    const creatorRef = creator.startsWith('orcid:') ? creator : `orcid:${creator.split('/').pop()}`;
     
     return `sub:provenance {
-  sub:assertion prov:wasAttributedTo <${creator}> .
+  sub:assertion prov:wasAttributedTo ${creatorRef} .
 }`;
   }
 
   buildPubinfo(timestamp) {
-    const creator = this.metadata.creator || 'https://orcid.org/0000-0000-0000-0000';
+    const creator = this.metadata.creator || 'https://orcid.org/0000-0002-1784-2920';
     const creatorName = this.metadata.creatorName || 'Unknown';
+    const creatorRef = creator.startsWith('orcid:') ? creator : `orcid:${creator.split('/').pop()}`;
     
     const lines = [
-      `  <${creator}> foaf:name "${creatorName}" .`,
+      `  ${creatorRef} foaf:name "${creatorName}" .`,
       '',
       `  this: dct:created "${timestamp}"^^xsd:dateTime;`,
-      `    dct:creator <${creator}>;`,
+      `    dct:creator ${creatorRef};`,
       `    dct:license <https://creativecommons.org/licenses/by/4.0/>`
     ];
     

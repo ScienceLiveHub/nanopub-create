@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Collapsible Optional Fields Demo</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 30px;
+    }
+    
+    .form-section {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    
+    .form-field {
+      margin-bottom: 15px;
+    }
+    
+    .form-field.required {
+      border-left: 3px solid #be2e78;
+      padding-left: 15px;
+    }
+    
+    .form-field label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #333;
+    }
+    
+    .form-field input,
+    .form-field textarea {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.95em;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+    
+    .form-field input:focus,
+    .form-field textarea:focus {
+      border-color: #be2e78;
+      outline: none;
+    }
+    
+    .required-badge {
+      background: #ffc107;
+      color: #333;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75em;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+    
+    .demo-note {
+      background: #e7f3ff;
+      border-left: 4px solid #0066cc;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+    
+    .demo-note h3 {
+      margin: 0 0 10px 0;
+      color: #0066cc;
+    }
+  </style>
+</head>
+<body>
+  <h1>📋 Collapsible Optional Fields Demo</h1>
+  
+  <div class="demo-note">
+    <h3>✨ How it works</h3>
+    <p><strong>Required fields</strong> are shown with a yellow badge and are always visible.</p>
+    <p><strong>Optional fields</strong> start collapsed - click the gray bar to expand them.</p>
+    <p>If you start typing in a collapsed field, it automatically expands!</p>
+  </div>
+  
+  <div class="form-section">
+    <h2 style="margin-top: 0; color: #be2e78;">Paper Citation</h2>
+    
+    <!-- Required Field -->
+    <div class="form-field required">
+      <label>
+        DOI of the paper
+        <span class="required-badge">Required</span>
+      </label>
+      <input 
+        type="text" 
+        placeholder="10.1234/example.2024"
+        value="10.1177/1096348020982353"
+      />
+    </div>
+    
+    <!-- Required Field -->
+    <div class="form-field required">
+      <label>
+        The exact quotation from the paper
+        <span class="required-badge">Required</span>
+      </label>
+      <textarea 
+        rows="3"
+        placeholder="Enter the exact text from the paper..."
+      >The article aims to investigate how the business model in tourism that is used in Italy's Langhe region is aligned to the promotion of sustainable development.</textarea>
+    </div>
+    
+    <!-- Optional Field - Collapsed by default -->
+    <div class="form-field optional-collapsible collapsed" id="optional-1">
+      <div class="optional-toggle">
+        <span class="toggle-icon">▶</span>
+        <span class="toggle-label">End of quotation (for longer passages)</span>
+        <span class="optional-badge">Optional</span>
+      </div>
+      <div class="optional-content">
+        <textarea 
+          rows="3"
+          placeholder="If quoting a long passage, enter the ending text here..."
+        ></textarea>
+        <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
+          Use this when you want to quote the beginning and end of a longer passage
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="form-section">
+    <h2 style="margin-top: 0; color: #be2e78;">📍 Geographic Location</h2>
+    
+    <!-- Required Field -->
+    <div class="form-field required">
+      <label>
+        Location identifier
+        <span class="required-badge">Required</span>
+      </label>
+      <input 
+        type="text" 
+        placeholder="e.g., langhe-region-italy"
+        value="langhe-region-italy"
+      />
+      <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
+        💡 This creates a URI: <code>.../langhe-region-italy</code>
+      </div>
+    </div>
+    
+    <!-- Required Field -->
+    <div class="form-field required">
+      <label>
+        Name of the geographical area
+        <span class="required-badge">Required</span>
+      </label>
+      <input 
+        type="text" 
+        placeholder="e.g., Northern Europe, Amazon Basin"
+        value="Langhe region, Italy"
+      />
+    </div>
+    
+    <!-- Optional Field - Collapsed -->
+    <div class="form-field optional-collapsible collapsed" id="optional-2">
+      <div class="optional-toggle">
+        <span class="toggle-icon">▶</span>
+        <span class="toggle-label">Geometry details (WKT format)</span>
+        <span class="optional-badge">Optional</span>
+      </div>
+      <div class="optional-content">
+        <label style="margin-bottom: 8px; display: block;">Geometry identifier:</label>
+        <input 
+          type="text" 
+          placeholder="e.g., langhe-geometry"
+          style="margin-bottom: 10px;"
+        />
+        
+        <label style="margin-bottom: 8px; display: block;">WKT coordinates:</label>
+        <textarea 
+          rows="2"
+          placeholder="POLYGON((7.5 44.3, 8.5 44.3, 8.5 44.9, 7.5 44.9, 7.5 44.3))"
+        ></textarea>
+        <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
+          📍 Well-Known Text format enables spatial queries
+        </div>
+      </div>
+    </div>
+    
+    <!-- Optional Field - Collapsed -->
+    <div class="form-field optional-collapsible collapsed" id="optional-3">
+      <div class="optional-toggle">
+        <span class="toggle-icon">▶</span>
+        <span class="toggle-label">Bounding box (alternative to geometry)</span>
+        <span class="optional-badge">Optional</span>
+      </div>
+      <div class="optional-content">
+        <textarea 
+          rows="2"
+          placeholder="WKT POLYGON format for bounding box..."
+        ></textarea>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Collapsible functionality
+    document.querySelectorAll('.optional-toggle').forEach(toggle => {
+      const field = toggle.closest('.optional-collapsible');
+      const content = field.querySelector('.optional-content');
+      const icon = toggle.querySelector('.toggle-icon');
+      const badge = toggle.querySelector('.optional-badge');
+      
+      // Style elements
+      toggle.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        padding: 12px;
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 6px;
+        margin-bottom: 0;
+        transition: all 0.2s;
+        user-select: none;
+      `;
+      
+      badge.style.cssText = `
+        background: #e7f3ff;
+        color: #0066cc;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 0.75em;
+        font-weight: 600;
+        margin-left: auto;
+      `;
+      
+      icon.style.cssText = `
+        transition: transform 0.2s;
+        font-size: 0.8em;
+        color: #666;
+        min-width: 12px;
+      `;
+      
+      toggle.querySelector('.toggle-label').style.cssText = `
+        font-weight: 500;
+        color: #495057;
+        flex: 1;
+      `;
+      
+      content.style.cssText = `
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+        padding: 0;
+      `;
+      
+      // Hover effect
+      toggle.addEventListener('mouseenter', () => {
+        if (field.classList.contains('collapsed')) {
+          toggle.style.background = '#e9ecef';
+        }
+      });
+      
+      toggle.addEventListener('mouseleave', () => {
+        if (field.classList.contains('collapsed')) {
+          toggle.style.background = '#f8f9fa';
+        }
+      });
+      
+      // Click to toggle
+      toggle.addEventListener('click', () => {
+        const isCollapsed = field.classList.contains('collapsed');
+        field.classList.toggle('collapsed');
+        
+        if (isCollapsed) {
+          // Expand
+          icon.style.transform = 'rotate(90deg)';
+          content.style.maxHeight = content.scrollHeight + 'px';
+          content.style.padding = '15px 0 0 0';
+          toggle.style.background = '#e7f3ff';
+          toggle.style.borderColor = '#0066cc';
+          badge.style.background = '#d1ecf1';
+        } else {
+          // Collapse
+          icon.style.transform = 'rotate(0deg)';
+          content.style.maxHeight = '0';
+          content.style.padding = '0';
+          toggle.style.background = '#f8f9fa';
+          toggle.style.borderColor = '#dee2e6';
+          badge.style.background = '#e7f3ff';
+        }
+      });
+      
+      // Auto-expand when typing
+      content.addEventListener('input', () => {
+        if (field.classList.contains('collapsed')) {
+          toggle.click();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
