@@ -3,6 +3,8 @@
  * Main entry point with profile management and signing
  */
 
+import './styles/styles-index.css';
+
 import { StorageAdapter } from './core/storage-adapter.js';
 import { TemplateParser } from './core/templateParser.js';
 import FormGenerator from './core/formGenerator.js';

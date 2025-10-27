@@ -16,16 +16,20 @@ export default defineConfig({
       }
     },
     rollupOptions: {
-      external: [], // Bundle everything including WASM
+      external: [],
       output: {
-        inlineDynamicImports: true, // Important for WASM
+        inlineDynamicImports: true,
+        exports: 'named',  // Fix export warning
         assetFileNames: (assetInfo) => {
+          // CSS files will be named style.css by default
           if (assetInfo.name === 'style.css') return 'nanopub-creator.css';
+          // WASM files
           if (assetInfo.name.endsWith('.wasm')) return 'nanopub-creator.wasm';
           return assetInfo.name;
         }
       }
-    }
+    },
+    cssCodeSplit: false  // Bundle all CSS into one file
   },
   optimizeDeps: {
     exclude: ['@nanopub/sign']

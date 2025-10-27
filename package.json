@@ -10,7 +10,8 @@
       "import": "./dist/nanopub-creator.esm.js",
       "require": "./dist/nanopub-creator.js"
     },
-    "./styles": "./dist/nanopub-creator.css"
+    "./styles": "./dist/nanopub-creator.css",
+    "./dist/nanopub-creator.css": "./dist/nanopub-creator.css"
   },
   "files": [
     "dist",
@@ -21,6 +22,18 @@
     "build": "vite build --config vite.lib.config.js",
     "build:demo": "vite build --mode demo",
     "preview": "vite preview"
+  },
+  "keywords": [
+    "nanopublication",
+    "rdf",
+    "semantic-web",
+    "linked-data"
+  ],
+  "author": "ScienceLive Hub",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ScienceLiveHub/nanopub-create.git"
   },
   "dependencies": {
     "@nanopub/sign": "^0.1.4"
