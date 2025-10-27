@@ -5,6 +5,18 @@ class z {
   constructor(A = null) {
     A ? this.storage = A : typeof localStorage < "u" ? this.storage = localStorage : this.storage = this.createInMemoryStorage();
   }
+  createInMemoryStorage() {
+    const A = {};
+    return {
+      getItem: (g) => A[g] || null,
+      setItem: (g, I) => {
+        A[g] = I;
+      },
+      removeItem: (g) => {
+        delete A[g];
+      }
+    };
+  }
   getItem(A) {
     return this.storage.getItem(A);
   }
