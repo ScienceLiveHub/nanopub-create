@@ -333,17 +333,55 @@ Contributions welcome! Please:
 
 ## 🐛 Troubleshooting
 
-### Double Hash `##` in Signed URIs
+### Hash URIs to Slash URIs Conversion
 
-There's a known issue with `@nanopub/sign` WASM where signed nanopubs contain `##` instead of `#` in graph URIs. This causes publishing to fail with "Invalid IRI" errors.
+The `@nanopub/sign` WASM library generates hash-based URIs (`#`), but nanopub-create converts them to slash-based URIs (`/`) for better HTTP dereferenceability and RESTful compliance.
 
-**Workaround in `index.html`:**
+**The conversion happens automatically in `index.html`:**
 ```javascript
-// In signAndDownload() function around line 701
-let signedContent = result.signedContent.replace(/##/g, '#');
+// In signAndDownload() function around line 710
+// Extract the nanopub URI and convert hash patterns to slash patterns
+const npUriMatch = signedContent.match(/PREFIX this: <([^>]+)>/);
+if (npUriMatch) {
+  const npUri = npUriMatch[1];
+  
+  // Step 1: Replace #/ with / (for graph names like #/Head)
+  signedContent = signedContent.replace(
+    new RegExp(escapeRegex(npUri + '#/'), 'g'), 
+    npUri + '/'
+  );
+  
+  // Step 2: Replace # with / (for prefix definition)
+  signedContent = signedContent.replace(
+    new RegExp(escapeRegex(npUri + '#'), 'g'), 
+    npUri + '/'
+  );
+}
 ```
 
-This fix is already applied in the demo. See [GitHub issue](https://github.com/vemonet/nanopub-rs/issues) for status.
+**Why this is needed:**
+- WASM library is hardcoded to use hash URIs
+- Slash URIs are more RESTful and HTTP dereferenceable
+- Aligns with nanodash output format
+- Each component (Head, assertion, provenance, pubinfo) can be accessed independently
+
+**Result:**
+```turtle
+PREFIX sub: <https://w3id.org/np/RA.../> .
+
+GRAPH <https://w3id.org/np/RA.../Head> {
+  this: np:hasAssertion <.../assertion> .
+}
+```
+
+**Not:**
+```turtle
+PREFIX sub: <https://w3id.org/np/RA...#> .
+
+GRAPH <https://w3id.org/np/RA...#/Head> {
+```
+
+This fix is already applied in the demo. The conversion happens post-signing and doesn't affect the cryptographic signature.
 
 ### WASM Not Loading
 ```bash
@@ -366,9 +404,31 @@ const patternMatch = this.content.match(/nt:hasNanopubLabelPattern/);
 ```
 
 ### Correct Prefix Format
-The `sub:` prefix should have `#` at the end (this is correct):
+
+The `sub:` prefix should have a trailing slash `/` for slash-based URIs (this is correct):
 ```javascript
-`@prefix sub: <${baseUri}#> .`  // ✓ Correct - matches nanodash format
+`@prefix sub: <${baseUri}/> .`
+```
+
+**Why slash URIs?**
+- Each component is HTTP dereferenceable (can be fetched separately via HTTP)
+- More RESTful architecture
+- Aligns with nanodash standard
+- Better scalability and future-proofing
+
+**Example:**
+```turtle
+@prefix sub: <https://w3id.org/np/RA.../> .
+
+sub:Head { }           # Expands to: https://w3id.org/np/RA.../Head
+sub:assertion { }      # Expands to: https://w3id.org/np/RA.../assertion
+```
+
+**Not:**
+```turtle
+@prefix sub: <https://w3id.org/np/RA...#> .
+
+sub:Head { }           # Expands to: https://w3id.org/np/RA...#Head (hash fragment)
 ```
 
 ## 📚 Resources
