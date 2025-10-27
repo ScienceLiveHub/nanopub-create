@@ -1,26 +1,27 @@
 {
-  "name": "nanopub-create",
+  "name": "@sciencelivehub/nanopub-create",
   "version": "1.0.0",
   "description": "JavaScript library for creating nanopublications from templates",
   "type": "module",
-  "main": "src/index.js",
+  "main": "dist/nanopub-creator.js",
+  "module": "dist/nanopub-creator.esm.js",
   "exports": {
-    ".": "./src/index.js",
-    "./styles": "./src/styles/creator.css"
+    ".": {
+      "import": "./dist/nanopub-creator.esm.js",
+      "require": "./dist/nanopub-creator.js"
+    },
+    "./styles": "./dist/nanopub-creator.css"
   },
+  "files": [
+    "dist",
+    "src"
+  ],
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build --config vite.lib.config.js",
+    "build:demo": "vite build --mode demo",
     "preview": "vite preview"
   },
-  "keywords": [
-    "nanopublication",
-    "rdf",
-    "semantic-web",
-    "linked-data"
-  ],
-  "author": "ScienceLive Hub",
-  "license": "MIT",
   "dependencies": {
     "@nanopub/sign": "^0.1.4"
   },

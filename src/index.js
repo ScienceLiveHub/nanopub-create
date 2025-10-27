@@ -3,6 +3,7 @@
  * Main entry point with profile management and signing
  */
 
+import { StorageAdapter } from './core/storage-adapter.js';
 import { TemplateParser } from './core/templateParser.js';
 import FormGenerator from './core/formGenerator.js';
 import { NanopubBuilder } from './core/nanopubBuilder.js';
@@ -35,6 +36,23 @@ export async function createFormFromTemplate(templateUri, containerElement) {
   return generator;
 }
 
+// Dynamic WASM import that works in different environments
+let nanopubSign;
+
+async function initWasm() {
+  if (nanopubSign) return nanopubSign;
+  
+  try {
+    // Try to import the WASM module
+    const module = await import('@nanopub/sign');
+    nanopubSign = module;
+    return nanopubSign;
+  } catch (error) {
+    console.error('Failed to load @nanopub/sign WASM module:', error);
+    throw new Error('Could not initialize nanopub signing library');
+  }
+}
+
 
 /**
  * Main NanopubCreator class with WASM support
@@ -49,6 +67,7 @@ class NanopubCreator {
       ...options
     };
 
+    this.storage = new StorageAdapter(options.storage);
     this.template = null;
     this.formGenerator = null;
     this.builder = null;
@@ -227,7 +246,7 @@ class NanopubCreator {
   }
 
   /**
-   * Save credentials to localStorage
+   * Save credentials to storage
    */
   saveCredentials() {
     if (!this.profile || !this.credentials) return;
@@ -238,24 +257,25 @@ class NanopubCreator {
         credentials: this.credentials,
         savedAt: new Date().toISOString()
       };
-      localStorage.setItem('nanopub_profile', JSON.stringify(data));
-      console.log('✓ Profile saved to localStorage');
+      this.storage.setItem('nanopub_profile', JSON.stringify(data));
+      console.log('✓ Profile saved to storage');
     } catch (error) {
       console.error('Failed to save credentials:', error);
+      throw error;
     }
   }
 
   /**
-   * Load credentials from localStorage
+   * Load credentials from storage
    */
   loadCredentials() {
     try {
-      const stored = localStorage.getItem('nanopub_profile');
+      const stored = this.storage.getItem('nanopub_profile');
       if (stored) {
         const data = JSON.parse(stored);
         this.profile = data.profile;
         this.credentials = data.credentials;
-        console.log('✓ Profile loaded from localStorage');
+        console.log('✓ Profile loaded from storage');
         return true;
       }
     } catch (error) {
@@ -271,7 +291,7 @@ class NanopubCreator {
     this.profile = null;
     this.credentials = null;
     try {
-      localStorage.removeItem('nanopub_profile');
+      this.storage.removeItem('nanopub_profile');
       console.log('✓ Profile cleared');
     } catch (error) {
       console.error('Failed to clear credentials:', error);
