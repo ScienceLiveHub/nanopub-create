@@ -3,139 +3,10 @@
  * Maps placeholder types to rendering components
  */
 
-// ============================================
-// COMPONENT REGISTRY
-// ============================================
-
-const FieldComponents = {
-  
-  'LiteralPlaceholder': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || '';
-    if (placeholder.validation?.regex) {
-      input.pattern = placeholder.validation.regex;
-    }
-    return input;
-  },
-  
-  'LongLiteralPlaceholder': (placeholder) => {
-    const textarea = document.createElement('textarea');
-    textarea.className = 'form-input';
-    textarea.rows = 5;
-    textarea.placeholder = placeholder.label || '';
-    return textarea;
-  },
-  
-  'ExternalUriPlaceholder': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'url';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || 'https://...';
-    return input;
-  },
-  
-  'UriPlaceholder': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'url';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || 'https://...';
-    return input;
-  },
-  
-  'TrustyUriPlaceholder': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'url';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || 'https://...';
-    return input;
-  },
-  
-  'RestrictedChoicePlaceholder': (placeholder) => {
-    const select = document.createElement('select');
-    select.className = 'form-select';
-    
-    // Only add "Select..." if there are multiple options
-    if (placeholder.options && placeholder.options.length > 1) {
-      const emptyOption = document.createElement('option');
-      emptyOption.value = '';
-      emptyOption.textContent = 'Select...';
-      select.appendChild(emptyOption);
-    }
-    
-    console.log(`[RestrictedChoice] Rendering ${placeholder.id} with ${placeholder.options?.length || 0} options`);
-    
-    // Options are loaded by templateParser
-    if (placeholder.options && Array.isArray(placeholder.options)) {
-      placeholder.options.forEach((opt, idx) => {
-        const option = document.createElement('option');
-        option.value = opt.value || opt;
-        option.textContent = opt.label || opt.value || opt;
-        
-        // Auto-select if only one option
-        if (placeholder.options.length === 1) {
-          option.selected = true;
-        }
-        
-        select.appendChild(option);
-      });
-    } else {
-      console.warn(`[RestrictedChoice] No options found for ${placeholder.id}`);
-    }
-    
-    return select;
-  },
-  
-  'GuidedChoicePlaceholder': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || 'Type to search...';
-    input.setAttribute('data-guided-choice', 'true');
-    return input;
-  },
-  
-  'IntroducedResource': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || 'Enter identifier';
-    return input;
-  },
-  
-  'LocalResource': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || 'Enter identifier';
-    return input;
-  },
-  
-  'ValuePlaceholder': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || 'Enter value';
-    return input;
-  },
-  
-  'AutoEscapeUriPlaceholder': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || '';
-    return input;
-  },
-  
-  'AgentPlaceholder': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'url';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || 'https://orcid.org/...';
-    return input;
-  }
-};
+import { TemplateRegistry } from '../templates/registry.js';
+import { FieldComponents } from '../components/fieldComponents.js';
+import { makeOptionalCollapsible, makeOptionalGroupCollapsible } from '../components/collapsible.js';
+import { AutofillManager } from '../components/autofill.js';
 
 // ============================================
 // FORM GENERATOR
@@ -158,6 +29,15 @@ export class FormGenerator {
       preview: []
     };
     this.formElement = null;
+    
+    // Initialize auto-fill manager
+    this.autofillManager = new AutofillManager();
+    
+    // Get template-specific customization
+    const CustomizationClass = TemplateRegistry.getCustomization(template.uri);
+    this.customization = new CustomizationClass(template);
+    
+    console.log(`[FormGenerator] Using customization: ${this.customization.constructor.name}`);
   }
 
   /**
@@ -377,9 +257,26 @@ export class FormGenerator {
    * Render fields from statements
    */
   renderFields(container) {
+    if (!this.template.statements || this.template.statements.length === 0) {
+      container.innerHTML = '<div class="empty-state"><h3>No fields to display</h3></div>';
+      return;
+    }
+
     const processedGroups = new Set();
+    const processedStatements = new Set();
     const renderedPlaceholders = new Set(); // Track which placeholders we've already shown
     
+   // Detect semantic groupings from template customization
+    const semanticGroups = this.customization.detectSemanticGroups();
+    console.log('[renderFields] Semantic groups:', semanticGroups);
+  
+    // Setup autofill rules
+    const autofillRules = this.customization.getAutofillRules();
+    autofillRules.forEach(rule => {
+      this.autofillManager.addRule(rule.trigger, rule.target, rule.transform);
+    });
+    this.autofillManager.setupAll();
+
     console.log('[renderFields] Processing statements...');
     
     // Group consecutive statements by subject
@@ -387,6 +284,32 @@ export class FormGenerator {
     let currentSubject = null;
     
     this.template.statements.forEach((statement, index) => {
+        // Skip if already processed as part of a semantic group
+  if (processedStatements.has(statement.id)) {
+    console.log(`  ${statement.id}: → Skipping (already in semantic group)`);
+    return;
+  }
+  
+  // Check if this statement is part of a semantic group
+  const semanticGroup = semanticGroups.find(g => 
+    g.statements.includes(statement.id)
+  );
+  
+  if (semanticGroup && !processedGroups.has(semanticGroup.id)) {
+    console.log(`  ${statement.id}: → Part of semantic group ${semanticGroup.id}`);
+    
+    // Close any open subject group first
+    if (currentSubjectGroup) {
+      container.appendChild(currentSubjectGroup);
+      currentSubjectGroup = null;
+      currentSubject = null;
+    }
+    
+    this.renderSemanticGroup(container, semanticGroup, renderedPlaceholders);
+    semanticGroup.statements.forEach(stmtId => processedStatements.add(stmtId));
+    processedGroups.add(semanticGroup.id);
+    return;
+  }
       // Skip if this statement is part of a grouped statement we've already processed
       const parentGroup = this.template.groupedStatements.find(g => 
         g.statements.includes(statement.id)
@@ -1139,529 +1062,32 @@ export class FormGenerator {
     this.formElement = null;
     this.formData = {};
   }
-}
-/**
- * Helper function to make optional fields collapsible
- * Add this to formGenerator.js
- */
-
-/**
- * Makes an optional field collapsible with a toggle header
- * @param {HTMLElement} field - The form field element
- * @param {string} label - The label text for the field
- * @returns {HTMLElement} The field with collapsible functionality
- */
-function makeOptionalCollapsible(field, label) {
-  field.classList.add('optional-collapsible');
-  
-  // Create toggle header
-  const toggle = document.createElement('div');
-  toggle.className = 'optional-toggle';
-  toggle.innerHTML = `
-    <span class="toggle-icon">▶</span>
-    <span class="toggle-label">${label}</span>
-    <span class="optional-badge">Optional</span>
-  `;
-  toggle.style.cssText = `
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    padding: 12px;
-    background: #f8f9fa;
-    border: 2px solid #dee2e6;
-    border-radius: 6px;
-    margin-bottom: 0;
-    transition: all 0.2s;
-    user-select: none;
-  `;
-  
-  toggle.addEventListener('mouseenter', () => {
-    if (field.classList.contains('collapsed')) {
-      toggle.style.background = '#e9ecef';
-    }
-  });
-  
-  toggle.addEventListener('mouseleave', () => {
-    if (field.classList.contains('collapsed')) {
-      toggle.style.background = '#f8f9fa';
-    }
-  });
-  
-  // Style the optional badge
-  const badge = toggle.querySelector('.optional-badge');
-  badge.style.cssText = `
-    background: #e7f3ff;
-    color: #0066cc;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 0.75em;
-    font-weight: 600;
-    margin-left: auto;
-  `;
-  
-  // Style the icon
-  const icon = toggle.querySelector('.toggle-icon');
-  icon.style.cssText = `
-    transition: transform 0.2s;
-    font-size: 0.8em;
-    color: #666;
-    min-width: 12px;
-  `;
-  
-  // Style the label
-  const toggleLabel = toggle.querySelector('.toggle-label');
-  toggleLabel.style.cssText = `
-    font-weight: 500;
-    color: #495057;
-    flex: 1;
-  `;
-  
-  // Wrap existing content
-  const content = document.createElement('div');
-  content.className = 'optional-content';
-  content.style.cssText = `
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease-out, padding 0.3s ease-out;
-    padding: 0;
-  `;
-  
-  // Move all children to content (except the toggle we're about to add)
-  const children = Array.from(field.children);
-  children.forEach(child => content.appendChild(child));
-  
-  // Add toggle and content to field
-  field.appendChild(toggle);
-  field.appendChild(content);
-  
-  // Start collapsed
-  field.classList.add('collapsed');
-  
-  // Toggle functionality
-  toggle.addEventListener('click', () => {
-    const isCollapsed = field.classList.contains('collapsed');
-    field.classList.toggle('collapsed');
-    
-    if (isCollapsed) {
-      // Expand
-      icon.style.transform = 'rotate(90deg)';
-      content.style.maxHeight = content.scrollHeight + 'px';
-      content.style.padding = '15px 0 0 0';
-      toggle.style.background = '#e7f3ff';
-      toggle.style.borderColor = '#0066cc';
-      badge.style.background = '#d1ecf1';
-    } else {
-      // Collapse
-      icon.style.transform = 'rotate(0deg)';
-      content.style.maxHeight = '0';
-      content.style.padding = '0';
-      toggle.style.background = '#f8f9fa';
-      toggle.style.borderColor = '#dee2e6';
-      badge.style.background = '#e7f3ff';
-    }
-  });
-  
-  // Auto-expand if field has value
-  const checkAndExpand = () => {
-    const inputs = content.querySelectorAll('input, select, textarea');
-    const hasValue = Array.from(inputs).some(input => input.value && input.value.trim());
-    if (hasValue && field.classList.contains('collapsed')) {
-      toggle.click(); // Auto-expand if has value
-    }
-  };
-  
-  // Check after a short delay to let form populate
-  setTimeout(checkAndExpand, 100);
-  
-  // Also check when any input changes
-  content.addEventListener('input', () => {
-    if (field.classList.contains('collapsed')) {
-      toggle.click(); // Expand when user types
-    }
-  });
-  
-  return field;
-}
-
-/**
- * Auto-fill Enhancement for Nanopub Creator
- * Add to formGenerator.js
- */
-
-class AutoFillManager {
-  constructor() {
-    this.profile = null;
-    this.lastUsed = {};
-    this.loadStoredData();
-  }
 
   /**
-   * Load profile and last-used values from localStorage
+   * Render a semantic group of related optional fields
    */
-  loadStoredData() {
-    try {
-      // Load profile
-      const profileStr = localStorage.getItem('nanopub-profile');
-      if (profileStr) {
-        this.profile = JSON.parse(profileStr);
-      }
-
-      // Load last-used values
-      const lastUsedStr = localStorage.getItem('nanopub-last-used');
-      if (lastUsedStr) {
-        this.lastUsed = JSON.parse(lastUsedStr);
-      }
-    } catch (e) {
-      console.warn('Failed to load stored data:', e);
-    }
-  }
-
-  /**
-   * Save value to last-used cache
-   */
-  rememberValue(fieldId, value) {
-    if (!value || !value.trim()) return;
+  renderSemanticGroup(container, semanticGroup, renderedPlaceholders = new Set()) {
+    const groupContainer = document.createElement('div');
+    groupContainer.className = 'semantic-group';
+    groupContainer.style.cssText = 'margin: 1.25rem 0;';
     
-    this.lastUsed[fieldId] = {
-      value: value,
-      timestamp: Date.now()
-    };
-    
-    try {
-      localStorage.setItem('nanopub-last-used', JSON.stringify(this.lastUsed));
-    } catch (e) {
-      console.warn('Failed to save last-used value:', e);
-    }
-  }
-
-  /**
-   * Get auto-fill value for a placeholder
-   */
-  getAutoFillValue(placeholder, statement) {
-    // Priority 1: nt:CREATOR special case
-    if (statement.subject === 'nt:CREATOR' || statement.object === 'nt:CREATOR') {
-      return this.profile?.orcid || null;
-    }
-
-    // Priority 2: Specific field auto-fills based on placeholder type
-    const autoFills = {
-      // Creator/Author fields
-      'creator': () => this.profile?.orcid,
-      'author': () => this.profile?.orcid,
-      'name': () => this.profile?.name,
-      'orcid': () => this.profile?.orcid,
+    // Render each statement in the group
+    semanticGroup.statements.forEach(stmtId => {
+      const statement = this.template.statements.find(s => s.id === stmtId);
+      if (!statement) return;
       
-      // Paper/DOI fields - use last paper if accessed recently
-      'paper': () => this.getRecentValue('paper', 5 * 60 * 1000), // 5 min
-      'doi': () => this.getRecentValue('doi', 5 * 60 * 1000),
-      'article': () => this.getRecentValue('article', 5 * 60 * 1000),
-      
-      // Date fields
-      'date': () => new Date().toISOString().split('T')[0],
-      'year': () => new Date().getFullYear().toString(),
-      
-      // Common URIs
-      'license': () => 'https://creativecommons.org/licenses/by/4.0/',
-    };
-
-    const key = placeholder.id.toLowerCase();
-    if (autoFills[key]) {
-      return autoFills[key]();
-    }
-
-    // Priority 3: Check last-used values
-    return this.getRecentValue(placeholder.id, 30 * 60 * 1000); // 30 min
-  }
-
-  /**
-   * Get recently used value if within time threshold
-   */
-  getRecentValue(fieldId, maxAge) {
-    const stored = this.lastUsed[fieldId];
-    if (!stored) return null;
-    
-    const age = Date.now() - stored.timestamp;
-    if (age > maxAge) return null;
-    
-    return stored.value;
-  }
-
-  /**
-   * Smart suggestions based on field type and context
-   */
-  getSuggestions(placeholder, currentValue) {
-    const suggestions = [];
-
-    // For DOI fields, suggest format
-    if (placeholder.id.toLowerCase().includes('doi') || 
-        placeholder.id.toLowerCase().includes('paper')) {
-      if (!currentValue || currentValue.length < 3) {
-        suggestions.push({
-          text: '10.',
-          hint: 'DOIs always start with "10."',
-          action: () => '10.'
-        });
-      }
-    }
-
-    // For WKT geometry fields, suggest common formats
-    if (placeholder.id.toLowerCase().includes('wkt')) {
-      suggestions.push(
-        {
-          text: 'POINT format',
-          hint: 'POINT(longitude latitude)',
-          action: () => 'POINT(0.0 0.0)'
-        },
-        {
-          text: 'POLYGON format',
-          hint: 'POLYGON((lon lat, lon lat, ...))',
-          action: () => 'POLYGON((0.0 0.0, 1.0 0.0, 1.0 1.0, 0.0 1.0, 0.0 0.0))'
-        }
-      );
-    }
-
-    return suggestions;
-  }
-
-  /**
-   * Context-aware auto-complete for related fields
-   * Generate identifiers dynamically from user input
-   */
-  getContextualValue(placeholder, formData) {
-    // Generate location identifier FROM location name
-    if (placeholder.id === 'location' && formData['location-label']) {
-      return this.generateIdentifier(formData['location-label']);
-    }
-
-    // Generate geometry identifier FROM location identifier
-    if (placeholder.id === 'geometry' && formData['location']) {
-      return formData['location'] + '-geometry';
-    }
-
-    // Suggest formatted label FROM location identifier (reverse)
-    if (placeholder.id === 'location-label' && formData['location']) {
-      const id = formData['location'];
-      // Convert "amazon-basin-brazil" -> "Amazon Basin Brazil"
-      return id.split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-    }
-
-    return null;
-  }
-
-  /**
-   * Generate URL-safe identifier from human-readable text
-   * @param {string} text - Human-readable location name
-   * @returns {string} URL-safe identifier
-   */
-  generateIdentifier(text) {
-    if (!text || !text.trim()) return '';
-    
-    return text
-      .toLowerCase()
-      .normalize('NFD')                    // Decompose accented chars
-      .replace(/[\u0300-\u036f]/g, '')    // Remove diacritics (São → Sao)
-      .replace(/[^\w\s-]/g, '')           // Keep only word chars, spaces, dashes
-      .trim()
-      .replace(/\s+/g, '-')               // Spaces to dashes
-      .replace(/--+/g, '-')               // Multiple dashes to single
-      .replace(/^-+|-+$/g, '')            // Remove leading/trailing dashes
-      .substring(0, 50);                  // Limit length
-  }
-  
-  /**
-   * Examples of generateIdentifier():
-   * "Northern Europe" → "northern-europe"
-   * "São Paulo" → "sao-paulo"
-   * "Amazon Basin, Brazil" → "amazon-basin-brazil"
-   * "Italian Alps (Piedmont)" → "italian-alps-piedmont"
-   * "Sub-Saharan  Africa" → "sub-saharan-africa"
-   */
-}
-
-/**
- * Integration with formGenerator.js
- * 
- * In the renderInput() method, enhance each input field:
- */
-function enhanceInputWithAutoFill(input, placeholder, statement, formData) {
-  const autoFill = new AutoFillManager();
-  
-  // 1. Set auto-fill value if available
-  const autoValue = autoFill.getAutoFillValue(placeholder, statement);
-  if (autoValue && !input.value) {
-    input.value = autoValue;
-    input.classList.add('auto-filled');
-    input.dataset.autoFilled = 'true';
-    
-    // Add visual indicator
-    const indicator = document.createElement('span');
-    indicator.className = 'auto-fill-indicator';
-    indicator.textContent = '✓ auto-filled';
-    indicator.style.cssText = `
-      font-size: 0.75em;
-      color: #059669;
-      margin-left: 8px;
-      font-weight: 500;
-    `;
-    input.parentElement.querySelector('label')?.appendChild(indicator);
-  }
-
-  // 2. SPECIAL: Live identifier preview for location-label field
-  if (placeholder.id === 'location-label') {
-    const previewEl = document.createElement('div');
-    previewEl.className = 'identifier-preview';
-    previewEl.style.cssText = `
-      font-size: 0.85em;
-      color: #6b7280;
-      margin-top: 8px;
-      padding: 8px 12px;
-      background: #f9fafb;
-      border-radius: 4px;
-      border-left: 3px solid #be2e78;
-      display: none;
-    `;
-    
-    // Update preview as user types
-    input.addEventListener('input', (e) => {
-      const identifier = autoFill.generateIdentifier(e.target.value);
-      
-      if (identifier) {
-        previewEl.innerHTML = `💡 Will create identifier: <code style="background: #f3f4f6; padding: 2px 6px; border-radius: 3px; font-family: monospace;">${identifier}</code>`;
-        previewEl.style.display = 'block';
-        
-        // Auto-fill the location identifier field if it's empty or was auto-filled
-        const locationField = document.querySelector('[name$="_subject"][id*="location"]');
-        if (locationField && (!locationField.value || locationField.dataset.autoFilled)) {
-          locationField.value = identifier;
-          locationField.dataset.autoFilled = 'true';
-          locationField.classList.add('auto-filled');
-        }
-      } else {
-        previewEl.style.display = 'none';
-      }
+      this.renderStatement(groupContainer, statement, renderedPlaceholders);
     });
     
-    input.parentElement.appendChild(previewEl);
+    // Make the entire group collapsible if specified
+    if (semanticGroup.collapsible) {
+      setTimeout(() => {
+        makeOptionalGroupCollapsible(groupContainer, semanticGroup.label);
+      }, 0);
+    }
     
-    // Trigger once if field already has value
-    if (input.value) {
-      input.dispatchEvent(new Event('input'));
-    }
+    container.appendChild(groupContainer);
   }
-
-  // 3. Add contextual suggestions
-  const contextValue = autoFill.getContextualValue(placeholder, formData);
-  if (contextValue && !input.value) {
-    const suggestionBtn = document.createElement('button');
-    suggestionBtn.type = 'button';
-    suggestionBtn.className = 'btn-suggestion';
-    suggestionBtn.innerHTML = `💡 Use: "<strong>${contextValue}</strong>"`;
-    suggestionBtn.style.cssText = `
-      font-size: 0.85em;
-      padding: 8px 12px;
-      background: #f0fdf4;
-      border: 1px solid #86efac;
-      border-radius: 4px;
-      color: #059669;
-      cursor: pointer;
-      margin-top: 8px;
-      transition: all 0.2s;
-      font-family: inherit;
-    `;
-    suggestionBtn.onmouseover = () => {
-      suggestionBtn.style.background = '#dcfce7';
-      suggestionBtn.style.transform = 'translateY(-1px)';
-    };
-    suggestionBtn.onmouseout = () => {
-      suggestionBtn.style.background = '#f0fdf4';
-      suggestionBtn.style.transform = 'translateY(0)';
-    };
-    suggestionBtn.onclick = () => {
-      input.value = contextValue;
-      input.dataset.autoFilled = 'true';
-      input.classList.add('auto-filled');
-      suggestionBtn.remove();
-      input.focus();
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-    };
-    input.parentElement.appendChild(suggestionBtn);
-  }
-
-  // 4. Remove auto-fill indicator when user manually edits
-  input.addEventListener('focus', () => {
-    if (input.dataset.autoFilled) {
-      // Show subtle hint
-      const hint = document.createElement('div');
-      hint.className = 'edit-hint';
-      hint.textContent = 'Auto-generated - edit if needed';
-      hint.style.cssText = `
-        font-size: 0.8em;
-        color: #6b7280;
-        margin-top: 4px;
-        font-style: italic;
-      `;
-      if (!input.parentElement.querySelector('.edit-hint')) {
-        input.parentElement.appendChild(hint);
-      }
-    }
-  });
-  
-  input.addEventListener('input', () => {
-    if (input.dataset.autoFilled && input.value !== input.dataset.originalAutoValue) {
-      // User is editing auto-filled value
-      delete input.dataset.autoFilled;
-      input.classList.remove('auto-filled');
-      const indicator = input.parentElement.querySelector('.auto-fill-indicator');
-      if (indicator) indicator.remove();
-      const hint = input.parentElement.querySelector('.edit-hint');
-      if (hint) hint.remove();
-    }
-  });
-
-  // 5. Remember value on change
-  input.addEventListener('change', () => {
-    autoFill.rememberValue(placeholder.id, input.value);
-  });
-
-  // 6. Add autocomplete datalist for common values
-  if (placeholder.id.toLowerCase().includes('doi') || 
-      placeholder.id.toLowerCase().includes('paper')) {
-    const datalist = document.createElement('datalist');
-    datalist.id = `suggestions-${placeholder.id}`;
-    
-    // Add recent DOIs
-    Object.entries(autoFill.lastUsed)
-      .filter(([key]) => key.includes('paper') || key.includes('doi'))
-      .sort((a, b) => b[1].timestamp - a[1].timestamp)
-      .slice(0, 5)
-      .forEach(([key, data]) => {
-        const option = document.createElement('option');
-        option.value = data.value;
-        datalist.appendChild(option);
-      });
-    
-    if (datalist.children.length > 0) {
-      input.setAttribute('list', datalist.id);
-      input.parentElement.appendChild(datalist);
-      
-      // Add hint about autocomplete
-      const hint = document.createElement('div');
-      hint.className = 'autocomplete-hint';
-      hint.textContent = '💡 Recent values available - start typing to see suggestions';
-      hint.style.cssText = `
-        font-size: 0.8em;
-        color: #6b7280;
-        margin-top: 4px;
-      `;
-      input.parentElement.appendChild(hint);
-    }
-  }
-
-  return input;
 }
 
 export default FormGenerator;
-export { AutoFillManager, enhanceInputWithAutoFill };
