@@ -45,10 +45,10 @@ class q {
     i && (this.template.tags = [i[1]]);
     const a = this.content.match(/nt:hasTargetNanopubType\s+(.+?)\s*[;.](?:\s|$)/s);
     if (a) {
-      const d = a[1], l = /<([^>]+)>/g, p = [];
-      let f;
-      for (; (f = l.exec(d)) !== null; ) p.push(f[1]);
-      this.template.types = p, console.log(`\u2705 Found ${p.length} target nanopub types:`, p);
+      const c = a[1], l = /<([^>]+)>/g, f = [];
+      let p;
+      for (; (p = l.exec(c)) !== null; ) f.push(p[1]);
+      this.template.types = f, console.log(`\u2705 Found ${f.length} target nanopub types:`, f);
     } else console.warn("\u26A0\uFE0F No nt:hasTargetNanopubType found in template");
   }
   parseLabels() {
@@ -66,45 +66,45 @@ class q {
     for (; (t = e.exec(this.content)) !== null; ) {
       const n = t[1], r = t[2].trim(), o = t.index;
       let i = this.content.length;
-      const d = this.content.substring(o).substring(1).search(/\n\s*(?:sub:[\w-]+\s+a\s+nt:|})/);
-      d > 0 && (i = o + d + 1);
+      const c = this.content.substring(o).substring(1).search(/\n\s*(?:sub:[\w-]+\s+a\s+nt:|})/);
+      c > 0 && (i = o + c + 1);
       const l = this.content.substring(o, i);
       console.log(`
 --- Parsing ${n} ---`), console.log(`Block length: ${l.length} chars`), console.log(`Block preview: ${l.substring(0, 200)}...`);
-      const p = r.split(",").map((b) => b.trim()), f = p[0].replace(/^nt:/, ""), c = { id: this.cleanUri(n), type: f, isLocalResource: p.some((b) => b.includes("LocalResource")), isIntroducedResource: p.some((b) => b.includes("IntroducedResource")), label: this.extractLabel(l), description: this.extractDescription(l), validation: this.extractValidation(l), possibleValuesFrom: null, possibleValuesFromApi: null, options: [], prefix: null, hasDatatype: null };
-      if (f.includes("AutoEscapeUriPlaceholder")) {
+      const f = r.split(",").map((b) => b.trim()), p = f[0].replace(/^nt:/, ""), d = { id: this.cleanUri(n), type: p, isLocalResource: f.some((b) => b.includes("LocalResource")), isIntroducedResource: f.some((b) => b.includes("IntroducedResource")), label: this.extractLabel(l), description: this.extractDescription(l), validation: this.extractValidation(l), possibleValuesFrom: null, possibleValuesFromApi: null, options: [], prefix: null, hasDatatype: null };
+      if (p.includes("AutoEscapeUriPlaceholder")) {
         const b = l.match(/nt:hasPrefix\s+"([^"]+)"/);
-        b && (c.prefix = b[1], console.log(`  \u2192 Found prefix for AutoEscapeUriPlaceholder: ${c.prefix}`));
+        b && (d.prefix = b[1], console.log(`  \u2192 Found prefix for AutoEscapeUriPlaceholder: ${d.prefix}`));
       }
       const m = l.match(/nt:hasDatatype\s+<([^>]+)>/);
-      if (m && (c.hasDatatype = m[1], console.log(`  \u2192 Found datatype: ${c.hasDatatype}`)), f.includes("RestrictedChoice")) {
+      if (m && (d.hasDatatype = m[1], console.log(`  \u2192 Found datatype: ${d.hasDatatype}`)), p.includes("RestrictedChoice")) {
         const b = l.match(/nt:possibleValuesFrom\s+(?:<([^>]+)>|([\w-]+:[\w-]+))/);
         if (b) {
           const w = b[1] || b[2];
           if (w && w.includes(":") && !w.startsWith("http")) {
-            const [$, L] = w.split(":"), P = this.content.match(new RegExp(`@prefix ${$}:\\s+<([^>]+)>`));
-            P ? c.possibleValuesFrom = P[1] + L : c.possibleValuesFrom = w;
-          } else c.possibleValuesFrom = w;
-          console.log(`  \u2192 Will fetch options from: ${c.possibleValuesFrom}`);
+            const [j, L] = w.split(":"), P = this.content.match(new RegExp(`@prefix ${j}:\\s+<([^>]+)>`));
+            P ? d.possibleValuesFrom = P[1] + L : d.possibleValuesFrom = w;
+          } else d.possibleValuesFrom = w;
+          console.log(`  \u2192 Will fetch options from: ${d.possibleValuesFrom}`);
         }
-        const y = l.match(/nt:possibleValue\s+([\s\S]+?)(?:\s+\.(?:\s|$))/);
-        if (y) {
-          const w = y[1];
+        const v = l.match(/nt:possibleValue\s+([\s\S]+?)(?:\s+\.(?:\s|$))/);
+        if (v) {
+          const w = v[1];
           console.log(`  \u2192 Raw value text: ${w.substring(0, 100)}...`);
-          const $ = [], L = /<([^>]+)>|([\w-]+:[\w-]+)/g;
+          const j = [], L = /<([^>]+)>|([\w-]+:[\w-]+)/g;
           let P;
-          for (; (P = L.exec(w)) !== null; ) $.push(P[1] || P[2]);
-          $.length > 0 ? (c.options = $.map((C) => {
-            let j = this.template.labels[C];
-            return j || (C.startsWith("http") ? (j = C.replace(/^https?:\/\//, "").replace(/\/$/, ""), j = j.charAt(0).toUpperCase() + j.slice(1)) : C.includes(":") ? j = C.split(":")[1] : j = C), { value: C, label: j };
-          }), console.log(`  \u2192 Found ${c.options.length} inline options:`, c.options.map((C) => C.label))) : console.warn("  \u2192 No values found in possibleValue text");
+          for (; (P = L.exec(w)) !== null; ) j.push(P[1] || P[2]);
+          j.length > 0 ? (d.options = j.map((C) => {
+            let $ = this.template.labels[C];
+            return $ || (C.startsWith("http") ? ($ = C.replace(/^https?:\/\//, "").replace(/\/$/, ""), $ = $.charAt(0).toUpperCase() + $.slice(1)) : C.includes(":") ? $ = C.split(":")[1] : $ = C), { value: C, label: $ };
+          }), console.log(`  \u2192 Found ${d.options.length} inline options:`, d.options.map((C) => C.label))) : console.warn("  \u2192 No values found in possibleValue text");
         }
       }
-      if (f.includes("GuidedChoice")) {
+      if (p.includes("GuidedChoice")) {
         const b = l.match(/nt:possibleValuesFromApi\s+"([^"]+)"/);
-        b && (c.possibleValuesFromApi = b[1]);
+        b && (d.possibleValuesFromApi = b[1]);
       }
-      console.log(`Found placeholder: ${c.id} (${c.type})`), this.template.placeholders.push(c);
+      console.log(`Found placeholder: ${d.id} (${d.type})`), this.template.placeholders.push(d);
     }
     console.log(`Total placeholders found: ${this.template.placeholders.length}`);
   }
@@ -122,20 +122,20 @@ class q {
       let o = "";
       const i = r.match(/@prefix sub:\s+<([^>]+)>/);
       i && (o = i[1]);
-      const a = /<([^>]+)>\s+rdfs:label\s+"([^"]+)"/g, d = /(sub:[\w-]+)\s+rdfs:label\s+"([^"]+)"/g;
+      const a = /<([^>]+)>\s+rdfs:label\s+"([^"]+)"/g, c = /(sub:[\w-]+)\s+rdfs:label\s+"([^"]+)"/g;
       e.options = [];
       let l = 0;
-      for (const p of r.matchAll(a)) {
+      for (const f of r.matchAll(a)) {
         l++;
-        const f = p[1], c = p[2];
-        console.log(`  \u2192 Match ${l} (full URI): URI=${f}, Label="${c}"`), f.includes("#assertion") || f.includes("#Head") || f.includes("#provenance") || f.includes("#pubinfo") || f.includes("ntemplate") || f.includes("rdf-syntax") || f.includes("XMLSchema") || f.includes("rdfs#") || f.includes("dc/terms") || f.includes("foaf/0.1") || f.includes("nanopub/x/") || f.includes("nanopub.org/nschema") || c.includes("Template:") || c.includes("Making a statement") || c.includes("is a") || c.includes("has type") || e.options.push({ value: f, label: c });
+        const p = f[1], d = f[2];
+        console.log(`  \u2192 Match ${l} (full URI): URI=${p}, Label="${d}"`), p.includes("#assertion") || p.includes("#Head") || p.includes("#provenance") || p.includes("#pubinfo") || p.includes("ntemplate") || p.includes("rdf-syntax") || p.includes("XMLSchema") || p.includes("rdfs#") || p.includes("dc/terms") || p.includes("foaf/0.1") || p.includes("nanopub/x/") || p.includes("nanopub.org/nschema") || d.includes("Template:") || d.includes("Making a statement") || d.includes("is a") || d.includes("has type") || e.options.push({ value: p, label: d });
       }
-      for (const p of r.matchAll(d)) {
+      for (const f of r.matchAll(c)) {
         l++;
-        const f = p[1], c = p[2], m = f.replace("sub:", ""), b = o + m;
-        console.log(`  \u2192 Match ${l} (prefixed): ${f} -> ${b}, Label="${c}"`), e.options.push({ value: b, label: c });
+        const p = f[1], d = f[2], m = p.replace("sub:", ""), b = o + m;
+        console.log(`  \u2192 Match ${l} (prefixed): ${p} -> ${b}, Label="${d}"`), e.options.push({ value: b, label: d });
       }
-      console.log(`  \u2192 Loaded ${e.options.length} options for ${e.id}`), e.options.length > 0 && console.log("  \u2192 First 3 options:", e.options.slice(0, 3).map((p) => p.label));
+      console.log(`  \u2192 Loaded ${e.options.length} options for ${e.id}`), e.options.length > 0 && console.log("  \u2192 First 3 options:", e.options.slice(0, 3).map((f) => f.label));
     } catch (t) {
       console.warn("Failed to fetch options for", e.id, t);
     }
@@ -172,12 +172,12 @@ class q {
   parseStatement(e) {
     const t = e.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), n = new RegExp(`${t}\\s+(?:a\\s+[^;]+;\\s*)?(rdf:[\\s\\S]*?)(?=\\n\\s*(?:sub:[\\w.-]+|<[^>]+>)\\s+|\\n\\s*}|$)`, "i"), r = this.content.match(n);
     if (!r) return console.warn(`Could not find statement block for ${e}`), null;
-    const o = r[1], i = o.match(/rdf:subject\s+(<[^>]+>|[\w:-]+)/), a = o.match(/rdf:predicate\s+(<[^>]+>|[\w:-]+)/), d = o.match(/rdf:object\s+(?:<([^>]+)>|([\w:-]+)|"([^"]+)")/);
-    if (!i || !a || !d) return console.warn(`Incomplete statement ${e}:`, { subjMatch: !!i, predMatch: !!a, objMatch: !!d }), null;
+    const o = r[1], i = o.match(/rdf:subject\s+(<[^>]+>|[\w:-]+)/), a = o.match(/rdf:predicate\s+(<[^>]+>|[\w:-]+)/), c = o.match(/rdf:object\s+(?:<([^>]+)>|([\w:-]+)|"([^"]+)")/);
+    if (!i || !a || !c) return console.warn(`Incomplete statement ${e}:`, { subjMatch: !!i, predMatch: !!a, objMatch: !!c }), null;
     let l;
-    d[1] ? l = d[1] : d[2] ? l = d[2] : d[3] && (l = d[3]);
-    const f = r[0].match(/a\s+([^;.]+)/), c = f ? f[1].split(",").map((k) => k.trim()) : [], m = this.cleanUri(i[1]), b = this.cleanUri(a[1]), y = this.cleanUri(l), w = i[1] === "nt:CREATOR", $ = l === "nt:CREATOR", L = !w && this.isPlaceholder(m), P = this.isPlaceholder(b), C = !$ && this.isPlaceholder(y) && !d[3], j = w ? "nt:CREATOR" : L ? null : this.expandUri(i[1]), ne = this.expandUri(a[1]), re = $ ? "nt:CREATOR" : C || d[3] ? null : this.expandUri(l);
-    return { id: this.cleanUri(e), subject: m, predicate: b, object: y, subjectIsPlaceholder: L, predicateIsPlaceholder: P, objectIsPlaceholder: C, subjectUri: j, predicateUri: ne, objectUri: re, isLiteralObject: !!d[3], repeatable: c.some((k) => k.includes("RepeatableStatement")), optional: c.some((k) => k.includes("OptionalStatement")), grouped: c.some((k) => k.includes("GroupedStatement")), types: c };
+    c[1] ? l = c[1] : c[2] ? l = c[2] : c[3] && (l = c[3]);
+    const p = r[0].match(/a\s+([^;.]+)/), d = p ? p[1].split(",").map((k) => k.trim()) : [], m = this.cleanUri(i[1]), b = this.cleanUri(a[1]), v = this.cleanUri(l), w = i[1] === "nt:CREATOR", j = l === "nt:CREATOR", L = !w && this.isPlaceholder(m), P = this.isPlaceholder(b), C = !j && this.isPlaceholder(v) && !c[3], $ = w ? "nt:CREATOR" : L ? null : this.expandUri(i[1]), ne = this.expandUri(a[1]), re = j ? "nt:CREATOR" : C || c[3] ? null : this.expandUri(l);
+    return { id: this.cleanUri(e), subject: m, predicate: b, object: v, subjectIsPlaceholder: L, predicateIsPlaceholder: P, objectIsPlaceholder: C, subjectUri: $, predicateUri: ne, objectUri: re, isLiteralObject: !!c[3], repeatable: d.some((k) => k.includes("RepeatableStatement")), optional: d.some((k) => k.includes("OptionalStatement")), grouped: d.some((k) => k.includes("GroupedStatement")), types: d };
   }
   cleanUri(e) {
     return e && e.replace(/^<|>$/g, "").replace(/^"|"$/g, "").replace(/^sub:/, "").trim();
@@ -391,9 +391,9 @@ function J(s, e) {
     overflow: hidden;
     transition: max-height 0.3s ease-out, padding 0.3s ease-out;
     padding: 0;
-  `, Array.from(s.children).forEach((d) => i.appendChild(d)), s.appendChild(t), s.appendChild(i), s.classList.add("collapsed"), t.addEventListener("click", () => {
-    const d = s.classList.contains("collapsed");
-    s.classList.toggle("collapsed"), d ? (r.style.transform = "rotate(90deg)", i.style.maxHeight = i.scrollHeight + "px", i.style.padding = "15px 0 0 0", t.style.background = "#e7f3ff", t.style.borderColor = "#0066cc", n.style.background = "#d1ecf1", setTimeout(() => {
+  `, Array.from(s.children).forEach((c) => i.appendChild(c)), s.appendChild(t), s.appendChild(i), s.classList.add("collapsed"), t.addEventListener("click", () => {
+    const c = s.classList.contains("collapsed");
+    s.classList.toggle("collapsed"), c ? (r.style.transform = "rotate(90deg)", i.style.maxHeight = i.scrollHeight + "px", i.style.padding = "15px 0 0 0", t.style.background = "#e7f3ff", t.style.borderColor = "#0066cc", n.style.background = "#d1ecf1", setTimeout(() => {
       s.classList.contains("collapsed") || (i.style.maxHeight = "none", i.style.overflow = "visible");
     }, 300)) : (i.style.maxHeight = i.scrollHeight + "px", i.style.overflow = "hidden", i.offsetHeight, setTimeout(() => {
       r.style.transform = "rotate(0deg)", i.style.maxHeight = "0", i.style.padding = "0", t.style.background = "#f8f9fa", t.style.borderColor = "#dee2e6", n.style.background = "#e7f3ff";
@@ -451,13 +451,13 @@ function ae(s, e) {
     overflow: hidden;
     transition: max-height 0.3s ease-out, padding 0.3s ease-out;
     padding: 0;
-  `, Array.from(s.children).forEach((d) => i.appendChild(d)), s.appendChild(t), s.appendChild(i), t.addEventListener("mouseenter", () => {
+  `, Array.from(s.children).forEach((c) => i.appendChild(c)), s.appendChild(t), s.appendChild(i), t.addEventListener("mouseenter", () => {
     s.classList.contains("collapsed") && (t.style.background = "#e9ecef");
   }), t.addEventListener("mouseleave", () => {
     s.classList.contains("collapsed") && (t.style.background = "#f8f9fa");
   }), t.addEventListener("click", () => {
-    const d = s.classList.contains("collapsed");
-    if (s.classList.toggle("collapsed"), d) {
+    const c = s.classList.contains("collapsed");
+    if (s.classList.toggle("collapsed"), c) {
       r.style.transform = "rotate(90deg)";
       const l = i.scrollHeight;
       i.style.maxHeight = l + "px", i.style.padding = "15px 0 0 0", t.style.background = "#e7f3ff", t.style.borderColor = "#0066cc", n.style.background = "#d1ecf1", setTimeout(() => {
@@ -544,7 +544,7 @@ class ce {
   parseUriLabel(e) {
     if (!e) return "";
     const t = { "dct:": "DC Terms: ", "foaf:": "FOAF: ", "prov:": "Provenance: ", "rdfs:": "RDFS: ", "schema:": "Schema: " };
-    for (const [o, i] of Object.entries(t)) if (e.startsWith(o)) return e.substring(o.length).replace(/([a-z])([A-Z])/g, "$1 $2").split(/[-_]/).map((d) => d.charAt(0).toUpperCase() + d.slice(1).toLowerCase()).join(" ");
+    for (const [o, i] of Object.entries(t)) if (e.startsWith(o)) return e.substring(o.length).replace(/([a-z])([A-Z])/g, "$1 $2").split(/[-_]/).map((c) => c.charAt(0).toUpperCase() + c.slice(1).toLowerCase()).join(" ");
     const n = e.split(/[#\/]/);
     let r = n[n.length - 1] || "";
     return !r && n.length > 1 && (r = n[n.length - 2]), r = r.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[_-]/g, " ").replace(/^(has|is)\s+/i, "").trim().split(" ").map((o) => o.charAt(0).toUpperCase() + o.slice(1).toLowerCase()).join(" "), r || e;
@@ -580,55 +580,55 @@ class ce {
     console.log("[renderFields] Semantic groups:", o), this.customization.getAutofillRules().forEach((l) => {
       this.autofillManager.addRule(l.trigger, l.target, l.transform);
     }), this.autofillManager.setupAll(), console.log("[renderFields] Processing statements...");
-    let a = null, d = null;
-    this.template.statements.forEach((l, p) => {
+    let a = null, c = null;
+    this.template.statements.forEach((l, f) => {
       if (n.has(l.id)) {
         console.log(`  ${l.id}: \u2192 Skipping (already in semantic group)`);
         return;
       }
-      const f = o.find((w) => w.statements.includes(l.id));
-      if (f && !t.has(f.id)) {
-        console.log(`  ${l.id}: \u2192 Part of semantic group ${f.id}`), a && (e.appendChild(a), a = null, d = null), this.renderSemanticGroup(e, f, r), f.statements.forEach((w) => n.add(w)), t.add(f.id);
+      const p = o.find((w) => w.statements.includes(l.id));
+      if (p && !t.has(p.id)) {
+        console.log(`  ${l.id}: \u2192 Part of semantic group ${p.id}`), a && (e.appendChild(a), a = null, c = null), this.renderSemanticGroup(e, p, r), p.statements.forEach((w) => n.add(w)), t.add(p.id);
         return;
       }
-      const c = this.template.groupedStatements.find((w) => w.statements.includes(l.id));
-      if (console.log(`  ${l.id}: parentGroup=${c == null ? void 0 : c.id}, processed=${t.has(c == null ? void 0 : c.id)}, subject=${l.subject}`), c && t.has(c.id)) {
+      const d = this.template.groupedStatements.find((w) => w.statements.includes(l.id));
+      if (console.log(`  ${l.id}: parentGroup=${d == null ? void 0 : d.id}, processed=${t.has(d == null ? void 0 : d.id)}, subject=${l.subject}`), d && t.has(d.id)) {
         console.log("    \u2192 Skipping (group already processed)");
         return;
       }
-      const m = this.findPlaceholder(l.subject), b = this.findPlaceholder(l.object), y = this.findPlaceholder(l.predicate);
-      if (!m && !b && !y) {
+      const m = this.findPlaceholder(l.subject), b = this.findPlaceholder(l.object), v = this.findPlaceholder(l.predicate);
+      if (!m && !b && !v) {
         console.log("    \u2192 Skipping (all fixed - auto-filled statement)");
         return;
       }
-      if (m && (m.type.includes("ExternalUriPlaceholder") || m.type.includes("UriPlaceholder")) && !y && !b) {
+      if (m && (m.type.includes("ExternalUriPlaceholder") || m.type.includes("UriPlaceholder")) && !v && !b) {
         console.log("    \u2192 Skipping (URI placeholder metadata statement)");
         return;
       }
-      if (l.subject !== d) {
-        if (a && (e.appendChild(a), a = null), this.template.statements.filter(($) => $.subject === l.subject).length > 1) {
+      if (l.subject !== c) {
+        if (a && (e.appendChild(a), a = null), this.template.statements.filter((j) => j.subject === l.subject).length > 1) {
           a = document.createElement("div"), a.className = "subject-group", a.style.cssText = "margin: 1.5rem 0; padding: 1.5rem; border: 2px solid #be2e78; border-radius: 8px; background: #f6d7e8; box-shadow: 0 1px 3px rgba(190, 46, 120, 0.1);";
-          const $ = this.findPlaceholder(l.subject);
-          if ($ && !r.has($.id)) {
+          const j = this.findPlaceholder(l.subject);
+          if (j && !r.has(j.id)) {
             const L = document.createElement("div");
             L.className = "form-field subject-field";
             const P = document.createElement("label");
-            P.className = "field-label subject-label", P.style.cssText = "font-weight: 600; font-size: 1.15em; color: #2b3456; margin-bottom: 0.75rem; display: block;", P.textContent = $.label || this.getLabel(l.subject), L.appendChild(P);
-            const C = this.renderInput($);
+            P.className = "field-label subject-label", P.style.cssText = "font-weight: 600; font-size: 1.15em; color: #2b3456; margin-bottom: 0.75rem; display: block;", P.textContent = j.label || this.getLabel(l.subject), L.appendChild(P);
+            const C = this.renderInput(j);
             if (C !== null) C.name = `${l.id}_subject`, C.id = `field_${l.id}_subject`, L.appendChild(C);
             else {
-              const j = document.createElement("div");
-              j.className = "field-value auto-generated", j.textContent = "(auto-generated)", L.appendChild(j);
+              const $ = document.createElement("div");
+              $.className = "field-value auto-generated", $.textContent = "(auto-generated)", L.appendChild($);
             }
-            a.appendChild(L), r.add($.id);
+            a.appendChild(L), r.add(j.id);
           }
         }
-        d = l.subject;
+        c = l.subject;
       }
-      if (c) {
-        console.log(`    \u2192 Rendering grouped statement ${c.id}`);
+      if (d) {
+        console.log(`    \u2192 Rendering grouped statement ${d.id}`);
         const w = a || e;
-        this.renderGroupedStatement(w, c, l, r), t.add(c.id);
+        this.renderGroupedStatement(w, d, l, r), t.add(d.id);
       } else {
         console.log("    \u2192 Rendering individual statement");
         const w = a || e;
@@ -639,131 +639,131 @@ class ce {
   renderGroupedStatement(e, t, n, r = /* @__PURE__ */ new Set()) {
     const o = document.createElement("div");
     o.className = "form-field-group", n.repeatable && o.classList.add("repeatable-group"), n.optional && o.classList.add("optional-group");
-    const i = t.statements.map((d) => this.template.statements.find((l) => l.id === d)).filter((d) => d), a = i[0];
+    const i = t.statements.map((c) => this.template.statements.find((l) => l.id === c)).filter((c) => c), a = i[0];
     if (a) {
-      const d = this.findPlaceholder(a.subject);
-      if (d && !r.has(d.id)) {
+      const c = this.findPlaceholder(a.subject);
+      if (c && !r.has(c.id)) {
         const l = document.createElement("div");
         l.className = "form-field";
-        const p = document.createElement("label");
-        p.className = "field-label", p.textContent = d.label || this.getLabel(a.subject), l.appendChild(p);
-        const f = this.renderInput(d);
-        f.name = `${a.id}_subject`, f.id = `field_${a.id}_subject`, l.appendChild(f), o.appendChild(l), r.add(d.id);
+        const f = document.createElement("label");
+        f.className = "field-label", f.textContent = c.label || this.getLabel(a.subject), l.appendChild(f);
+        const p = this.renderInput(c);
+        p.name = `${a.id}_subject`, p.id = `field_${a.id}_subject`, l.appendChild(p), o.appendChild(l), r.add(c.id);
       }
     }
-    i.forEach((d) => {
-      this.renderStatementInGroup(o, d, r);
+    i.forEach((c) => {
+      this.renderStatementInGroup(o, c, r);
     }), n.repeatable && o.appendChild(this.buildRepeatableControls(n, null)), e.appendChild(o);
   }
   renderStatementInGroup(e, t, n = /* @__PURE__ */ new Set(), r = false) {
     console.log(`[renderStatementInGroup] ${t.id}:`, { predicate: t.predicate, object: t.object, isLiteralObject: t.isLiteralObject });
     const o = this.findPlaceholder(t.object), i = this.findPlaceholder(t.predicate);
     console.log("  objectPlaceholder:", o == null ? void 0 : o.id), console.log("  predicatePlaceholder:", i == null ? void 0 : i.id);
-    const a = i && !n.has(i.id), d = o && !n.has(o.id);
-    if (i && o && !a && !d) {
+    const a = i && !n.has(i.id), c = o && !n.has(o.id);
+    if (i && o && !a && !c) {
       console.log("  \u2192 SKIP (both placeholders already rendered)");
       return;
     }
     const l = this.getLabel(t.predicate);
     if (!o && !i) {
       console.log(`  \u2192 READONLY path: ${l} = ${t.object}`);
-      const c = document.createElement("div");
-      c.className = "form-field readonly-field";
+      const d = document.createElement("div");
+      d.className = "form-field readonly-field";
       const m = document.createElement("label");
       m.className = "field-label", m.textContent = l;
       const b = document.createElement("div");
-      b.className = "field-value", b.textContent = t.object, c.appendChild(m), c.appendChild(b), e.appendChild(c);
+      b.className = "field-value", b.textContent = t.object, d.appendChild(m), d.appendChild(b), e.appendChild(d);
       return;
     }
-    if (o && !d && !i) {
+    if (o && !c && !i) {
       console.log("  \u2192 SKIP (object placeholder already rendered)");
       return;
     }
     console.log("  \u2192 INPUT path");
-    const p = document.createElement("div");
-    p.className = "form-field", t.optional && (p.classList.add("optional"), r || setTimeout(() => {
-      J(p, l);
+    const f = document.createElement("div");
+    f.className = "form-field", t.optional && (f.classList.add("optional"), r || setTimeout(() => {
+      J(f, l);
     }, 0));
-    const f = document.createElement("label");
-    if (f.className = "field-label", f.textContent = l, p.appendChild(f), a) {
-      const c = this.renderInput(i);
-      c.name = `${t.id}_predicate`, c.id = `field_${t.id}_predicate`, p.appendChild(c), n.add(i.id);
+    const p = document.createElement("label");
+    if (p.className = "field-label", p.textContent = l, f.appendChild(p), a) {
+      const d = this.renderInput(i);
+      d.name = `${t.id}_predicate`, d.id = `field_${t.id}_predicate`, f.appendChild(d), n.add(i.id);
     }
-    if (d) {
+    if (c) {
       if (o.label) {
         const m = document.createElement("div");
-        m.className = "field-help", m.textContent = o.label, p.appendChild(m);
+        m.className = "field-help", m.textContent = o.label, f.appendChild(m);
       }
-      const c = this.renderInput(o);
-      c.name = t.id, c.id = `field_${t.id}`, p.appendChild(c), n.add(o.id);
+      const d = this.renderInput(o);
+      d.name = t.id, d.id = `field_${t.id}`, f.appendChild(d), n.add(o.id);
     } else if (!o) {
-      const c = document.createElement("div");
-      c.className = "field-value", c.textContent = this.getLabel(t.object) || t.object, p.appendChild(c);
+      const d = document.createElement("div");
+      d.className = "field-value", d.textContent = this.getLabel(t.object) || t.object, f.appendChild(d);
     }
     if (t.optional) {
-      const c = document.createElement("span");
-      c.className = "optional-badge", c.textContent = "optional", f.appendChild(c);
+      const d = document.createElement("span");
+      d.className = "optional-badge", d.textContent = "optional", p.appendChild(d);
     }
-    e.appendChild(p);
+    e.appendChild(f);
   }
   renderStatement(e, t, n = /* @__PURE__ */ new Set(), r = false) {
-    const o = this.findPlaceholder(t.subject), i = this.findPlaceholder(t.predicate), a = this.findPlaceholder(t.object), d = this.getLabel(t.predicate), l = o && !n.has(o.id), p = i && !n.has(i.id), f = a && !n.has(a.id);
-    if (!l && !p && !f && (i || a)) return;
+    const o = this.findPlaceholder(t.subject), i = this.findPlaceholder(t.predicate), a = this.findPlaceholder(t.object), c = this.getLabel(t.predicate), l = o && !n.has(o.id), f = i && !n.has(i.id), p = a && !n.has(a.id);
+    if (!l && !f && !p && (i || a)) return;
     if (!i && !a && !l) {
       const m = document.createElement("div");
       m.className = "form-field readonly-field";
       const b = document.createElement("label");
-      b.className = "field-label", b.textContent = d;
-      const y = document.createElement("div");
-      y.className = "field-value", y.textContent = this.getLabel(t.object) || t.object, m.appendChild(b), m.appendChild(y), e.appendChild(m);
+      b.className = "field-label", b.textContent = c;
+      const v = document.createElement("div");
+      v.className = "field-value", v.textContent = this.getLabel(t.object) || t.object, m.appendChild(b), m.appendChild(v), e.appendChild(m);
       return;
     }
-    const c = document.createElement("div");
-    if (c.className = "form-field", t.repeatable && c.classList.add("repeatable"), t.optional && (c.classList.add("optional"), r || setTimeout(() => {
-      const m = i && i.label || d;
-      J(c, m);
+    const d = document.createElement("div");
+    if (d.className = "form-field", t.repeatable && d.classList.add("repeatable"), t.optional && (d.classList.add("optional"), r || setTimeout(() => {
+      const m = i && i.label || c;
+      J(d, m);
     }, 0)), l) {
       const m = document.createElement("label");
-      m.className = "field-label", m.textContent = o.label || this.getLabel(t.subject), c.appendChild(m);
+      m.className = "field-label", m.textContent = o.label || this.getLabel(t.subject), d.appendChild(m);
       const b = this.renderInput(o);
-      if (b !== null) b.name = `${t.id}_subject`, b.id = `field_${t.id}_subject`, t.optional || (b.required = true), c.appendChild(b);
+      if (b !== null) b.name = `${t.id}_subject`, b.id = `field_${t.id}_subject`, t.optional || (b.required = true), d.appendChild(b);
       else {
-        const y = document.createElement("div");
-        y.className = "field-value auto-generated", y.textContent = "(auto-generated)", c.appendChild(y);
+        const v = document.createElement("div");
+        v.className = "field-value auto-generated", v.textContent = "(auto-generated)", d.appendChild(v);
       }
       n.add(o.id);
     }
-    if (p) {
+    if (f) {
       const m = document.createElement("label");
-      m.className = "field-label", m.textContent = i.label || d, c.appendChild(m);
+      m.className = "field-label", m.textContent = i.label || c, d.appendChild(m);
       const b = this.renderInput(i);
-      b.name = `${t.id}_predicate`, b.id = `field_${t.id}_predicate`, t.optional || (b.required = true), c.appendChild(b), n.add(i.id);
+      b.name = `${t.id}_predicate`, b.id = `field_${t.id}_predicate`, t.optional || (b.required = true), d.appendChild(b), n.add(i.id);
     } else if (!i) {
       const m = document.createElement("label");
-      if (m.className = "field-label", m.textContent = d, t.optional) {
+      if (m.className = "field-label", m.textContent = c, t.optional) {
         const b = document.createElement("span");
         b.className = "optional-badge", b.textContent = "optional", m.appendChild(b);
       }
-      c.appendChild(m);
+      d.appendChild(m);
     }
-    if (f) {
+    if (p) {
       const m = this.renderInput(a);
       if (m === null) {
         const b = document.createElement("div");
-        b.className = "field-value auto-generated", b.textContent = a.label || t.object, c.appendChild(b);
+        b.className = "field-value auto-generated", b.textContent = a.label || t.object, d.appendChild(b);
       } else {
         if (a.label) {
           const b = document.createElement("div");
-          b.className = "field-help", b.textContent = a.label, c.appendChild(b);
+          b.className = "field-help", b.textContent = a.label, d.appendChild(b);
         }
-        m.name = `${t.id}_object`, m.id = `field_${t.id}_object`, t.optional || (m.required = true), c.appendChild(m);
+        m.name = `${t.id}_object`, m.id = `field_${t.id}_object`, t.optional || (m.required = true), d.appendChild(m);
       }
       n.add(a.id);
     } else if (!a) {
       const m = document.createElement("div");
-      m.className = "field-value", m.textContent = this.getLabel(t.object) || t.object, c.appendChild(m);
+      m.className = "field-value", m.textContent = this.getLabel(t.object) || t.object, d.appendChild(m);
     }
-    e.appendChild(c), t.repeatable && e.appendChild(this.buildRepeatableControls(t, null));
+    e.appendChild(d), t.repeatable && e.appendChild(this.buildRepeatableControls(t, null));
   }
   renderInput(e) {
     const t = e.type.split(",").map((r) => r.trim().replace(/^nt:/, ""));
@@ -790,39 +790,39 @@ class ce {
     const r = document.createElement("div");
     r.className = "repeatable-field-group";
     const o = this.findPlaceholder(e.subject), i = this.findPlaceholder(e.predicate), a = this.findPlaceholder(e.object);
-    let d = false;
+    let c = false;
     if (o) {
-      const p = this.template.statements.filter((f) => f.subject === e.subject);
-      d = p.length === 1, console.log(`[buildRepeatableField] Subject ${e.subject}:`, { occurrences: p.length, shouldRepeat: d });
+      const f = this.template.statements.filter((p) => p.subject === e.subject);
+      c = f.length === 1, console.log(`[buildRepeatableField] Subject ${e.subject}:`, { occurrences: f.length, shouldRepeat: c });
     }
-    if (o && d) {
-      const p = document.createElement("div");
-      p.className = "repeatable-field";
-      const f = document.createElement("label");
-      f.className = "field-label", f.textContent = o.label || this.getLabel(e.subject), p.appendChild(f);
-      const c = this.renderInput(o);
-      c.name = `${e.id}_subject_${n}`, c.id = `field_${e.id}_subject_${n}`, p.appendChild(c), r.appendChild(p);
+    if (o && c) {
+      const f = document.createElement("div");
+      f.className = "repeatable-field";
+      const p = document.createElement("label");
+      p.className = "field-label", p.textContent = o.label || this.getLabel(e.subject), f.appendChild(p);
+      const d = this.renderInput(o);
+      d.name = `${e.id}_subject_${n}`, d.id = `field_${e.id}_subject_${n}`, f.appendChild(d), r.appendChild(f);
     }
     if (i) {
-      const p = document.createElement("div");
-      p.className = "repeatable-field";
-      const f = document.createElement("label");
-      f.className = "field-label", f.textContent = i.label || this.getLabel(e.predicate), p.appendChild(f);
-      const c = this.renderInput(i);
-      c.name = `${e.id}_predicate_${n}`, c.id = `field_${e.id}_predicate_${n}`, p.appendChild(c), r.appendChild(p);
+      const f = document.createElement("div");
+      f.className = "repeatable-field";
+      const p = document.createElement("label");
+      p.className = "field-label", p.textContent = i.label || this.getLabel(e.predicate), f.appendChild(p);
+      const d = this.renderInput(i);
+      d.name = `${e.id}_predicate_${n}`, d.id = `field_${e.id}_predicate_${n}`, f.appendChild(d), r.appendChild(f);
     }
     if (a) {
-      const p = document.createElement("div");
-      if (p.className = "repeatable-field", !i) {
-        const c = document.createElement("label");
-        c.className = "field-label", c.textContent = this.getLabel(e.predicate), p.appendChild(c);
+      const f = document.createElement("div");
+      if (f.className = "repeatable-field", !i) {
+        const d = document.createElement("label");
+        d.className = "field-label", d.textContent = this.getLabel(e.predicate), f.appendChild(d);
       }
       if (a.label) {
-        const c = document.createElement("div");
-        c.className = "field-help", c.textContent = a.label, p.appendChild(c);
+        const d = document.createElement("div");
+        d.className = "field-help", d.textContent = a.label, f.appendChild(d);
       }
-      const f = this.renderInput(a);
-      f.name = `${e.id}_object_${n}`, f.id = `field_${e.id}_object_${n}`, p.appendChild(f), r.appendChild(p);
+      const p = this.renderInput(a);
+      p.name = `${e.id}_object_${n}`, p.id = `field_${e.id}_object_${n}`, f.appendChild(p), r.appendChild(f);
     }
     const l = document.createElement("button");
     return l.type = "button", l.className = "btn-remove-field", l.textContent = "\xD7 Remove", l.onclick = () => {
@@ -910,16 +910,16 @@ class de {
     this.formData = e, this.metadata = t;
     const n = (/* @__PURE__ */ new Date()).toISOString(), r = this.generateRandomId(), o = `http://purl.org/nanopub/temp/${r}`;
     this.currentNanopubBaseUri = o;
-    const i = this.buildPrefixes(r), a = this.buildHead(), d = this.buildAssertion(), l = this.buildProvenance(), p = this.buildPubinfo(n);
+    const i = this.buildPrefixes(r), a = this.buildHead(), c = this.buildAssertion(), l = this.buildProvenance(), f = this.buildPubinfo(n);
     return `${i}
 
 ${a}
 
-${d}
+${c}
 
 ${l}
 
-${p}
+${f}
 `;
   }
   generateRandomId() {
@@ -969,28 +969,28 @@ ${e.join(`
   }
   getInstanceData(e, t) {
     var _a, _b;
-    const n = t ? `_${t}` : "", r = { subject: this.formData[`${e.id}_subject${n}`], predicate: this.formData[`${e.id}_predicate${n}`], object: this.formData[`${e.id}_object${n}`] }, o = (_a = this.template.placeholders) == null ? void 0 : _a.find((p) => p.id === e.subject), i = (_b = this.template.placeholders) == null ? void 0 : _b.find((p) => p.id === e.object);
+    const n = t ? `_${t}` : "", r = { subject: this.formData[`${e.id}_subject${n}`], predicate: this.formData[`${e.id}_predicate${n}`], object: this.formData[`${e.id}_object${n}`] }, o = (_a = this.template.placeholders) == null ? void 0 : _a.find((f) => f.id === e.subject), i = (_b = this.template.placeholders) == null ? void 0 : _b.find((f) => f.id === e.object);
     o && (o.isIntroducedResource || o.isLocalResource);
     const a = i && (i.isIntroducedResource || i.isLocalResource);
     if (!r.subject && e.subjectIsPlaceholder) {
-      const p = e.subject, f = this.findPlaceholderValue(p);
-      f && (r.subject = f);
+      const f = e.subject, p = this.findPlaceholderValue(f);
+      p && (r.subject = p);
     }
     if (!r.object && e.objectIsPlaceholder) {
-      const p = e.object, f = this.findPlaceholderValue(p);
-      f && (r.object = f);
+      const f = e.object, p = this.findPlaceholderValue(f);
+      p && (r.object = p);
     }
     r.subject && r.subject;
-    const d = r.predicate && r.predicate !== "", l = r.object && r.object !== "";
-    return e.optional && !l && !a || !e.optional && (e.objectIsPlaceholder && !l || e.predicateIsPlaceholder && !d) ? null : r;
+    const c = r.predicate && r.predicate !== "", l = r.object && r.object !== "";
+    return e.optional && !l && !a || !e.optional && (e.objectIsPlaceholder && !l || e.predicateIsPlaceholder && !c) ? null : r;
   }
   buildTriple(e, t) {
     const n = this.metadata.creator || "https://orcid.org/0000-0000-0000-0000";
     let r = t.subject || e.subject, o;
     e.subjectUri === "nt:CREATOR" ? o = n.startsWith("orcid:") ? n : `orcid:${n.split("/").pop()}` : o = e.subjectIsPlaceholder ? this.resolveValue(r, e.subject) : this.formatUri(e.subjectUri);
     const i = t.predicate || e.predicate, a = e.predicateIsPlaceholder ? this.resolveValue(i, e.predicate) : this.formatUri(e.predicateUri);
-    let d = t.object || e.object, l;
-    return e.objectUri === "nt:CREATOR" ? l = n.startsWith("orcid:") ? n : `orcid:${n.split("/").pop()}` : l = e.objectIsPlaceholder ? this.resolveValue(d, e.object) : this.formatUri(e.objectUri), !o || !a || !l || o.startsWith("<") && o.endsWith(">") && !o.includes("://") || l.startsWith("<") && l.endsWith(">") && !l.includes("://") ? null : e.predicateUri === "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" || a === "rdf:type" || a === "a" ? `  ${o} a ${l} .` : `  ${o} ${a} ${l} .`;
+    let c = t.object || e.object, l;
+    return e.objectUri === "nt:CREATOR" ? l = n.startsWith("orcid:") ? n : `orcid:${n.split("/").pop()}` : l = e.objectIsPlaceholder ? this.resolveValue(c, e.object) : this.formatUri(e.objectUri), !o || !a || !l || o.startsWith("<") && o.endsWith(">") && !o.includes("://") || l.startsWith("<") && l.endsWith(">") && !l.includes("://") ? null : e.predicateUri === "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" || a === "rdf:type" || a === "a" ? `  ${o} a ${l} .` : `  ${o} ${a} ${l} .`;
   }
   resolveValue(e, t) {
     var _a;
@@ -1028,15 +1028,15 @@ ${e.join(`
     var _a;
     const t = this.metadata.creator || "https://orcid.org/0000-0002-1784-2920", n = this.metadata.creatorName || "Unknown", r = t.startsWith("orcid:") ? t : `orcid:${t.split("/").pop()}`, o = [`  ${r} foaf:name "${n}" .`, "", `  this: dct:created "${e}"^^xsd:dateTime;`, `    dct:creator ${r};`, "    dct:license <https://creativecommons.org/licenses/by/4.0/>"];
     if (((_a = this.template.types) == null ? void 0 : _a.length) > 0) {
-      const a = this.template.types.map((d) => `<${d}>`).join(", ");
+      const a = this.template.types.map((c) => `<${c}>`).join(", ");
       o.push(`;
     npx:hasNanopubType ${a}`);
     }
     const i = [];
     for (const a of this.template.placeholders || []) if (a.isIntroducedResource) {
-      const d = this.findPlaceholderValue(a.id);
-      if (d) {
-        const l = `${this.currentNanopubBaseUri}/${d}`;
+      const c = this.findPlaceholderValue(a.id);
+      if (c) {
+        const l = `${this.currentNanopubBaseUri}/${c}`;
         i.push(`<${l}>`);
       }
     }
@@ -1109,7 +1109,7 @@ function h(s) {
 function ue(s) {
   s < 132 || (I[s] = D, D = s);
 }
-function v(s) {
+function x(s) {
   const e = h(s);
   return ue(s), e;
 }
@@ -1124,8 +1124,8 @@ const B = typeof TextEncoder < "u" ? new TextEncoder("utf-8") : { encode: () => 
 };
 function N(s, e, t) {
   if (t === void 0) {
-    const a = B.encode(s), d = e(a.length, 1) >>> 0;
-    return W().subarray(d, d + a.length).set(a), R = a.length, d;
+    const a = B.encode(s), c = e(a.length, 1) >>> 0;
+    return W().subarray(c, c + a.length).set(a), R = a.length, c;
   }
   let n = s.length, r = e(n, 1) >>> 0;
   const o = W();
@@ -1137,8 +1137,8 @@ function N(s, e, t) {
   }
   if (i !== n) {
     i !== 0 && (s = s.slice(i)), r = t(r, n, n = i + s.length * 3, 1) >>> 0;
-    const a = W().subarray(r + i, r + n), d = pe(s, a);
-    i += d.written, r = t(r, n, i, 1) >>> 0;
+    const a = W().subarray(r + i, r + n), c = pe(s, a);
+    i += c.written, r = t(r, n, i, 1) >>> 0;
   }
   return R = i, r;
 }
@@ -1184,7 +1184,7 @@ function V(s) {
   return s instanceof Error ? `${s.name}: ${s.message}
 ${s.stack}` : n;
 }
-const X = typeof FinalizationRegistry > "u" ? { register: () => {
+const Y = typeof FinalizationRegistry > "u" ? { register: () => {
 }, unregister: () => {
 } } : new FinalizationRegistry((s) => {
   u.__wbindgen_export_2.get(s.dtor)(s.a, s.b);
@@ -1197,15 +1197,15 @@ function he(s, e, t, n) {
     try {
       return n(a, r.b, ...i);
     } finally {
-      --r.cnt === 0 ? (u.__wbindgen_export_2.get(r.dtor)(a, r.b), X.unregister(r)) : r.a = a;
+      --r.cnt === 0 ? (u.__wbindgen_export_2.get(r.dtor)(a, r.b), Y.unregister(r)) : r.a = a;
     }
   };
-  return o.original = r, X.register(o, r, r), o;
+  return o.original = r, Y.register(o, r, r), o;
 }
 function be(s, e, t) {
   u._dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__h15d348a8f539de58(s, e, g(t));
 }
-function x(s, e) {
+function y(s, e) {
   try {
     return s.apply(this, e);
   } catch (t) {
@@ -1215,7 +1215,7 @@ function x(s, e) {
 function me(s, e, t, n) {
   u.wasm_bindgen__convert__closures__invoke2_mut__h2c289313db95095e(s, e, g(t), g(n));
 }
-function Y(s, e) {
+function X(s, e) {
   if (!(s instanceof e)) throw new Error(`expected instance of ${e.name}`);
   return s.ptr;
 }
@@ -1241,7 +1241,7 @@ class we {
       const r = u.__wbindgen_add_to_stack_pointer(-16);
       u.keypair_new(r);
       var e = _()[r / 4 + 0], t = _()[r / 4 + 1], n = _()[r / 4 + 2];
-      if (n) throw v(t);
+      if (n) throw x(t);
       return this.__wbg_ptr = e >>> 0, this;
     } finally {
       u.__wbindgen_add_to_stack_pointer(16);
@@ -1252,8 +1252,8 @@ class we {
       const r = u.__wbindgen_add_to_stack_pointer(-16);
       u.keypair_toJs(r, this.__wbg_ptr);
       var e = _()[r / 4 + 0], t = _()[r / 4 + 1], n = _()[r / 4 + 2];
-      if (n) throw v(t);
-      return v(e);
+      if (n) throw x(t);
+      return x(e);
     } finally {
       u.__wbindgen_add_to_stack_pointer(16);
     }
@@ -1281,7 +1281,7 @@ class U {
       const o = u.__wbindgen_add_to_stack_pointer(-16);
       u.nanopub_new(o, g(e));
       var t = _()[o / 4 + 0], n = _()[o / 4 + 1], r = _()[o / 4 + 2];
-      if (r) throw v(n);
+      if (r) throw x(n);
       return this.__wbg_ptr = t >>> 0, this;
     } finally {
       u.__wbindgen_add_to_stack_pointer(16);
@@ -1292,7 +1292,7 @@ class U {
       const r = this.__destroy_into_raw(), o = u.__wbindgen_add_to_stack_pointer(-16);
       u.nanopub_check(o, r);
       var e = _()[o / 4 + 0], t = _()[o / 4 + 1], n = _()[o / 4 + 2];
-      if (n) throw v(t);
+      if (n) throw x(t);
       return U.__wrap(e);
     } finally {
       u.__wbindgen_add_to_stack_pointer(16);
@@ -1301,9 +1301,9 @@ class U {
   sign(e) {
     try {
       const o = this.__destroy_into_raw(), i = u.__wbindgen_add_to_stack_pointer(-16);
-      Y(e, G), u.nanopub_sign(i, o, e.__wbg_ptr);
+      X(e, G), u.nanopub_sign(i, o, e.__wbg_ptr);
       var t = _()[i / 4 + 0], n = _()[i / 4 + 1], r = _()[i / 4 + 2];
-      if (r) throw v(n);
+      if (r) throw x(n);
       return U.__wrap(t);
     } finally {
       u.__wbindgen_add_to_stack_pointer(16);
@@ -1314,28 +1314,28 @@ class U {
       const o = this.__destroy_into_raw();
       var n = F(t) ? 0 : N(t, u.__wbindgen_malloc, u.__wbindgen_realloc), r = R;
       const i = u.nanopub_publish(o, ge(e), n, r);
-      return v(i);
+      return x(i);
     } finally {
       I[H++] = void 0;
     }
   }
   static fetch(e) {
     const t = N(e, u.__wbindgen_malloc, u.__wbindgen_realloc), n = R, r = u.nanopub_fetch(t, n);
-    return v(r);
+    return x(r);
   }
   static publish_intro(e, t) {
-    Y(e, G);
+    X(e, G);
     const n = N(t, u.__wbindgen_malloc, u.__wbindgen_realloc), r = R, o = u.nanopub_publish_intro(e.__wbg_ptr, n, r);
-    return v(o);
+    return x(o);
   }
   rdf() {
     let e, t;
     try {
       const l = u.__wbindgen_add_to_stack_pointer(-16);
       u.nanopub_rdf(l, this.__wbg_ptr);
-      var n = _()[l / 4 + 0], r = _()[l / 4 + 1], o = _()[l / 4 + 2], i = _()[l / 4 + 3], a = n, d = r;
-      if (i) throw a = 0, d = 0, v(o);
-      return e = a, t = d, T(a, d);
+      var n = _()[l / 4 + 0], r = _()[l / 4 + 1], o = _()[l / 4 + 2], i = _()[l / 4 + 3], a = n, c = r;
+      if (i) throw a = 0, c = 0, x(o);
+      return e = a, t = c, T(a, c);
     } finally {
       u.__wbindgen_add_to_stack_pointer(16), u.__wbindgen_free(e, t, 1);
     }
@@ -1345,8 +1345,8 @@ class U {
       const r = u.__wbindgen_add_to_stack_pointer(-16);
       u.nanopub_info(r, this.__wbg_ptr);
       var e = _()[r / 4 + 0], t = _()[r / 4 + 1], n = _()[r / 4 + 2];
-      if (n) throw v(t);
-      return v(e);
+      if (n) throw x(t);
+      return x(e);
     } finally {
       u.__wbindgen_add_to_stack_pointer(16);
     }
@@ -1388,12 +1388,12 @@ class G {
   }
   constructor(e, t, n, r) {
     try {
-      const b = u.__wbindgen_add_to_stack_pointer(-16), y = N(e, u.__wbindgen_malloc, u.__wbindgen_realloc), w = R;
-      var o = F(t) ? 0 : N(t, u.__wbindgen_malloc, u.__wbindgen_realloc), i = R, a = F(n) ? 0 : N(n, u.__wbindgen_malloc, u.__wbindgen_realloc), d = R, l = F(r) ? 0 : N(r, u.__wbindgen_malloc, u.__wbindgen_realloc), p = R;
-      u.npprofile_new(b, y, w, o, i, a, d, l, p);
-      var f = _()[b / 4 + 0], c = _()[b / 4 + 1], m = _()[b / 4 + 2];
-      if (m) throw v(c);
-      return this.__wbg_ptr = f >>> 0, this;
+      const b = u.__wbindgen_add_to_stack_pointer(-16), v = N(e, u.__wbindgen_malloc, u.__wbindgen_realloc), w = R;
+      var o = F(t) ? 0 : N(t, u.__wbindgen_malloc, u.__wbindgen_realloc), i = R, a = F(n) ? 0 : N(n, u.__wbindgen_malloc, u.__wbindgen_realloc), c = R, l = F(r) ? 0 : N(r, u.__wbindgen_malloc, u.__wbindgen_realloc), f = R;
+      u.npprofile_new(b, v, w, o, i, a, c, l, f);
+      var p = _()[b / 4 + 0], d = _()[b / 4 + 1], m = _()[b / 4 + 2];
+      if (m) throw x(d);
+      return this.__wbg_ptr = p >>> 0, this;
     } finally {
       u.__wbindgen_add_to_stack_pointer(16);
     }
@@ -1414,8 +1414,8 @@ class G {
       const r = u.__wbindgen_add_to_stack_pointer(-16);
       u.npprofile_toJs(r, this.__wbg_ptr);
       var e = _()[r / 4 + 0], t = _()[r / 4 + 1], n = _()[r / 4 + 2];
-      if (n) throw v(t);
-      return v(e);
+      if (n) throw x(t);
+      return x(e);
     } finally {
       u.__wbindgen_add_to_stack_pointer(16);
     }
@@ -1445,23 +1445,23 @@ function ve() {
     const n = T(e, t);
     return g(n);
   }, s.wbg.__wbg_call_b3ca7c6051f9bec1 = function() {
-    return x(function(e, t, n) {
+    return y(function(e, t, n) {
       const r = h(e).call(h(t), h(n));
       return g(r);
     }, arguments);
   }, s.wbg.__wbindgen_object_drop_ref = function(e) {
-    v(e);
+    x(e);
   }, s.wbg.__wbg_abort_2aa7521d5690750e = function(e) {
     h(e).abort();
   }, s.wbg.__wbg_new_72fb9a18b5ae2624 = function() {
     const e = new Object();
     return g(e);
   }, s.wbg.__wbg_set_1f9b04f170055d33 = function() {
-    return x(function(e, t, n) {
+    return y(function(e, t, n) {
       return Reflect.set(h(e), h(t), h(n));
     }, arguments);
   }, s.wbg.__wbg_new_ab6fd82b10560829 = function() {
-    return x(function() {
+    return y(function() {
       const e = new Headers();
       return g(e);
     }, arguments);
@@ -1469,7 +1469,7 @@ function ve() {
     const t = h(e);
     return g(t);
   }, s.wbg.__wbg_new_0d76b0581eca6298 = function() {
-    return x(function() {
+    return y(function() {
       const e = new AbortController();
       return g(e);
     }, arguments);
@@ -1477,7 +1477,7 @@ function ve() {
     const t = h(e).signal;
     return g(t);
   }, s.wbg.__wbg_append_7bfcb4937d1d5e29 = function() {
-    return x(function(e, t, n, r, o) {
+    return y(function(e, t, n, r, o) {
       h(e).append(T(t, n), T(r, o));
     }, arguments);
   }, s.wbg.__wbg_instanceof_Response_849eb93e75734b6e = function(e) {
@@ -1499,14 +1499,14 @@ function ve() {
   }, s.wbg.__wbg_iterator_2cee6dadfd956dfa = function() {
     return g(Symbol.iterator);
   }, s.wbg.__wbg_get_e3c254076557e348 = function() {
-    return x(function(e, t) {
+    return y(function(e, t) {
       const n = Reflect.get(h(e), h(t));
       return g(n);
     }, arguments);
   }, s.wbg.__wbindgen_is_function = function(e) {
     return typeof h(e) == "function";
   }, s.wbg.__wbg_call_27c0f87801dedf93 = function() {
-    return x(function(e, t) {
+    return y(function(e, t) {
       const n = h(e).call(h(t));
       return g(n);
     }, arguments);
@@ -1517,7 +1517,7 @@ function ve() {
     const t = h(e).next;
     return g(t);
   }, s.wbg.__wbg_next_196c84450b364254 = function() {
-    return x(function(e) {
+    return y(function(e) {
       const t = h(e).next();
       return g(t);
     }, arguments);
@@ -1527,7 +1527,7 @@ function ve() {
     const t = h(e).value;
     return g(t);
   }, s.wbg.__wbg_stringify_8887fe74e1c50d81 = function() {
-    return x(function(e) {
+    return y(function(e) {
       const t = JSON.stringify(h(e));
       return g(t);
     }, arguments);
@@ -1536,7 +1536,7 @@ function ve() {
     var o = F(r) ? 0 : N(r, u.__wbindgen_malloc, u.__wbindgen_realloc), i = R;
     _()[e / 4 + 1] = i, _()[e / 4 + 0] = o;
   }, s.wbg.__wbg_text_450a059667fd91fd = function() {
-    return x(function(e) {
+    return y(function(e) {
       const t = h(e).text();
       return g(t);
     }, arguments);
@@ -1559,7 +1559,7 @@ function ve() {
   }, s.wbg.__wbindgen_is_string = function(e) {
     return typeof h(e) == "string";
   }, s.wbg.__wbg_require_cca90b1a94a0255b = function() {
-    return x(function() {
+    return y(function() {
       const e = module.require;
       return g(e);
     }, arguments);
@@ -1579,14 +1579,14 @@ function ve() {
     const r = new Uint8Array(h(e), t >>> 0, n >>> 0);
     return g(r);
   }, s.wbg.__wbg_randomFillSync_5c9c955aa56b6049 = function() {
-    return x(function(e, t) {
-      h(e).randomFillSync(v(t));
+    return y(function(e, t) {
+      h(e).randomFillSync(x(t));
     }, arguments);
   }, s.wbg.__wbg_subarray_a1f73cd4b5b42fe1 = function(e, t, n) {
     const r = h(e).subarray(t >>> 0, n >>> 0);
     return g(r);
   }, s.wbg.__wbg_getRandomValues_3aa56aa6edec874c = function() {
-    return x(function(e, t) {
+    return y(function(e, t) {
       h(e).getRandomValues(h(t));
     }, arguments);
   }, s.wbg.__wbg_new_63b92bc8671ed464 = function(e) {
@@ -1595,22 +1595,22 @@ function ve() {
   }, s.wbg.__wbg_set_a47bac70306a19a7 = function(e, t, n) {
     h(e).set(h(t), n >>> 0);
   }, s.wbg.__wbg_self_ce0dbfc45cf2f5be = function() {
-    return x(function() {
+    return y(function() {
       const e = self.self;
       return g(e);
     }, arguments);
   }, s.wbg.__wbg_window_c6fb939a7f436783 = function() {
-    return x(function() {
+    return y(function() {
       const e = window.window;
       return g(e);
     }, arguments);
   }, s.wbg.__wbg_globalThis_d1e6af4856ba331b = function() {
-    return x(function() {
+    return y(function() {
       const e = globalThis.globalThis;
       return g(e);
     }, arguments);
   }, s.wbg.__wbg_global_207b558942527489 = function() {
-    return x(function() {
+    return y(function() {
       const e = global.global;
       return g(e);
     }, arguments);
@@ -1623,7 +1623,7 @@ function ve() {
     const e = new Array();
     return g(e);
   }, s.wbg.__wbg_apply_0a5aa603881e6d79 = function() {
-    return x(function(e, t, n) {
+    return y(function(e, t, n) {
       const r = Reflect.apply(h(e), h(t), h(n));
       return g(r);
     }, arguments);
@@ -1633,12 +1633,12 @@ function ve() {
   }, s.wbg.__wbg_new_81740750da40724f = function(e, t) {
     try {
       var n = { a: e, b: t }, r = (i, a) => {
-        const d = n.a;
+        const c = n.a;
         n.a = 0;
         try {
-          return me(d, n.b, i, a);
+          return me(c, n.b, i, a);
         } finally {
-          n.a = d;
+          n.a = c;
         }
       };
       const o = new Promise(r);
@@ -1647,12 +1647,12 @@ function ve() {
       n.a = n.b = 0;
     }
   }, s.wbg.__wbg_set_f975102236d3c502 = function(e, t, n) {
-    h(e)[v(t)] = v(n);
+    h(e)[x(t)] = x(n);
   }, s.wbg.__wbindgen_cb_drop = function(e) {
-    const t = v(e).original;
+    const t = x(e).original;
     return t.cnt-- == 1 ? (t.a = 0, true) : false;
   }, s.wbg.__wbg_has_0af94d20077affa2 = function() {
-    return x(function(e, t) {
+    return y(function(e, t) {
       return Reflect.has(h(e), h(t));
     }, arguments);
   }, s.wbg.__wbg_fetch_eadcbc7351113537 = function(e) {
@@ -1681,7 +1681,7 @@ function ve() {
     const t = Promise.resolve(h(e));
     return g(t);
   }, s.wbg.__wbg_newwithstrandinit_3fd6fba4083ff2d0 = function() {
-    return x(function(e, t, n) {
+    return y(function(e, t, n) {
       const r = new Request(T(e, t), h(n));
       return g(r);
     }, arguments);
@@ -1818,9 +1818,9 @@ class Ee {
       const a = i.rdf();
       if (!this.options.publishServer) return console.log("\u{1F4E5} Download-only mode (no publish server configured)"), this.emit("publish", { uri: null, signedContent: a, downloadOnly: true }), { signedContent: a, downloadOnly: true };
       console.log("\u{1F4E4} Publishing to network..."), console.log("   Server:", this.options.publishServer);
-      const d = await i.publish(r, this.options.publishServer);
-      console.log("\u2705 Published successfully!"), console.log("\u{1F310} Result:", d);
-      const l = typeof d == "string" ? d : d.uri || d.nanopub_uri;
+      const c = await i.publish(r, this.options.publishServer);
+      console.log("\u2705 Published successfully!"), console.log("\u{1F310} Result:", c);
+      const l = typeof c == "string" ? c : c.uri || c.nanopub_uri;
       return this.emit("publish", { uri: l, signedContent: a }), { uri: l, nanopub_uri: l, signedContent: a };
     } catch (t) {
       throw console.error("\u274C Sign/Publish failed:", t), console.error("Error details:", t.message), this.emit("error", { type: "publish", error: t }), t;
@@ -1834,12 +1834,12 @@ class Ee {
   }
 }
 let E = null, K = "";
-async function $e() {
+async function je() {
   try {
     E = new Ee({ publishServer: null }), E.on("change", (s) => {
       console.log("Form data changed:", s);
     }), E.on("submit", (s) => {
-      console.log("Generated nanopub:", s.trigContent), K = s.trigContent, je(s.trigContent);
+      console.log("Generated nanopub:", s.trigContent), K = s.trigContent, $e(s.trigContent);
     }), E.on("error", (s) => {
       console.error("Error:", s.type, s.error), S(`Error (${s.type}): ${s.error.message}`, "error");
     }), E.on("profileNeeded", () => {
@@ -1918,7 +1918,7 @@ document.getElementById("load-template-btn").addEventListener("click", async () 
     n.disabled = false, n.textContent = "Load Template";
   }
 });
-function je(s) {
+function $e(s) {
   document.getElementById("preview-text").textContent = s, document.getElementById("preview-section").classList.remove("hidden");
 }
 document.getElementById("copy-btn").addEventListener("click", () => {
@@ -1943,15 +1943,8 @@ async function Pe() {
   try {
     s.disabled = true, s.textContent = "Signing...", S("\u{1F510} Signing nanopublication...", "info");
     let t = (await E.publish(K)).signedContent;
-    const n = t.match(/PREFIX this: <([^>]+)>/);
-    if (n) {
-      const p = n[1], f = p + "#/", c = p + "/", m = f.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      t = t.replace(new RegExp(m, "g"), c);
-      const y = (p + "#").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      t = t.replace(new RegExp(y, "g"), c), console.log("\u2705 Converted hash URIs to slash URIs");
-    }
-    const r = E.getProfile(), i = `nanopub-signed-${(/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-")}.trig`, a = new Blob([t], { type: "application/trig" }), d = URL.createObjectURL(a), l = document.createElement("a");
-    l.href = d, l.download = i, l.click(), URL.revokeObjectURL(d), S("\u2705 Signed nanopub downloaded!", "success"), document.getElementById("preview-text").textContent = t;
+    const n = E.getProfile(), o = `nanopub-signed-${(/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-")}.trig`, i = new Blob([t], { type: "application/trig" }), a = URL.createObjectURL(i), c = document.createElement("a");
+    c.href = a, c.download = o, c.click(), URL.revokeObjectURL(a), S("\u2705 Signed nanopub downloaded!", "success"), document.getElementById("preview-text").textContent = t;
   } catch (e) {
     console.error("Sign failed:", e), S(`Sign failed: ${e.message}`, "error");
   } finally {
@@ -1964,4 +1957,4 @@ function S(s, e = "info") {
     n.style.animation = "slideOut 0.3s ease", setTimeout(() => n.remove(), 300);
   }, 5e3);
 }
-$e();
+je();
