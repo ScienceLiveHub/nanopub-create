@@ -1,0 +1,315 @@
+/**
+ * Form Fields Styles
+ */
+
+/* Form Fields */
+.form-field {
+  margin-bottom: 1.25rem;
+}
+
+.field-label {
+  display: block;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 0.5rem;
+  font-size: 0.95em;
+}
+
+.field-help {
+  color: var(--text-light);
+  font-size: 0.85em;
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+.field-value {
+  color: var(--text-light);
+  font-size: 0.9em;
+  padding: 0.5rem 0;
+}
+
+.field-value.auto-generated {
+  color: var(--text-light);
+  font-style: italic;
+  font-size: 0.85em;
+}
+
+/* Form Inputs */
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.95em;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: white;
+}
+
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 12px;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+.form-select:hover {
+  border-color: var(--primary);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(190, 46, 120, 0.15);
+}
+
+.form-select option {
+  padding: 0.5rem;
+}
+
+.form-select option:first-child {
+  color: var(--text-light);
+}
+
+.form-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Optional Field Badge */
+.optional-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 2px 6px;
+  background: var(--bg-subtle);
+  color: var(--text-light);
+  font-size: 0.7em;
+  font-weight: 500;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Required Badge */
+.required-badge {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75em;
+  font-weight: 600;
+  margin-left: 8px;
+  text-transform: uppercase;
+}
+
+.form-field.required {
+  border-left: 3px solid #fbbf24;
+  padding-left: 12px;
+}
+
+/* Field Hints */
+.field-hint {
+  font-size: 0.85em;
+  color: var(--text-light);
+  margin-top: 5px;
+  display: flex;
+  gap: 5px;
+  align-items: start;
+}
+
+.field-hint code {
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-size: 0.9em;
+  color: var(--secondary);
+}
+
+/* Identifier Preview (live preview while typing) */
+.identifier-preview {
+  font-size: 0.85em;
+  color: var(--text-light);
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #f9fafb;
+  border-radius: 4px;
+  border-left: 3px solid var(--primary);
+  animation: slideIn 0.2s ease-out;
+}
+
+.identifier-preview code {
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-size: 0.9em;
+  color: var(--secondary);
+  font-weight: 600;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.edit-hint {
+  font-size: 0.8em;
+  color: var(--text-light);
+  margin-top: 4px;
+  font-style: italic;
+  animation: fadeIn 0.2s ease-in;
+}
+
+/* Validation States */
+.form-field.valid .form-input,
+.form-field.valid .form-select,
+.form-field.valid .form-textarea {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.form-field.invalid .form-input,
+.form-field.invalid .form-select,
+.form-field.invalid .form-textarea {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.validation-message {
+  font-size: 0.85em;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.validation-message.success {
+  color: #059669;
+}
+
+.validation-message.error {
+  color: #dc2626;
+}
+
+/* Validation */
+.form-field.error .form-input,
+.form-field.error .form-select,
+.form-field.error .form-textarea {
+  border-color: #dc2626;
+}
+
+.field-error {
+  color: #dc2626;
+  font-size: 0.85em;
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Readonly Fields */
+.readonly-field {
+  background: var(--bg-subtle);
+  padding: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-light);
+}
+
+.readonly-field .field-label {
+  margin-bottom: 0.25rem;
+}
+
+.readonly-field .field-value {
+  color: var(--text-dark);
+  font-weight: 500;
+}
+
+/* Auto-fill Styles */
+.auto-filled {
+  background: #f0fdf4 !important;
+  border-color: #86efac !important;
+}
+
+.auto-fill-indicator {
+  font-size: 0.75em;
+  color: #059669;
+  margin-top: 4px;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.btn-suggestion {
+  font-size: 0.85em;
+  padding: 6px 12px;
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 4px;
+  color: #059669;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s;
+  display: inline-block;
+  font-family: inherit;
+}
+
+.btn-suggestion:hover {
+  background: #dcfce7;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+}
+
+.autocomplete-hint {
+  font-size: 0.8em;
+  color: var(--text-light);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* Progress Indicator */
+.form-progress-header {
+  background: white;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+
+.progress-bar-container {
+  height: 8px;
+  background: var(--border-light);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), #d946a6);
+  border-radius: 4px;
+  transition: width 0.3s ease-out;
+}
+
+.progress-text {
+  font-size: 0.85em;
+  color: var(--text-light);
+  text-align: center;
+}

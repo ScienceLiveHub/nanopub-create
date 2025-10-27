@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nanopub Creator - Demo</title>
-  <link rel="stylesheet" href="../src/styles/creator.css">
+   <link rel="stylesheet" href="../src/styles/styles-index.css">
+
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -704,8 +705,29 @@
         // Since publishServer is null, it will just sign without publishing
         const result = await creator.publish(currentTrigContent);
         
-        // Get signed content and fix double hash bug from nanopub-rs
-        let signedContent = result.signedContent.replace(/##/g, '#');
+        // Get signed content and convert hash URIs to slash URIs
+        // The WASM library generates patterns like: npUri#/Head
+        // We need to convert them to: npUri/Head (not npUri//Head)
+        let signedContent = result.signedContent;
+        
+        // Extract the nanopub URI from the signed content
+        const npUriMatch = signedContent.match(/PREFIX this: <([^>]+)>/);
+        if (npUriMatch) {
+          const npUri = npUriMatch[1];
+          
+          // Replace npUri#/ with npUri/ (this handles graph names like #/Head)
+          const hashSlashPattern = npUri + '#/';
+          const slashPattern = npUri + '/';
+          const escapedHashSlash = hashSlashPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          signedContent = signedContent.replace(new RegExp(escapedHashSlash, 'g'), slashPattern);
+          
+          // Replace npUri# with npUri/ (this handles the PREFIX definition)
+          const hashPattern = npUri + '#';
+          const escapedHash = hashPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          signedContent = signedContent.replace(new RegExp(escapedHash, 'g'), slashPattern);
+          
+          console.log('✅ Converted hash URIs to slash URIs');
+        }
         
         // Download the signed nanopub
         const profile = creator.getProfile();

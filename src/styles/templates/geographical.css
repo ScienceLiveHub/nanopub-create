@@ -1,0 +1,43 @@
+/**
+ * Geographical Template Specific Styles
+ */
+
+/* Apply specific class to form when using geographical template */
+/* Usage: Add class "template-geographical" to form container */
+
+.template-geographical .geometry-group {
+  /* Custom styling for geometry+WKT group */
+  border-left: 3px solid #059669;
+}
+
+.template-geographical .geometry-group .optional-toggle {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.template-geographical .geometry-group:not(.collapsed) .optional-toggle {
+  background: #dcfce7;
+  border-color: #059669;
+}
+
+.template-geographical .location-field {
+  /* Highlight location fields */
+  position: relative;
+}
+
+.template-geographical .wkt-field {
+  /* Monospace font for WKT coordinates */
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+/* Paper citation styling */
+.template-geographical .paper-citation {
+  background: #fef3c7;
+  border-left: 3px solid #fbbf24;
+}
+
+/* DOI field styling */
+.template-geographical .doi-field {
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+}

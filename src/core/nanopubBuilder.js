@@ -53,7 +53,7 @@ ${pubinfo}
     
     const prefixes = [
       `@prefix this: <${baseUri}> .`,
-      `@prefix sub: <${baseUri}#> .`,
+      `@prefix sub: <${baseUri}/> .`,
       '@prefix np: <http://www.nanopub.org/nschema#> .',
       '@prefix dct: <http://purl.org/dc/terms/> .',
       '@prefix nt: <https://w3id.org/np/o/ntemplate/> .',

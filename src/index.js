@@ -6,7 +6,35 @@
 import { TemplateParser } from './core/templateParser.js';
 import FormGenerator from './core/formGenerator.js';
 import { NanopubBuilder } from './core/nanopubBuilder.js';
+// Components
+export { FieldComponents } from './components/fieldComponents.js';
+export { makeOptionalCollapsible, makeOptionalGroupCollapsible } from './components/collapsible.js';
+export { AutofillManager } from './components/autofill.js';
+
+// Templates
+export { BaseTemplate } from './templates/base/baseTemplate.js';
+export { GeographicalTemplate } from './templates/geographical/geographicalTemplate.js';
+export { TemplateRegistry } from './templates/registry.js';
+
 import init, { Nanopub, NpProfile, KeyPair } from '@nanopub/sign';
+
+/**
+ * Convenience function to create a form from a template URI
+ * @param {string} templateUri - Nanopub template URI
+ * @param {HTMLElement} containerElement - Container to render form into
+ * @returns {Promise<FormGenerator>} Form generator instance
+ */
+export async function createFormFromTemplate(templateUri, containerElement) {
+  const parser = new TemplateParser();
+  const template = await parser.fetchTemplate(templateUri);
+  await parser.parseTemplate();
+  
+  const generator = new FormGenerator(parser.template);
+  generator.render(containerElement);
+  
+  return generator;
+}
+
 
 /**
  * Main NanopubCreator class with WASM support

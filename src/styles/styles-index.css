@@ -1,0 +1,16 @@
+/**
+ * Main CSS Entry Point
+ * Import all modular stylesheets
+ */
+
+/* Base styles - variables and reset */
+@import './base.css';
+
+/* Component styles */
+@import './components/fields.css';
+@import './components/collapsible.css';
+@import './components/buttons.css';
+@import './components/groups.css';
+
+/* Template-specific styles */
+@import './templates/geographical.css';
