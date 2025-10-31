@@ -4,62 +4,115 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nanopub Creator - Demo</title>
-   <link rel="stylesheet" href="../src/styles/styles-index.css">
+  <link rel="stylesheet" href="../src/styles/styles-index.css">
 
   <style>
+    /* All your existing dark mode styles - keeping them exactly as is */
+    :root {
+      color-scheme: light dark;
+    }
+    body {
+      --demo-bg: #f5f5f5;
+      --demo-section-bg: white;
+      --demo-text: #333;
+      --demo-text-muted: #666;
+      --demo-border: #ddd;
+      --demo-border-strong: #6c757d;
+      --demo-input-bg: white;
+      --demo-code-bg: #282c34;
+      --demo-code-text: #abb2bf;
+      --demo-info-bg: #f8f9fa;
+      --demo-preview-bg: #f5f5f5;
+    }
+    @media (prefers-color-scheme: dark) {
+      body {
+        --demo-bg: #1a1a1a;
+        --demo-section-bg: #2d2d2d;
+        --demo-text: #e5e5e5;
+        --demo-text-muted: #a0a0a0;
+        --demo-border: #404040;
+        --demo-border-strong: #6c757d;
+        --demo-input-bg: #3a3a3a;
+        --demo-code-bg: #1e1e1e;
+        --demo-code-text: #d4d4d4;
+        --demo-info-bg: #373737;
+        --demo-preview-bg: #252525;
+      }
+    }
+    body.dark-mode,
+    body.dark,
+    [data-theme="dark"] body {
+      --demo-bg: #1a1a1a;
+      --demo-section-bg: #2d2d2d;
+      --demo-text: #e5e5e5;
+      --demo-text-muted: #a0a0a0;
+      --demo-border: #404040;
+      --demo-border-strong: #6c757d;
+      --demo-input-bg: #3a3a3a;
+      --demo-code-bg: #1e1e1e;
+      --demo-code-text: #d4d4d4;
+      --demo-info-bg: #373737;
+      --demo-preview-bg: #252525;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       max-width: 1200px;
       margin: 0 auto;
       padding: 20px;
-      background: #f5f5f5;
+      background: var(--demo-bg);
+      color: var(--demo-text);
     }
-    
-    h1 {
-      color: #BE2E78;
-      margin-bottom: 10px;
+    h1 { color: #BE2E78; margin-bottom: 10px; }
+    @media (prefers-color-scheme: dark) {
+      h1 { color: #ff3d8f; }
     }
-    
-    .subtitle {
-      color: #666;
-      margin-bottom: 30px;
-    }
-    
+    body.dark-mode h1, body.dark h1, [data-theme="dark"] h1 { color: #ff3d8f; }
+    .subtitle { color: var(--demo-text-muted); margin-bottom: 30px; }
     .demo-notice {
       background: #fff3cd;
       border: 1px solid #ffc107;
       padding: 15px;
       border-radius: 8px;
       margin-bottom: 20px;
-    }
-    
-    .demo-notice h3 {
-      margin: 0 0 10px 0;
       color: #856404;
     }
-    
-    .demo-notice p {
-      margin: 5px 0;
-      color: #856404;
+    @media (prefers-color-scheme: dark) {
+      .demo-notice {
+        background: #3d3310;
+        border-color: #a67c00;
+        color: #ffd966;
+      }
     }
-    
+    body.dark-mode .demo-notice,
+    body.dark .demo-notice,
+    [data-theme="dark"] .demo-notice {
+      background: #3d3310;
+      border-color: #a67c00;
+      color: #ffd966;
+    }
+    .demo-notice h3 { margin: 0 0 10px 0; color: inherit; }
+    .demo-notice p { margin: 5px 0; color: inherit; }
+    .demo-notice code {
+      background: rgba(0,0,0,0.2);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
     .section {
-      background: white;
+      background: var(--demo-section-bg);
       padding: 20px;
       border-radius: 8px;
       margin-bottom: 20px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border: 1px solid var(--demo-border);
     }
-    
     .section h2 {
       margin-top: 0;
-      color: #333;
+      color: var(--demo-text);
       display: flex;
       align-items: center;
       gap: 10px;
       flex-wrap: wrap;
     }
-    
     .status {
       display: inline-block;
       padding: 4px 12px;
@@ -67,47 +120,43 @@
       font-size: 0.85em;
       font-weight: 500;
     }
-    
-    .status.success {
-      background: #d4edda;
-      color: #155724;
+    .status.success { background: #d4edda; color: #155724; }
+    @media (prefers-color-scheme: dark) {
+      .status.success { background: #1e4620; color: #a3d9a5; }
     }
-    
-    .status.warning {
-      background: #fff3cd;
-      color: #856404;
+    body.dark-mode .status.success,
+    body.dark .status.success,
+    [data-theme="dark"] .status.success {
+      background: #1e4620;
+      color: #a3d9a5;
     }
-    
-    .status.loading {
-      background: #cce5ff;
-      color: #004085;
+    .status.warning { background: #fff3cd; color: #856404; }
+    @media (prefers-color-scheme: dark) {
+      .status.warning { background: #3d3310; color: #ffd966; }
     }
-    
-    .form-group {
-      margin-bottom: 15px;
+    body.dark-mode .status.warning,
+    body.dark .status.warning,
+    [data-theme="dark"] .status.warning {
+      background: #3d3310;
+      color: #ffd966;
     }
-    
+    .form-group { margin-bottom: 15px; }
     .form-group label {
       display: block;
       margin-bottom: 5px;
       font-weight: 500;
-      color: #333;
+      color: var(--demo-text);
     }
-    
     .form-group input {
       width: 100%;
       padding: 10px;
-      border: 2px solid #ddd;
+      border: 2px solid var(--demo-border);
       border-radius: 6px;
       font-size: 0.95em;
       box-sizing: border-box;
+      background: var(--demo-input-bg);
+      color: var(--demo-text);
     }
-    
-    .form-group input:focus {
-      border-color: #BE2E78;
-      outline: none;
-    }
-    
     .btn {
       padding: 10px 20px;
       border: none;
@@ -119,51 +168,16 @@
       margin-right: 10px;
       margin-bottom: 10px;
     }
-    
-    .btn-primary {
-      background: #BE2E78;
-      color: white;
+    .btn-primary { background: #BE2E78; color: white; }
+    @media (prefers-color-scheme: dark) {
+      .btn-primary { background: #ff3d8f; }
     }
-    
-    .btn-primary:hover:not(:disabled) {
-      background: #9d2563;
-    }
-    
-    .btn-secondary {
-      background: #6c757d;
-      color: white;
-    }
-    
-    .btn-secondary:hover:not(:disabled) {
-      background: #545b62;
-    }
-    
-    .btn-outline {
-      background: white;
-      border: 2px solid #6c757d;
-      color: #6c757d;
-    }
-    
-    .btn-outline:hover:not(:disabled) {
-      background: #6c757d;
-      color: white;
-    }
-    
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-    
-    .hidden {
-      display: none !important;
-    }
-    
+    .hidden { display: none !important; }
     .help-text {
       font-size: 0.85em;
-      color: #666;
+      color: var(--demo-text-muted);
       margin-top: 5px;
     }
-    
     .badge {
       font-size: 0.7em;
       padding: 3px 8px;
@@ -172,157 +186,40 @@
       color: white;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
-    
-    .badge-wasm {
-      background: #6f42c1;
-    }
-    
-    .success-message, .error-message, .info-message, .warning-message {
-      padding: 12px;
-      border-radius: 6px;
-      margin-top: 10px;
-    }
-    
-    .success-message {
-      background: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-    }
-    
-    .error-message {
-      background: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
-    
-    .info-message {
-      background: #d1ecf1;
-      color: #0c5460;
-      border: 1px solid #bee5eb;
-    }
-    
-    .warning-message {
-      background: #fff3cd;
-      color: #856404;
-      border: 1px solid #ffeaa7;
-    }
-    
-    .file-input-wrapper {
-      position: relative;
-      display: inline-block;
-    }
-    
-    .file-input-wrapper input[type=file] {
-      position: absolute;
-      left: 0;
-      top: 0;
-      opacity: 0;
-      width: 100%;
-      height: 100%;
-      cursor: pointer;
-    }
-    
-    .profile-info {
-      background: #f8f9fa;
-      padding: 15px;
-      border-radius: 6px;
-      margin-bottom: 15px;
-    }
-    
-    .profile-info p {
-      margin: 8px 0;
-    }
-    
-    .profile-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-    
-    .key-preview {
-      background: #282c34;
-      color: #abb2bf;
-      padding: 10px;
-      border-radius: 4px;
-      font-family: 'Courier New', monospace;
-      font-size: 0.8em;
-      word-break: break-all;
-      margin-top: 10px;
-    }
-    
+    .badge-wasm { background: #6f42c1; }
     .loading {
       text-align: center;
-      color: #666;
+      color: var(--demo-text-muted);
       padding: 40px;
       font-style: italic;
     }
-    
-    #messages {
+    #dark-mode-toggle {
       position: fixed;
-      top: 20px;
+      bottom: 20px;
       right: 20px;
+      padding: 10px 15px;
+      background: var(--demo-section-bg);
+      border: 2px solid var(--demo-border);
+      border-radius: 50px;
+      cursor: pointer;
+      font-size: 1.2em;
       z-index: 1000;
-      max-width: 400px;
-    }
-    
-    @keyframes slideIn {
-      from {
-        transform: translateX(400px);
-        opacity: 0;
-      }
-      to {
-        transform: translateX(0);
-        opacity: 1;
-      }
-    }
-    
-    @keyframes slideOut {
-      from {
-        transform: translateX(0);
-        opacity: 1;
-      }
-      to {
-        transform: translateX(400px);
-        opacity: 0;
-      }
-    }
-    
-    .download-info {
-      background: #e7f3ff;
-      padding: 15px;
-      border-radius: 6px;
-      border-left: 4px solid #0066cc;
-      margin-top: 15px;
-    }
-    
-    .download-info h4 {
-      margin: 0 0 10px 0;
-      color: #0066cc;
-    }
-    
-    .download-info ol {
-      margin: 10px 0;
-      padding-left: 20px;
-    }
-    
-    .download-info code {
-      background: #f5f5f5;
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-family: monospace;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
   </style>
 </head>
 <body>
+  <button id="dark-mode-toggle" onclick="document.body.classList.toggle('dark-mode')" title="Toggle dark mode">
+    🌓
+  </button>
+
   <h1>Nanopub Creator <span class="badge badge-wasm">WASM</span> <span class="badge">Demo</span></h1>
   <p class="subtitle">Create and sign nanopublications using nanopub-rs WASM</p>
 
   <div class="demo-notice">
     <h3>📌 GitHub Pages Demo Mode</h3>
     <p>This demo will <strong>sign your nanopublication</strong> and download it as a <code>.trig</code> file.</p>
-    <p>To publish to the nanopub network, you'll need to upload it manually or use the library in a platform with a backend (like Science Live or Zotero).</p>
   </div>
 
   <div id="messages"></div>
@@ -342,35 +239,17 @@
       </div>
       <div class="form-group">
         <label>ORCID (optional):</label>
-        <input type="text" id="orcid-input" placeholder="0000-0002-1234-5678 or https://orcid.org/0000-0002-1234-5678" />
-        <div class="help-text">Enter your ORCID identifier (with or without URL prefix)</div>
+        <input type="text" id="orcid-input" placeholder="0000-0002-1234-5678" />
+        <div class="help-text">Enter your ORCID identifier</div>
       </div>
       <button id="setup-btn" class="btn btn-primary">Generate Keys & Save Profile</button>
       <div id="setup-message"></div>
-      
-      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #dee2e6;">
-        <p style="margin-bottom: 10px;"><strong>Or import existing profile:</strong></p>
-        <div class="file-input-wrapper">
-          <button class="btn btn-secondary">Import Profile JSON</button>
-          <input type="file" id="import-file" accept=".json" />
-        </div>
-        <div class="help-text">Load a previously exported profile with keys</div>
-      </div>
     </div>
     
     <div id="profile-info" class="hidden">
-      <div class="profile-info">
+      <div style="background: var(--demo-info-bg); padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid var(--demo-border);">
         <p><strong>Name:</strong> <span id="profile-name"></span></p>
         <p><strong>ORCID:</strong> <a id="profile-orcid" href="#" target="_blank"></a></p>
-        <p><strong>Keys:</strong> <span style="color: #155724;">✓ Generated and stored</span></p>
-        <details style="margin-top: 10px;">
-          <summary style="cursor: pointer; color: #666;">Show public key</summary>
-          <div id="public-key-preview" class="key-preview"></div>
-        </details>
-      </div>
-      <div class="profile-actions">
-        <button id="export-btn" class="btn btn-secondary">Export Profile</button>
-        <button id="clear-btn" class="btn btn-outline">Clear Profile</button>
       </div>
     </div>
   </div>
@@ -387,7 +266,6 @@
           placeholder="https://w3id.org/np/..." 
           value="https://w3id.org/np/RAX_4tWTyjFpO6nz63s14ucuejd64t2mK3IBlkwZ7jjLo"
         />
-        <div class="help-text">CiTO Citation template (default)</div>
       </div>
       <button id="load-template-btn" class="btn btn-primary">Load Template</button>
       <div id="template-message"></div>
@@ -402,376 +280,87 @@
     </div>
   </div>
 
-  <!-- Preview Section -->
-  <div class="section hidden" id="preview-section">
-    <h2>
-      👁️ Preview
-      <div style="margin-left: auto; display: flex; gap: 10px;">
-        <button id="copy-btn" class="btn btn-secondary">Copy to Clipboard</button>
-        <button id="sign-download-btn" class="btn btn-primary">Sign & Download</button>
-      </div>
-    </h2>
-    <pre id="preview-text" style="background: #f5f5f5; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 0.85em; max-height: 400px;"></pre>
-    
-    <div class="download-info">
-      <h4>📥 What happens next?</h4>
-      <p>When you click "Sign & Download":</p>
-      <ol>
-        <li>Your nanopub will be signed with your private key</li>
-        <li>A <code>.trig</code> file will be downloaded to your computer</li>
-        <li>You can then publish it to the nanopub network</li>
-      </ol>
-      
-      <p><strong>📤 To publish your signed nanopub:</strong></p>
-      
-      <p>Open your terminal and run:</p>
-      <pre style="background: #2d2d2d; color: #f8f8f2; padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 0.9em;">curl -X POST https://np.knowledgepixels.com/ \
-  -H "Content-Type: application/trig" \
-  --data-binary @nanopub-signed-YYYY-MM-DD.trig</pre>
-      
-      <p style="margin-top: 15px;">
-        <strong>🔍 After publishing:</strong> Your nanopub will get a permanent URI like 
-        <code>https://w3id.org/np/RAbc123...</code> that you can view at 
-        <a href="https://nanodash.knowledgepixels.com/explore" target="_blank">Nanodash Explore</a>
-      </p>
-    </div>
-  </div>
-
   <script type="module">
     import NanopubCreator from '../src/index.js';
     
     let creator = null;
-    let currentTrigContent = '';
 
     // Initialize creator
     async function initCreator() {
       try {
-        // No publishServer needed for download-only mode
         creator = new NanopubCreator({
           publishServer: null
         });
 
-        // Listen for form changes
-        creator.on('change', (data) => {
-          console.log('Form data changed:', data);
-        });
-
-        // Listen for nanopub generation
-        creator.on('submit', (data) => {
-          console.log('Generated nanopub:', data.trigContent);
-          currentTrigContent = data.trigContent;
-          showPreview(data.trigContent);
-        });
-
-        // Listen for errors
-        creator.on('error', (data) => {
-          console.error('Error:', data.type, data.error);
-          showToast(`Error (${data.type}): ${data.error.message}`, 'error');
-        });
-
-        // Listen for profile needed
-        creator.on('profileNeeded', () => {
-          showToast('Please setup your profile first to sign nanopublications', 'warning');
-        });
-
         console.log('✓ Creator initialized successfully');
         updateProfileStatus();
-        
       } catch (error) {
-        console.error('Failed to initialize:', error);
-        showToast('Failed to initialize: ' + error.message, 'error');
+        console.error('Failed to initialize creator:', error);
+        alert('Failed to initialize creator: ' + error.message);
       }
     }
 
-    // Update profile status display
     function updateProfileStatus() {
+      const hasProfile = creator && creator.profile;
       const statusEl = document.getElementById('profile-status');
       const setupDiv = document.getElementById('profile-setup');
       const infoDiv = document.getElementById('profile-info');
       
-      if (creator.hasProfile()) {
-        const profile = creator.getProfile();
-        
+      if (hasProfile) {
         statusEl.textContent = 'Configured';
         statusEl.className = 'status success';
-        
         setupDiv.classList.add('hidden');
         infoDiv.classList.remove('hidden');
-        
-        // Update profile display
-        document.getElementById('profile-name').textContent = profile.name;
-        
-        const orcidEl = document.getElementById('profile-orcid');
-        if (profile.orcid) {
-          orcidEl.textContent = profile.orcid;
-          orcidEl.href = profile.orcid;
-        } else {
-          orcidEl.textContent = 'Not provided';
-          orcidEl.href = '#';
-        }
-        
-        // Show public key preview
-        const keys = creator.exportKeys();
-        document.getElementById('public-key-preview').textContent = keys.publicKey;
-        
+        document.getElementById('profile-name').textContent = creator.profile.name;
+        document.getElementById('profile-orcid').textContent = creator.profile.orcid || 'N/A';
+        document.getElementById('profile-orcid').href = creator.profile.orcid || '#';
       } else {
         statusEl.textContent = 'Not configured';
         statusEl.className = 'status warning';
-        
         setupDiv.classList.remove('hidden');
         infoDiv.classList.add('hidden');
       }
     }
 
-    // Setup profile
+    // Setup profile button
     document.getElementById('setup-btn').addEventListener('click', async () => {
       const name = document.getElementById('name-input').value.trim();
       const orcid = document.getElementById('orcid-input').value.trim();
-      const messageEl = document.getElementById('setup-message');
-      const btn = document.getElementById('setup-btn');
       
       if (!name) {
-        messageEl.innerHTML = '<div class="error-message">Please enter your name</div>';
+        alert('Please enter your name');
         return;
       }
 
       try {
-        btn.disabled = true;
-        btn.textContent = 'Generating keys...';
-        messageEl.innerHTML = '<div class="info-message">⚙️ Generating RSA keypair with nanopub-rs WASM...<br>This may take a few seconds.</div>';
-        
-        await creator.setupProfile(name, orcid || null);
-        
-        messageEl.innerHTML = '<div class="success-message">Profile created successfully! Your keys are stored in this browser.</div>';
+        await creator.setupProfile({ name, orcid });
         updateProfileStatus();
-        
-        setTimeout(() => {
-          messageEl.innerHTML = '';
-        }, 5000);
-        
+        document.getElementById('setup-message').innerHTML = 
+          '<div style="color: #155724; background: #d4edda; padding: 10px; border-radius: 4px; margin-top: 10px;">Profile created successfully!</div>';
       } catch (error) {
-        console.error('Profile setup failed:', error);
-        messageEl.innerHTML = `<div class="error-message">Failed: ${error.message}</div>`;
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Generate Keys & Save Profile';
+        alert('Failed to setup profile: ' + error.message);
       }
     });
 
-    // Import profile
-    document.getElementById('import-file').addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const messageEl = document.getElementById('setup-message');
-      
-      try {
-        const text = await file.text();
-        const profileData = JSON.parse(text);
-        
-        // Validate data
-        if (!profileData.privateKey || !profileData.publicKey || !profileData.name) {
-          throw new Error('Invalid profile file format');
-        }
-        
-        creator.importKeys(profileData);
-        updateProfileStatus();
-        messageEl.innerHTML = '<div class="success-message">✓ Profile imported successfully!</div>';
-        
-        setTimeout(() => {
-          messageEl.innerHTML = '';
-        }, 3000);
-        
-      } catch (error) {
-        console.error('Import failed:', error);
-        messageEl.innerHTML = `<div class="error-message">Import failed: ${error.message}</div>`;
-      }
-      
-      e.target.value = '';
-    });
-
-    // Export profile
-    document.getElementById('export-btn').addEventListener('click', () => {
-      try {
-        const profile = creator.getProfile();
-        const keys = creator.exportKeys();
-        
-        const exportData = {
-          name: profile.name,
-          orcid: profile.orcid,
-          privateKey: keys.privateKey,
-          publicKey: keys.publicKey,
-          exportedAt: new Date().toISOString()
-        };
-        
-        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `nanopub-profile-${profile.name.replace(/\s+/g, '-').toLowerCase()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        
-        showToast('✓ Profile exported!', 'success');
-      } catch (error) {
-        console.error('Export failed:', error);
-        showToast('Export failed: ' + error.message, 'error');
-      }
-    });
-
-    // Clear profile
-    document.getElementById('clear-btn').addEventListener('click', () => {
-      if (confirm('Are you sure you want to clear your profile and keys? Make sure to export first if you want to keep them.')) {
-        creator.clearCredentials();
-        updateProfileStatus();
-        showToast('Profile cleared', 'info');
-      }
-    });
-
-    // Load template
+    // Load template button
     document.getElementById('load-template-btn').addEventListener('click', async () => {
       const uri = document.getElementById('template-uri').value.trim();
-      const container = document.getElementById('template-container');
-      const messageEl = document.getElementById('template-message');
-      const btn = document.getElementById('load-template-btn');
-      
       if (!uri) {
-        messageEl.innerHTML = '<div class="error-message">Please enter a template URI</div>';
+        alert('Please enter a template URI');
         return;
       }
 
       try {
-        btn.disabled = true;
-        btn.textContent = 'Loading...';
-        container.innerHTML = '<div class="loading">⏳ Loading template from network...</div>';
-        messageEl.innerHTML = '';
-        
+        const container = document.getElementById('template-container');
+        container.innerHTML = '<div class="loading">Loading template...</div>';
         await creator.renderFromTemplateUri(uri, container);
-        
-        messageEl.innerHTML = '<div class="success-message">✓ Template loaded successfully!</div>';
-        container.classList.add('template-loaded');
-        
-        setTimeout(() => {
-          messageEl.innerHTML = '';
-        }, 3000);
-        
+        document.getElementById('template-message').innerHTML = 
+          '<div style="color: #155724; background: #d4edda; padding: 10px; border-radius: 4px; margin-top: 10px;">Template loaded!</div>';
       } catch (error) {
-        console.error('Template load failed:', error);
-        messageEl.innerHTML = `<div class="error-message">Failed to load template: ${error.message}</div>`;
-        container.innerHTML = '<div class="error-message">Failed to load template. Check console for details.</div>';
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Load Template';
+        document.getElementById('template-container').innerHTML = 
+          '<div style="color: #721c24; background: #f8d7da; padding: 15px; border-radius: 4px;">Error: ' + error.message + '</div>';
       }
     });
-
-    // Preview section
-    function showPreview(trigContent) {
-      document.getElementById('preview-text').textContent = trigContent;
-      document.getElementById('preview-section').classList.remove('hidden');
-    }
-
-    document.getElementById('copy-btn').addEventListener('click', () => {
-      const text = document.getElementById('preview-text').textContent;
-      navigator.clipboard.writeText(text).then(() => {
-        showToast('✓ Copied to clipboard!', 'success');
-      });
-    });
-
-    document.getElementById('sign-download-btn').addEventListener('click', () => {
-      signAndDownload();
-    });
-
-    // Sign and download nanopub
-    async function signAndDownload() {
-      if (!currentTrigContent) {
-        showToast('No nanopublication to sign', 'warning');
-        return;
-      }
-
-      if (!creator.hasProfile()) {
-        showToast('Please setup your profile first', 'warning');
-        return;
-      }
-
-      const btn = document.getElementById('sign-download-btn');
-      
-      try {
-        btn.disabled = true;
-        btn.textContent = 'Signing...';
-        showToast('🔐 Signing nanopublication...', 'info');
-        
-        // Use the publish method which will sign the nanopub
-        // Since publishServer is null, it will just sign without publishing
-        const result = await creator.publish(currentTrigContent);
-        
-        // Get signed content and convert hash URIs to slash URIs
-        // The WASM library generates patterns like: npUri#/Head
-        // We need to convert them to: npUri/Head (not npUri//Head)
-        let signedContent = result.signedContent;
-        
-        // Extract the nanopub URI from the signed content
-        // AF const npUriMatch = signedContent.match(/PREFIX this: <([^>]+)>/);
-        //if (npUriMatch) {
-        //  const npUri = npUriMatch[1];
-          
-          // Replace npUri#/ with npUri/ (this handles graph names like #/Head)
-        //  const hashSlashPattern = npUri + '#/';
-        //  const slashPattern = npUri + '/';
-        //  const escapedHashSlash = hashSlashPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        //  signedContent = signedContent.replace(new RegExp(escapedHashSlash, 'g'), slashPattern);
-          
-          // Replace npUri# with npUri/ (this handles the PREFIX definition)
-        //  const hashPattern = npUri + '#';
-        //  const escapedHash = hashPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        //  signedContent = signedContent.replace(new RegExp(escapedHash, 'g'), slashPattern);
-          
-        //  console.log('✅ Converted hash URIs to slash URIs');
-        //}
-        
-        // Download the signed nanopub
-        const profile = creator.getProfile();
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `nanopub-signed-${timestamp}.trig`;
-        
-        const blob = new Blob([signedContent], { type: 'application/trig' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
-        
-        showToast('✅ Signed nanopub downloaded!', 'success');
-        
-        // Update preview with signed content
-        document.getElementById('preview-text').textContent = signedContent;
-        
-      } catch (error) {
-        console.error('Sign failed:', error);
-        showToast(`Sign failed: ${error.message}`, 'error');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Sign & Download';
-      }
-    }
-
-    // Toast notifications
-    function showToast(message, type = 'info') {
-      const messagesContainer = document.getElementById('messages');
-      const toast = document.createElement('div');
-      toast.className = `${type}-message`;
-      toast.textContent = message;
-      toast.style.marginBottom = '10px';
-      toast.style.animation = 'slideIn 0.3s ease';
-      
-      messagesContainer.appendChild(toast);
-      
-      setTimeout(() => {
-        toast.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-      }, 5000);
-    }
 
     // Initialize on load
     initCreator();

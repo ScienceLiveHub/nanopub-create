@@ -1,5 +1,6 @@
 /**
  * Button Styles
+ * Now with Dark Mode Support!
  */
 
 /* Form Controls (Buttons Container) */
@@ -43,6 +44,19 @@
   box-shadow: 0 4px 12px rgba(190, 46, 120, 0.3);
 }
 
+/* Dark mode primary button hover - adjust shadow */
+@media (prefers-color-scheme: dark) {
+  .btn-primary:hover:not(:disabled) {
+    box-shadow: 0 4px 12px rgba(255, 61, 143, 0.4);
+  }
+}
+
+[data-theme="dark"] .btn-primary:hover:not(:disabled),
+.dark-mode .btn-primary:hover:not(:disabled),
+body.dark .btn-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(255, 61, 143, 0.4);
+}
+
 /* Secondary Button */
 .btn-secondary {
   background: var(--secondary);
@@ -55,9 +69,22 @@
   box-shadow: 0 4px 12px rgba(43, 52, 86, 0.3);
 }
 
+/* Dark mode secondary button hover */
+@media (prefers-color-scheme: dark) {
+  .btn-secondary:hover:not(:disabled) {
+    box-shadow: 0 4px 12px rgba(123, 155, 212, 0.4);
+  }
+}
+
+[data-theme="dark"] .btn-secondary:hover:not(:disabled),
+.dark-mode .btn-secondary:hover:not(:disabled),
+body.dark .btn-secondary:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(123, 155, 212, 0.4);
+}
+
 /* Outline Button */
 .btn-outline {
-  background: white;
+  background: var(--bg-white); /* Changed from hardcoded white */
   color: var(--primary);
   border: 2px solid var(--primary);
 }
@@ -93,6 +120,23 @@
   box-shadow: 0 4px 12px rgba(43, 52, 86, 0.3);
 }
 
+/* Dark mode add button hover */
+@media (prefers-color-scheme: dark) {
+  .btn-add:hover:not(:disabled),
+  .btn-add-field:hover:not(:disabled) {
+    box-shadow: 0 4px 12px rgba(123, 155, 212, 0.4);
+  }
+}
+
+[data-theme="dark"] .btn-add:hover:not(:disabled),
+[data-theme="dark"] .btn-add-field:hover:not(:disabled),
+.dark-mode .btn-add:hover:not(:disabled),
+.dark-mode .btn-add-field:hover:not(:disabled),
+body.dark .btn-add:hover:not(:disabled),
+body.dark .btn-add-field:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(123, 155, 212, 0.4);
+}
+
 /* Remove Button */
 .btn-remove {
   background: #dc2626;
@@ -112,6 +156,29 @@
 .btn-remove:hover:not(:disabled) {
   background: #b91c1c;
   transform: translateY(-1px);
+}
+
+/* Dark mode remove button - slightly brighter */
+@media (prefers-color-scheme: dark) {
+  .btn-remove {
+    background: #ef4444;
+  }
+  
+  .btn-remove:hover:not(:disabled) {
+    background: #dc2626;
+  }
+}
+
+[data-theme="dark"] .btn-remove,
+.dark-mode .btn-remove,
+body.dark .btn-remove {
+  background: #ef4444;
+}
+
+[data-theme="dark"] .btn-remove:hover:not(:disabled),
+.dark-mode .btn-remove:hover:not(:disabled),
+body.dark .btn-remove:hover:not(:disabled) {
+  background: #dc2626;
 }
 
 /* Repeatable Controls */

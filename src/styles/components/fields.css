@@ -1,5 +1,6 @@
 /**
  * Form Fields Styles
+ * Now with Dark Mode Support!
  */
 
 /* Form Fields */
@@ -34,7 +35,7 @@
   font-size: 0.85em;
 }
 
-/* Form Inputs */
+/* Form Inputs - Now using CSS variables for dark mode support */
 .form-input,
 .form-select,
 .form-textarea {
@@ -45,7 +46,8 @@
   font-size: 0.95em;
   font-family: inherit;
   transition: border-color 0.2s, box-shadow 0.2s;
-  background: white;
+  background: var(--bg-white); /* Changed from hardcoded white */
+  color: var(--text-dark);     /* Added for dark mode text visibility */
 }
 
 .form-select {
@@ -56,6 +58,20 @@
   background-size: 12px;
   padding-right: 2.5rem;
   cursor: pointer;
+  background-color: var(--bg-white); /* Ensure background uses variable */
+}
+
+/* Dark mode: Update dropdown arrow color */
+@media (prefers-color-scheme: dark) {
+  .form-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0a0a0' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  }
+}
+
+[data-theme="dark"] .form-select,
+.dark-mode .form-select,
+body.dark .form-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0a0a0' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
 }
 
 .form-select:hover {
@@ -70,8 +86,31 @@
   box-shadow: 0 0 0 3px rgba(190, 46, 120, 0.15);
 }
 
+/* Dark mode focus shadow adjustment */
+@media (prefers-color-scheme: dark) {
+  .form-input:focus,
+  .form-select:focus,
+  .form-textarea:focus {
+    box-shadow: 0 0 0 3px rgba(255, 61, 143, 0.25);
+  }
+}
+
+[data-theme="dark"] .form-input:focus,
+[data-theme="dark"] .form-select:focus,
+[data-theme="dark"] .form-textarea:focus,
+.dark-mode .form-input:focus,
+.dark-mode .form-select:focus,
+.dark-mode .form-textarea:focus,
+body.dark .form-input:focus,
+body.dark .form-select:focus,
+body.dark .form-textarea:focus {
+  box-shadow: 0 0 0 3px rgba(255, 61, 143, 0.25);
+}
+
 .form-select option {
   padding: 0.5rem;
+  background: var(--bg-white);
+  color: var(--text-dark);
 }
 
 .form-select option:first-child {
@@ -109,6 +148,21 @@
   text-transform: uppercase;
 }
 
+/* Dark mode badge adjustments */
+@media (prefers-color-scheme: dark) {
+  .required-badge {
+    background: #854d0e;
+    color: #fef3c7;
+  }
+}
+
+[data-theme="dark"] .required-badge,
+.dark-mode .required-badge,
+body.dark .required-badge {
+  background: #854d0e;
+  color: #fef3c7;
+}
+
 .form-field.required {
   border-left: 3px solid #fbbf24;
   padding-left: 12px;
@@ -125,7 +179,7 @@
 }
 
 .field-hint code {
-  background: #f3f4f6;
+  background: var(--bg-subtle);
   padding: 2px 6px;
   border-radius: 3px;
   font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
@@ -139,14 +193,14 @@
   color: var(--text-light);
   margin-top: 8px;
   padding: 8px 12px;
-  background: #f9fafb;
+  background: var(--bg-light);
   border-radius: 4px;
   border-left: 3px solid var(--primary);
   animation: slideIn 0.2s ease-out;
 }
 
 .identifier-preview code {
-  background: #f3f4f6;
+  background: var(--bg-subtle);
   padding: 2px 6px;
   border-radius: 3px;
   font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
@@ -182,11 +236,57 @@
   background: #f0fdf4;
 }
 
+/* Dark mode validation success */
+@media (prefers-color-scheme: dark) {
+  .form-field.valid .form-input,
+  .form-field.valid .form-select,
+  .form-field.valid .form-textarea {
+    background: #064e3b;
+    border-color: #34d399;
+  }
+}
+
+[data-theme="dark"] .form-field.valid .form-input,
+[data-theme="dark"] .form-field.valid .form-select,
+[data-theme="dark"] .form-field.valid .form-textarea,
+.dark-mode .form-field.valid .form-input,
+.dark-mode .form-field.valid .form-select,
+.dark-mode .form-field.valid .form-textarea,
+body.dark .form-field.valid .form-input,
+body.dark .form-field.valid .form-select,
+body.dark .form-field.valid .form-textarea {
+  background: #064e3b;
+  border-color: #34d399;
+}
+
 .form-field.invalid .form-input,
 .form-field.invalid .form-select,
 .form-field.invalid .form-textarea {
   border-color: #ef4444;
   background: #fef2f2;
+}
+
+/* Dark mode validation error */
+@media (prefers-color-scheme: dark) {
+  .form-field.invalid .form-input,
+  .form-field.invalid .form-select,
+  .form-field.invalid .form-textarea {
+    background: #450a0a;
+    border-color: #f87171;
+  }
+}
+
+[data-theme="dark"] .form-field.invalid .form-input,
+[data-theme="dark"] .form-field.invalid .form-select,
+[data-theme="dark"] .form-field.invalid .form-textarea,
+.dark-mode .form-field.invalid .form-input,
+.dark-mode .form-field.invalid .form-select,
+.dark-mode .form-field.invalid .form-textarea,
+body.dark .form-field.invalid .form-input,
+body.dark .form-field.invalid .form-select,
+body.dark .form-field.invalid .form-textarea {
+  background: #450a0a;
+  border-color: #f87171;
 }
 
 .validation-message {
@@ -205,6 +305,28 @@
   color: #dc2626;
 }
 
+/* Dark mode validation messages */
+@media (prefers-color-scheme: dark) {
+  .validation-message.success {
+    color: #6ee7b7;
+  }
+  .validation-message.error {
+    color: #fca5a5;
+  }
+}
+
+[data-theme="dark"] .validation-message.success,
+.dark-mode .validation-message.success,
+body.dark .validation-message.success {
+  color: #6ee7b7;
+}
+
+[data-theme="dark"] .validation-message.error,
+.dark-mode .validation-message.error,
+body.dark .validation-message.error {
+  color: #fca5a5;
+}
+
 /* Validation */
 .form-field.error .form-input,
 .form-field.error .form-select,
@@ -219,6 +341,19 @@
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+/* Dark mode field error */
+@media (prefers-color-scheme: dark) {
+  .field-error {
+    color: #fca5a5;
+  }
+}
+
+[data-theme="dark"] .field-error,
+.dark-mode .field-error,
+body.dark .field-error {
+  color: #fca5a5;
 }
 
 /* Readonly Fields */
@@ -244,12 +379,40 @@
   border-color: #86efac !important;
 }
 
+/* Dark mode auto-fill */
+@media (prefers-color-scheme: dark) {
+  .auto-filled {
+    background: #064e3b !important;
+    border-color: #34d399 !important;
+  }
+}
+
+[data-theme="dark"] .auto-filled,
+.dark-mode .auto-filled,
+body.dark .auto-filled {
+  background: #064e3b !important;
+  border-color: #34d399 !important;
+}
+
 .auto-fill-indicator {
   font-size: 0.75em;
   color: #059669;
   margin-top: 4px;
   font-weight: 500;
   animation: fadeIn 0.3s ease-in;
+}
+
+/* Dark mode auto-fill indicator */
+@media (prefers-color-scheme: dark) {
+  .auto-fill-indicator {
+    color: #6ee7b7;
+  }
+}
+
+[data-theme="dark"] .auto-fill-indicator,
+.dark-mode .auto-fill-indicator,
+body.dark .auto-fill-indicator {
+  color: #6ee7b7;
 }
 
 @keyframes fadeIn {
@@ -271,10 +434,42 @@
   font-family: inherit;
 }
 
+/* Dark mode suggestion button */
+@media (prefers-color-scheme: dark) {
+  .btn-suggestion {
+    background: #064e3b;
+    border-color: #34d399;
+    color: #6ee7b7;
+  }
+}
+
+[data-theme="dark"] .btn-suggestion,
+.dark-mode .btn-suggestion,
+body.dark .btn-suggestion {
+  background: #064e3b;
+  border-color: #34d399;
+  color: #6ee7b7;
+}
+
 .btn-suggestion:hover {
   background: #dcfce7;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(5, 150, 105, 0.2);
+}
+
+/* Dark mode suggestion button hover */
+@media (prefers-color-scheme: dark) {
+  .btn-suggestion:hover {
+    background: #065f46;
+    box-shadow: 0 2px 8px rgba(52, 211, 153, 0.3);
+  }
+}
+
+[data-theme="dark"] .btn-suggestion:hover,
+.dark-mode .btn-suggestion:hover,
+body.dark .btn-suggestion:hover {
+  background: #065f46;
+  box-shadow: 0 2px 8px rgba(52, 211, 153, 0.3);
 }
 
 .autocomplete-hint {
@@ -286,7 +481,7 @@
 
 /* Progress Indicator */
 .form-progress-header {
-  background: white;
+  background: var(--bg-white);
   padding: 15px;
   border-radius: 6px;
   margin-bottom: 20px;
