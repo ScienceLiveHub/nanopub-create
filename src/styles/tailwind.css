@@ -1,0 +1,74 @@
+/* Tailwind v4 CSS - src/styles/tailwind.css */
+@import "tailwindcss";
+
+/* Custom theme configuration in CSS */
+@theme {
+  --color-nanopub-primary: #BE2E78;
+  --color-nanopub-primary-hover: #a02660;
+  --color-nanopub-secondary: #101E43;
+  
+  --color-nanopub-pink-50: #fef0f7;
+  --color-nanopub-pink-100: #fce7f0;
+  --color-nanopub-pink-500: #BE2E78;
+  --color-nanopub-pink-600: #a02660;
+  --color-nanopub-pink-900: #3d2432;
+  --color-nanopub-pink-950: #2a1a23;
+}
+
+/* Custom component utilities - v4 style */
+@utility np-form-container {
+  max-width: 56rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1.5rem;
+  background-color: white;
+  
+  @media (prefers-color-scheme: dark) {
+    background-color: rgb(17 24 39);
+  }
+}
+
+@utility np-field-input {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border-width: 2px;
+  border-color: rgb(209 213 219);
+  border-radius: 0.5rem;
+  background-color: white;
+  color: rgb(17 24 39);
+  
+  &:focus {
+    outline: none;
+    border-color: var(--color-nanopub-primary);
+    box-shadow: 0 0 0 3px rgba(190, 46, 120, 0.1);
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    border-color: rgb(75 85 99);
+    background-color: rgb(31 41 55);
+    color: rgb(229 231 235);
+  }
+}
+
+@utility np-submit-button {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--color-nanopub-primary);
+  color: white;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background-color: var(--color-nanopub-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+}

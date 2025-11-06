@@ -3,6 +3,7 @@
  * Main entry point with profile management and signing
  */
 
+import './styles/tailwind.css';
 import './styles/styles-index.css';
 
 import { StorageAdapter } from './core/storage-adapter.js';
