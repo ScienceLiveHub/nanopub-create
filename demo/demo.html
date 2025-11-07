@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nanopub Creator Demo</title>
+  
+  <!-- Import all styles -->
+  <link rel="stylesheet" href="../src/styles/styles-index.css">
+</head>
+<body>
+  <div id="app">
+    <h1>Nanopub Creator Demo</h1>
+    <div id="form-container"></div>
+  </div>
+
+  <script type="module">
+    import { createFormFromTemplate } from '../src/index.js';
+    
+    // Geographical template
+    const templateUri = 'https://w3id.org/np/RAsPVd3bNOPg5vxQGc1Tqn69v3dSY-ASrAhEFioutCXao';
+    const container = document.getElementById('form-container');
+    
+    const formGenerator = await createFormFromTemplate(templateUri, container);
+    
+    console.log('Form ready!');
+  </script>
+</body>
+</html>
