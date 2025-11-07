@@ -25,7 +25,7 @@
 }
 
 /* ============================================
-   FORM COMPONENTS
+   BASE FORM COMPONENTS
    ============================================ */
 
 /* Form container */
@@ -205,7 +205,7 @@
   }
 }
 
-/* Assertion/Subject boxes */
+/* Default assertion/subject boxes */
 @utility assertion-box {
   background-color: var(--color-nanopub-pink-50);
   border-width: 2px;
@@ -479,6 +479,51 @@
     background-color: rgb(69 10 10) !important;
     border-color: rgb(248 113 113) !important;
   }
+}
+
+/* ============================================
+   COMPATIBILITY LAYER
+   ============================================ */
+
+/* Map old class names to new Tailwind utilities */
+.form-input {
+  @apply field-input;
+}
+
+.form-textarea {
+  @apply field-textarea;
+}
+
+.form-select {
+  @apply field-select;
+}
+
+.form-field {
+  @apply field-container;
+}
+
+.btn-primary {
+  @apply submit-button;
+}
+
+.btn-add-field {
+  @apply button-add;
+}
+
+.btn-remove-field {
+  @apply button-remove;
+}
+
+.subject-group {
+  @apply assertion-box;
+}
+
+.readonly-field {
+  @apply field-container opacity-70;
+}
+
+.repeatable-controls {
+  @apply flex gap-2 mt-3;
 }
 
 /* ============================================

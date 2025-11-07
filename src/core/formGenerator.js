@@ -38,7 +38,82 @@ export class FormGenerator {
     this.customization = new CustomizationClass(template);
     
     console.log(`[FormGenerator] Using customization: ${this.customization.constructor.name}`);
+
+    this.tailwindCustomization = template.customization || {};
+
+    if (this.tailwindCustomization.fieldClasses) {
+      console.log('[FormGenerator] Template has Tailwind customization');
+    }
   }
+
+// ============================================
+// TAILWIND CLASS HELPERS
+// ============================================
+
+/**
+ * Get Tailwind classes for a specific field
+ */
+getFieldClasses(fieldName, fieldType) {
+  const defaultClasses = {
+    'text': 'field-input',
+    'email': 'field-input',
+    'url': 'field-input',
+    'textarea': 'field-textarea',
+    'select': 'field-select'
+  };
+  
+  const baseClass = defaultClasses[fieldType] || 'field-input';
+  const customClass = this.tailwindCustomization.fieldClasses?.[fieldName];
+  
+  return customClass || baseClass;
+}
+
+/**
+ * Get Tailwind classes for a group/container
+ */
+getGroupClasses(groupName) {
+  const customClass = this.tailwindCustomization.groupClasses?.[groupName];
+  return customClass || 'assertion-box';
+}
+
+/**
+ * Inject template-specific CSS if provided
+ */
+injectCustomStyles(container) {
+  // Remove any existing template styles
+  const existingStyles = container.querySelectorAll('[data-template-styles]');
+  existingStyles.forEach(el => el.remove());
+  
+  // Inject custom CSS if template provides it
+  if (this.tailwindCustomization.customCSS) {
+    const style = document.createElement('style');
+    style.setAttribute('data-template-styles', 'true');
+    style.textContent = this.tailwindCustomization.customCSS;
+    container.prepend(style);
+  }
+  
+  // Apply theme colors
+  if (this.tailwindCustomization.theme) {
+    this.applyTheme(container, this.tailwindCustomization.theme);
+  }
+}
+
+/**
+ * Apply theme colors via CSS variables
+ */
+applyTheme(container, theme) {
+  const styleVars = [];
+  
+  if (theme.primary) styleVars.push(`--color-template-primary: ${theme.primary}`);
+  if (theme.secondary) styleVars.push(`--color-template-secondary: ${theme.secondary}`);
+  if (theme.background) styleVars.push(`--color-template-bg: ${theme.background}`);
+  if (theme.border) styleVars.push(`--color-template-border: ${theme.border}`);
+  
+  if (styleVars.length > 0) {
+    const currentStyle = container.style.cssText;
+    container.style.cssText = currentStyle + '; ' + styleVars.join('; ');
+  }
+}
 
   /**
    * Get label for URI or placeholder
@@ -209,19 +284,28 @@ export class FormGenerator {
     console.log('Rendering form with template:', this.template);
     
     this.formElement = document.createElement('form');
-    this.formElement.className = 'nanopub-form';
+    this.formElement.className = 'form-container';
+
+    if (typeof container === 'string') {
+      container = document.querySelector(container);
+    }
+
+    if (container) {
+      this.injectCustomStyles(container);
+    }
     
     // Header
     const header = document.createElement('div');
-    header.className = 'form-header';
+    header.className = 'mb-6';
     
     const title = document.createElement('h2');
+    title.className = 'text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2';
     title.textContent = this.template.label || 'Nanopublication Template';
     header.appendChild(title);
     
     if (this.template.description) {
       const desc = document.createElement('p');
-      desc.className = 'form-description';
+      desc.className = 'text-gray-600 dark:text-gray-400 text-sm';
       desc.textContent = this.template.description;
       header.appendChild(desc);
     }
@@ -230,7 +314,7 @@ export class FormGenerator {
     
     // Fields
     const fieldsContainer = document.createElement('div');
-    fieldsContainer.className = 'form-fields';
+    fieldsContainer.className = 'space-y-6';
     
     this.renderFields(fieldsContainer);
     
@@ -258,7 +342,10 @@ export class FormGenerator {
    */
   renderFields(container) {
     if (!this.template.statements || this.template.statements.length === 0) {
-      container.innerHTML = '<div class="empty-state"><h3>No fields to display</h3></div>';
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.innerHTML = '<h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">No fields to display</h3>';
+      container.appendChild(empty);
       return;
     }
 
@@ -764,7 +851,7 @@ export class FormGenerator {
     // Fallback to text input
     const input = document.createElement('input');
     input.type = 'text';
-    input.className = 'form-input';
+    input.className = this.getFieldClasses(placeholder.id, 'text');;
     input.placeholder = placeholder.label || '';
     return input;
   }

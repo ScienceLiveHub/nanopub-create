@@ -1,7 +1,43 @@
 /**
  * Main CSS Entry Point
- * Import all modular stylesheets
+ * 
+ * Import order matters:
+ * 1. Base Tailwind (global utilities)
+ * 2. Template-specific styles (scoped overrides)
  */
 
-/* Template-specific styles */
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+/* Import base Tailwind utilities and theme */
+@import './tailwind.base.css';
+
+/* ============================================
+   TEMPLATE-SPECIFIC STYLES
+   ============================================ */
+
+/* Geographical Coverage Template */
 @import './templates/geographical.css';
+
+/* Add more template imports here as they're created */
+/* @import './templates/aida.css'; */
+/* @import './templates/cito.css'; */
+/* @import './templates/yourtemplate.css'; */
+
+/* ============================================
+   NOTES
+   ============================================
+   
+   - Base Tailwind provides: field-input, field-textarea, 
+     submit-button, assertion-box, etc.
+   
+   - Template CSS files should:
+     * Scope all styles with .template-{name}
+     * Define custom colors as CSS variables
+     * Only override what's necessary
+     * Support dark mode
+   
+   - Keep this file clean - only imports!
+   
+   ============================================ */

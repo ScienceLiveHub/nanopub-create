@@ -1,43 +1,234 @@
 /**
  * Geographical Template Specific Styles
+ * 
+ * This file contains ONLY the customizations specific to the geographical template.
+ * Base styles come from tailwind.base.css
+ * 
+ * Template URI: https://w3id.org/np/RAsPVd3bNOPg5vxQGc1Tqn69v3dSY-ASrAhEFioutCXao
  */
 
-/* Apply specific class to form when using geographical template */
-/* Usage: Add class "template-geographical" to form container */
+/* ============================================
+   GEOGRAPHICAL TEMPLATE THEME
+   ============================================ */
 
+.template-geographical {
+  /* Custom theme colors for geographical template */
+  --geo-primary: #059669; /* Emerald green for geography */
+  --geo-primary-light: #10b981;
+  --geo-primary-lighter: #d1fae5;
+  --geo-primary-lightest: #f0fdf4;
+  
+  --geo-accent: #fbbf24; /* Amber for citations */
+  --geo-accent-light: #fef3c7;
+}
+
+/* ============================================
+   GEOMETRY & LOCATION FIELDS
+   ============================================ */
+
+/* Geometry group (replaces the generic assertion-box with geo-specific styling) */
 .template-geographical .geometry-group {
-  /* Custom styling for geometry+WKT group */
-  border-left: 3px solid #059669;
+  background-color: var(--geo-primary-lightest);
+  border-left: 3px solid var(--geo-primary);
+  border-width: 2px;
+  border-left-width: 4px;
+  border-color: var(--geo-primary-lighter);
+  border-left-color: var(--geo-primary);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  box-shadow: 0 1px 3px rgba(5, 150, 105, 0.1);
+  transition: all 0.2s ease;
 }
 
-.template-geographical .geometry-group .optional-toggle {
-  background: #f0fdf4;
-  border-color: #86efac;
+.template-geographical .geometry-group:hover {
+  border-left-color: var(--geo-primary-light);
+  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.15);
 }
 
-.template-geographical .geometry-group:not(.collapsed) .optional-toggle {
-  background: #dcfce7;
-  border-color: #059669;
+/* Dark mode for geometry group */
+.dark .template-geographical .geometry-group {
+  background-color: rgba(5, 150, 105, 0.1);
+  border-color: rgba(5, 150, 105, 0.3);
+  border-left-color: var(--geo-primary);
 }
 
+/* Collapsible toggle styling for geometry group */
+.template-geographical .geometry-group .collapsible-header {
+  background: var(--geo-primary-lightest);
+  border-color: var(--geo-primary-lighter);
+}
+
+.template-geographical .geometry-group .collapsible-header:hover {
+  background: var(--geo-primary-light);
+  border-color: var(--geo-primary);
+}
+
+.template-geographical .geometry-group:not(.collapsed) .collapsible-header {
+  background: var(--geo-primary-lighter);
+  border-color: var(--geo-primary);
+}
+
+.dark .template-geographical .geometry-group .collapsible-header {
+  background: rgba(5, 150, 105, 0.15);
+  border-color: rgba(5, 150, 105, 0.4);
+}
+
+.dark .template-geographical .geometry-group .collapsible-header:hover {
+  background: rgba(5, 150, 105, 0.25);
+}
+
+/* Location field highlighting */
 .template-geographical .location-field {
-  /* Highlight location fields */
   position: relative;
 }
 
-.template-geographical .wkt-field {
-  /* Monospace font for WKT coordinates */
-  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
-  font-size: 0.9em;
+.template-geographical .location-field::before {
+  content: '📍';
+  position: absolute;
+  left: -1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
 }
 
-/* Paper citation styling */
+/* WKT field (Well-Known Text for coordinates) */
+.template-geographical .wkt-field {
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-size: 0.9em;
+  letter-spacing: 0.02em;
+  background-color: #f8f9fa;
+  border-color: var(--geo-primary-lighter);
+}
+
+.template-geographical .wkt-field:focus {
+  border-color: var(--geo-primary);
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+}
+
+.dark .template-geographical .wkt-field {
+  background-color: rgba(5, 150, 105, 0.05);
+  border-color: rgba(5, 150, 105, 0.3);
+}
+
+.dark .template-geographical .wkt-field:focus {
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.25);
+}
+
+/* ============================================
+   PAPER CITATION SECTION
+   ============================================ */
+
+/* Paper citation group styling */
 .template-geographical .paper-citation {
-  background: #fef3c7;
-  border-left: 3px solid #fbbf24;
+  background: var(--geo-accent-light);
+  border-left: 3px solid var(--geo-accent);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  margin: 1rem 0;
+  box-shadow: 0 1px 2px rgba(251, 191, 36, 0.1);
+}
+
+.dark .template-geographical .paper-citation {
+  background: rgba(251, 191, 36, 0.1);
+  border-left-color: var(--geo-accent);
 }
 
 /* DOI field styling */
 .template-geographical .doi-field {
   font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-size: 0.9em;
+  background-color: #fffbeb;
+  border-color: #fef3c7;
+}
+
+.template-geographical .doi-field:focus {
+  border-color: var(--geo-accent);
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.15);
+}
+
+.dark .template-geographical .doi-field {
+  background-color: rgba(251, 191, 36, 0.05);
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+/* ============================================
+   FIELD HINTS & HELPERS
+   ============================================ */
+
+/* Custom field hint styling for geographical template */
+.template-geographical .field-hint {
+  margin-top: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  background-color: var(--geo-primary-lightest);
+  border-left: 3px solid var(--geo-primary-light);
+  border-radius: 0.375rem;
+  font-size: 0.85rem;
+  color: rgb(5, 78, 59);
+}
+
+.template-geographical .field-hint code {
+  background-color: white;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-size: 0.85em;
+  color: var(--geo-primary);
+  border: 1px solid var(--geo-primary-lighter);
+}
+
+.dark .template-geographical .field-hint {
+  background-color: rgba(5, 150, 105, 0.15);
+  border-left-color: var(--geo-primary);
+  color: rgb(167, 243, 208);
+}
+
+.dark .template-geographical .field-hint code {
+  background-color: rgba(5, 150, 105, 0.1);
+  border-color: rgba(5, 150, 105, 0.4);
+  color: rgb(167, 243, 208);
+}
+
+/* ============================================
+   SPECIAL BADGES & LABELS
+   ============================================ */
+
+/* Geography-specific badge */
+.template-geographical .geo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  background-color: var(--geo-primary-lighter);
+  color: rgb(5, 78, 59);
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.template-geographical .geo-badge::before {
+  content: '🌍';
+  font-size: 0.875rem;
+}
+
+.dark .template-geographical .geo-badge {
+  background-color: rgba(5, 150, 105, 0.2);
+  color: rgb(167, 243, 208);
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+
+@media (max-width: 640px) {
+  .template-geographical .geometry-group {
+    padding: 1rem;
+    margin: 1rem 0;
+  }
+  
+  .template-geographical .location-field::before {
+    display: none; /* Hide emoji on mobile to save space */
+  }
 }

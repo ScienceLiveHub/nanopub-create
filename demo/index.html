@@ -374,8 +374,6 @@
         }
         
         await creator.renderFromTemplateUri(uri, container);
-        document.getElementById('template-message').innerHTML = 
-          '<div style="color: #155724; background: #d4edda; padding: 10px; border-radius: 4px; margin-top: 10px;">Template loaded with Tailwind v4 styling!</div>';
       } catch (error) {
         document.getElementById('template-container').innerHTML = 
           '<div style="color: #721c24; background: #f8d7da; padding: 15px; border-radius: 4px;">Error: ' + error.message + '</div>';
