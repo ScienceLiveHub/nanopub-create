@@ -1,134 +1,112 @@
 /**
  * Field rendering components for different placeholder types
- * Extracted from formGenerator.js (lines 10-215)
+ * Updated to use UI component library
  */
+
+import { createInput, createTextarea, createSelect } from './ui/index.js';
 
 export const FieldComponents = {
   
   'LiteralPlaceholder': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || '';
-    if (placeholder.validation?.regex) {
-      input.pattern = placeholder.validation.regex;
-    }
-    return input;
+    return createInput({
+      type: 'text',
+      placeholder: placeholder.label || '',
+      attrs: placeholder.validation?.regex ? { pattern: placeholder.validation.regex } : {}
+    });
   },
   
   'LongLiteralPlaceholder': (placeholder) => {
-    const textarea = document.createElement('textarea');
-    textarea.className = 'form-input';
-    textarea.rows = 5;
-    textarea.placeholder = placeholder.label || '';
-    return textarea;
+    return createTextarea({
+      rows: 5,
+      placeholder: placeholder.label || ''
+    });
   },
   
   'ExternalUriPlaceholder': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'url';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || 'https://...';
-    return input;
+    return createInput({
+      type: 'url',
+      placeholder: placeholder.label || 'https://...'
+    });
   },
   
   'UriPlaceholder': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'url';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || 'https://...';
-    return input;
+    return createInput({
+      type: 'url',
+      placeholder: placeholder.label || 'https://...'
+    });
   },
   
   'TrustyUriPlaceholder': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'url';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || 'https://...';
-    return input;
+    return createInput({
+      type: 'url',
+      placeholder: placeholder.label || 'https://...'
+    });
   },
   
   'RestrictedChoicePlaceholder': (placeholder) => {
-    const select = document.createElement('select');
-    select.className = 'form-select';
-    
-    // Only add "Select..." if there are multiple options
-    if (placeholder.options && placeholder.options.length > 1) {
-      const emptyOption = document.createElement('option');
-      emptyOption.value = '';
-      emptyOption.textContent = 'Select...';
-      select.appendChild(emptyOption);
-    }
-    
     console.log(`[RestrictedChoice] Rendering ${placeholder.id} with ${placeholder.options?.length || 0} options`);
     
-    // Options are loaded by templateParser
+    const items = [];
+    
+    // Convert options to items array
     if (placeholder.options && Array.isArray(placeholder.options)) {
-      placeholder.options.forEach((opt, idx) => {
-        const option = document.createElement('option');
-        option.value = opt.value || opt;
-        option.textContent = opt.label || opt.value || opt;
-        
-        // Auto-select if only one option
-        if (placeholder.options.length === 1) {
-          option.selected = true;
-        }
-        
-        select.appendChild(option);
+      placeholder.options.forEach(opt => {
+        items.push({
+          value: opt.value || opt,
+          label: opt.label || opt.value || opt
+        });
       });
     } else {
       console.warn(`[RestrictedChoice] No options found for ${placeholder.id}`);
     }
     
-    return select;
+    return createSelect({
+      items,
+      placeholder: items.length > 1 ? 'Select...' : undefined,
+      value: items.length === 1 ? items[0].value : undefined
+    });
   },
   
   'GuidedChoicePlaceholder': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || 'Type to search...';
-    input.setAttribute('data-guided-choice', 'true');
-    return input;
+    return createInput({
+      type: 'text',
+      placeholder: placeholder.label || 'Type to search...',
+      attrs: { 'data-guided-choice': 'true' }
+    });
   },
   
   'IntroducedResource': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || 'Enter identifier';
-    return input;
+    return createInput({
+      type: 'text',
+      placeholder: placeholder.label || 'Enter identifier'
+    });
   },
   
   'LocalResource': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || 'Enter identifier';
-    return input;
+    return createInput({
+      type: 'text',
+      placeholder: placeholder.label || 'Enter identifier'
+    });
   },
   
   'ValuePlaceholder': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || 'Enter value';
-    return input;
+    return createInput({
+      type: 'text',
+      placeholder: placeholder.label || 'Enter value'
+    });
   },
   
   'AutoEscapeUriPlaceholder': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || '';
-    return input;
+    return createInput({
+      type: 'text',
+      placeholder: placeholder.label || ''
+    });
   },
   
   'AgentPlaceholder': (placeholder) => {
-    const input = document.createElement('input');
-    input.type = 'url';
-    input.className = 'form-input';
-    input.placeholder = placeholder.label || 'https://orcid.org/...';
-    return input;
+    return createInput({
+      type: 'url',
+      placeholder: placeholder.label || 'https://orcid.org/...'
+    });
   }
 };

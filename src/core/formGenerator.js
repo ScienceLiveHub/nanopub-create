@@ -3,6 +3,19 @@
  * Maps placeholder types to rendering components
  */
 
+import {
+  createInput,
+  createInputField,
+  createTextarea,
+  createTextareaField,
+  createSelect,
+  createSelectField,
+  createButton,
+  createCard,
+  createAlert,
+  cn
+} from '../components/ui/index.js';
+
 import { TemplateRegistry } from '../templates/registry.js';
 import { FieldComponents } from '../components/fieldComponents.js';
 import { makeOptionalCollapsible, makeOptionalGroupCollapsible } from '../components/collapsible.js';
@@ -849,11 +862,12 @@ applyTheme(container, theme) {
     
     console.warn(`No component for types: ${placeholder.type}`);
     // Fallback to text input
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = this.getFieldClasses(placeholder.id, 'text');;
-    input.placeholder = placeholder.label || '';
-    return input;
+
+    return createInput({
+      type: 'text',
+      placeholder: placeholder.label || '',
+      className: this.getFieldClasses(placeholder.id, 'text')
+    });
   }
 
   /**
@@ -863,176 +877,162 @@ applyTheme(container, theme) {
     const container = document.createElement('div');
     container.className = 'repeatable-controls';
     container.dataset.count = '1';
-    
-    const addBtn = document.createElement('button');
-    addBtn.type = 'button';
-    addBtn.className = 'btn-add-field';
-    addBtn.textContent = '+ Add Another';
-    addBtn.onclick = () => {
-      const count = parseInt(container.dataset.count);
-      container.dataset.count = count + 1;
-      
-      const field = this.buildRepeatableField(statement, placeholder, count);
-      container.parentElement.insertBefore(field, container);
-      
-      this.emit('change', this.collectFormData());
-    };
-    
+  
+    const addBtn = createButton({
+      variant: 'add',
+      type: 'button',
+      label: 'Add Another',
+      onClick: () => {
+        const count = parseInt(container.dataset.count);
+        container.dataset.count = count + 1;
+
+        const field = this.buildRepeatableField(statement, placeholder, count);
+        container.parentElement.insertBefore(field, container);
+
+        this.emit('change', this.collectFormData());
+      }
+    });
+
     container.appendChild(addBtn);
     return container;
   }
-
   /**
    * Build repeatable field instance
    * Logic: Only repeat placeholders that are UNIQUE to this repeatable statement
    */
-  buildRepeatableField(statement, placeholder, index) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'repeatable-field-group';
-    
-    // Check which positions have placeholders
-    const subjectPlaceholder = this.findPlaceholder(statement.subject);
-    const predicatePlaceholder = this.findPlaceholder(statement.predicate);
-    const objectPlaceholder = this.findPlaceholder(statement.object);
-    
-    // Determine if subject should be repeated
-    // Subject should be repeated ONLY if it's unique to this repeatable statement
-    // If the subject appears in other (non-repeatable) statements, it's SHARED and shouldn't repeat
-    let shouldRepeatSubject = false;
-    if (subjectPlaceholder) {
-      // Count how many statements use this subject
-      const statementsWithThisSubject = this.template.statements.filter(
-        s => s.subject === statement.subject
-      );
-      
-      // If subject ONLY appears in this one repeatable statement, then repeat it
-      // If subject appears in multiple statements, it's shared - don't repeat
-      shouldRepeatSubject = statementsWithThisSubject.length === 1;
-      
-      console.log(`[buildRepeatableField] Subject ${statement.subject}:`, {
-        occurrences: statementsWithThisSubject.length,
-        shouldRepeat: shouldRepeatSubject
-      });
-    }
-    
-    // Create subject field if needed
-    if (subjectPlaceholder && shouldRepeatSubject) {
-      const field = document.createElement('div');
-      field.className = 'repeatable-field';
-      
-      const label = document.createElement('label');
-      label.className = 'field-label';
-      label.textContent = subjectPlaceholder.label || this.getLabel(statement.subject);
-      field.appendChild(label);
-      
-      const input = this.renderInput(subjectPlaceholder);
-      input.name = `${statement.id}_subject_${index}`;
-      input.id = `field_${statement.id}_subject_${index}`;
-      field.appendChild(input);
-      wrapper.appendChild(field);
-    }
-    
-    // Create predicate field if it's a placeholder
-    if (predicatePlaceholder) {
-      const field = document.createElement('div');
-      field.className = 'repeatable-field';
-      
-      const label = document.createElement('label');
-      label.className = 'field-label';
-      label.textContent = predicatePlaceholder.label || this.getLabel(statement.predicate);
-      field.appendChild(label);
-      
-      const input = this.renderInput(predicatePlaceholder);
-      input.name = `${statement.id}_predicate_${index}`;
-      input.id = `field_${statement.id}_predicate_${index}`;
-      field.appendChild(input);
-      wrapper.appendChild(field);
-    }
-    
-    // Create object field if it's a placeholder
-    if (objectPlaceholder) {
-      const field = document.createElement('div');
-      field.className = 'repeatable-field';
-      
-      // Show predicate label if predicate is fixed
-      if (!predicatePlaceholder) {
-        const label = document.createElement('label');
-        label.className = 'field-label';
-        label.textContent = this.getLabel(statement.predicate);
-        field.appendChild(label);
-      }
-      
-      if (objectPlaceholder.label) {
-        const helpText = document.createElement('div');
-        helpText.className = 'field-help';
-        helpText.textContent = objectPlaceholder.label;
-        field.appendChild(helpText);
-      }
-      
-      const input = this.renderInput(objectPlaceholder);
-      input.name = `${statement.id}_object_${index}`;
-      input.id = `field_${statement.id}_object_${index}`;
-      field.appendChild(input);
-      wrapper.appendChild(field);
-    }
-    
-    // Add remove button
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'btn-remove-field';
-    removeBtn.textContent = '× Remove';
-    removeBtn.onclick = () => {
+buildRepeatableField(statement, placeholder, index) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'repeatable-field-group';
+
+  // Check which positions have placeholders
+  const subjectPlaceholder = this.findPlaceholder(statement.subject);
+  const predicatePlaceholder = this.findPlaceholder(statement.predicate);
+  const objectPlaceholder = this.findPlaceholder(statement.object);
+
+  // Determine if subject should be repeated
+  let shouldRepeatSubject = false;
+  if (subjectPlaceholder) {
+    const statementsWithThisSubject = this.template.statements.filter(
+      s => s.subject === statement.subject
+    );
+    shouldRepeatSubject = statementsWithThisSubject.length === 1;
+
+    console.log`[buildRepeatableField] Subject ${statement.subject}:`, {
+      occurrences: statementsWithThisSubject.length,
+      shouldRepeat: shouldRepeatSubject
+    };
+  }
+
+  // Create subject field if needed
+  if (subjectPlaceholder && shouldRepeatSubject) {
+    const field = createInputField({
+      label: subjectPlaceholder.label || this.getLabel(statement.subject),
+      inputOptions: {
+        ...this.getInputOptions(subjectPlaceholder),
+        name: `${statement.id}_subject_${index}`,
+        id: `field_${statement.id}_subject_${index}`
+      },
+      className: 'repeatable-field'
+    });
+    wrapper.appendChild(field);
+  }
+  
+  // Create predicate field if it's a placeholder
+  if (predicatePlaceholder) {
+    const field = createInputField({
+      label: predicatePlaceholder.label || this.getLabel(statement.predicate),
+      inputOptions: {
+        ...this.getInputOptions(predicatePlaceholder),
+        name: `${statement.id}_predicate_${index}`,
+        id: `field_${statement.id}_predicate_${index}`
+      },
+      className: 'repeatable-field'
+    });
+    wrapper.appendChild(field);
+  }
+  
+  // Create object field if it's a placeholder
+  if (objectPlaceholder) {
+    const field = createInputField({
+      label: !predicatePlaceholder ? this.getLabel(statement.predicate) : undefined,
+      inputOptions: {
+        ...this.getInputOptions(objectPlaceholder),
+        name: `${statement.id}_object_${index}`,
+        id: `field_${statement.id}_object_${index}`
+      },
+      helpText: objectPlaceholder.label,
+      className: 'repeatable-field'
+    });
+    wrapper.appendChild(field);
+  }
+  
+  // Add remove button
+  const removeBtn = createButton({
+    variant: 'remove',
+    type: 'button',
+    label: '× Remove',
+    onClick: () => {
       wrapper.remove();
       this.emit('change', this.collectFormData());
-    };
-    wrapper.appendChild(removeBtn);
-    
+    }
+  });
+  wrapper.appendChild(removeBtn);
+
     return wrapper;
+  }
+
+  // Add this helper method
+  getInputOptions(placeholder) {
+    return {
+      type: this.getInputType(placeholder),
+      placeholder: placeholder.label || '',
+      className: this.getFieldClasses(placeholder.id, this.getInputType(placeholder))
+    };
   }
 
   /**
    * Build controls
    */
-  buildControls() {
-    const controls = document.createElement('div');
-    controls.className = 'form-controls';
-    
-    const submitBtn = document.createElement('button');
-    submitBtn.type = 'submit';
-    submitBtn.className = 'btn btn-primary';
-    submitBtn.textContent = 'Create Nanopublication';
-    
-    controls.appendChild(submitBtn);
-    
-    return controls;
+buildControls() {
+  const controls = document.createElement('div');
+  controls.className = 'form-controls';
+
+  const submitBtn = createButton({
+    variant: 'primary',
+    type: 'submit',
+    label: 'Create Nanopublication'
+  });
+
+  controls.appendChild(submitBtn);
+
+  return controls;
   }
 
   /**
    * Setup event listeners
    */
   setupEventListeners() {
-    this.formElement.addEventListener('submit', (e) => {
-      e.preventDefault();
-      
-      const validation = this.validate();
-      if (!validation.isValid) {
-        console.warn('Validation failed:', validation.errors);
-        return;
-      }
-      
-      this.formData = this.collectFormData();
-      this.emit('submit', { formData: this.formData });
-    });
-    
-    if (this.options.validateOnChange) {
-      this.formElement.addEventListener('input', (e) => {
-        if (e.target.matches('input, select, textarea')) {
-          this.validateField(e.target);
-        }
-      });
-    }
-  }
+  this.formElement.addEventListener('submit', (e) => {
+    e.preventDefault();
 
+    const validation = this.validate();
+    if (!validation.isValid) {
+      console.warn('Validation failed:', validation.errors);
+      return;
+    }
+
+    this.formData = this.collectFormData();
+    this.emit('submit', { formData: this.formData });
+  });
+
+  if (this.options.validateOnChange) {
+    this.formElement.addEventListener('input', (e) => {
+      if (e.target.matches('input, select, textarea')) {
+        this.validateField(e.target);
+      }
+    });
+  }
+}
   /**
    * Handle preview
    */
