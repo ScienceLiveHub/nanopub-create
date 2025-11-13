@@ -7,17 +7,18 @@ Create nanopublications using templates from the [Knowledge Pixels network](http
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node Version](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
 
-## ✨ Features
+## Features
 
 - **Template-based creation** - Load any nanopub template by URI
 - **Auto-generated forms** - Dynamic forms from template placeholders
+- **Template customization** - Add custom styles and behavior per template type
 - **Built-in signing** - RSA key generation and nanopub signing via WASM
 - **Network publishing** - Publish directly to nanopub network
 - **Type handling** - Automatically handles `nt:ASSERTION`, `nt:CREATOR`, and other special placeholders
 - **Smart labels** - Extracts human-readable labels from URIs and patterns
 - **Valid nanopubs** - Generates standards-compliant nanopublications with trusty URIs
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -84,23 +85,22 @@ After successful publication, you'll receive a nanopub URI like:
 https://w3id.org/np/RAbc123...
 ```
 
-View it in Nanodash:
-```
-https://nanodash.knowledgepixels.com/explore?id=https://w3id.org/np/RAbc123...
-```
+You can view your published nanopublication using the companion library [nanopub-view](https://github.com/ScienceLiveHub/nanopub-view).
 
-Or search for your nanopubs by ORCID at [Nanodash](https://nanodash.knowledgepixels.com/)
-
-## 📖 Usage
+## Usage
 
 ### As a Library
 
 ```javascript
-import { NanopubCreator } from './src/index.js';
+import NanopubCreator from '@sciencelivehub/nanopub-create';
 
 // Initialize
-const creator = new NanopubCreator();
-await creator.init();
+const creator = new NanopubCreator({
+  publishServer: null  // Set to null for signing only, or provide server URL for publishing
+});
+
+// Initialize WASM
+await creator.initWasm();
 
 // Setup profile
 await creator.setupProfile('Your Name', 'https://orcid.org/0000-0002-1234-5678');
@@ -115,25 +115,122 @@ creator.on('create', ({ trigContent }) => {
   console.log('Created nanopub:', trigContent);
 });
 
-// Publish
-await creator.publish(trigContent);
+// Sign the nanopub
+const signedContent = await creator.publish(trigContent);
+
+// The signed nanopub can then be published to a nanopub server
 ```
 
 ### Programmatic Creation
 
 ```javascript
-// Create without form UI
-const template = await creator.loadTemplate(templateUri);
+// For programmatic creation without a form UI, you can use the lower-level APIs:
+
+import { TemplateParser } from '@sciencelivehub/nanopub-create';
+import { NanopubBuilder } from '@sciencelivehub/nanopub-create';
+
+// Parse template
+const parser = new TemplateParser();
+const template = await parser.fetchTemplate(templateUri);
+await parser.parseTemplate();
+
+// Build nanopub from form data
+const builder = new NanopubBuilder(parser.template);
 const formData = {
   'st01_subject': 'https://doi.org/10.1234/example',
   'st02_predicate': 'http://purl.org/spar/cito/cites',
   'st02_object': 'https://doi.org/10.5678/cited'
 };
 
-const trigContent = await creator.createNanopub(template, formData);
+const trigContent = await builder.buildFromFormData(formData, {
+  creator: 'https://orcid.org/0000-0002-1234-5678',
+  creatorName: 'Your Name'
+});
+
+// Then sign with the creator instance
+const signedContent = await creator.publish(trigContent);
 ```
 
-## 🏗️ Project Structure
+## Template Customization
+
+nanopub-create supports custom styling and behavior for different template types through a flexible customization system.
+
+### Available Templates
+
+**Geographical Coverage** - Document geographical coverage of research
+```
+https://w3id.org/np/RAsPVd3bNOPg5vxQGc1Tqn69v3dSY-ASrAhEFioutCXao
+```
+
+**Citation with CiTO** - Create citation relationships between papers
+```
+https://w3id.org/np/RAX_4tWTyjFpO6nz63s14ucuejd64t2mK3IBlkwZ7jjLo
+```
+
+**Comment on Paper** - Add quotes and commentary to papers
+```
+https://w3id.org/np/RAVEpTdLrX5XrhNl_gnvTaBcjRRSDu_hhZix8gu2HO7jI
+```
+
+Browse more templates at [Knowledge Pixels](https://knowledgepixels.com/) or explore existing nanopublications to find templates.
+
+### Creating Custom Templates
+
+To add custom styling and behavior for a template:
+
+1. **Create a template class** in `src/templates/[name]/[name]Template.js`
+2. **Create template styles** in `src/styles/templates/[name].css`
+3. **Register the template** in `src/templates/registry.js`
+4. **Import the styles** in `src/styles/styles-index.css`
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed instructions on creating custom template styles.
+
+### Example: Geographical Template
+
+The geographical template demonstrates the customization system:
+
+**Custom styling** - Green theme for geography-related forms
+```css
+.template-geographical {
+  --geo-primary: #059669;
+}
+```
+
+**Field grouping** - Groups geometry and WKT fields together
+```javascript
+detectSemanticGroups() {
+  return [{
+    id: 'geometry-group',
+    label: 'Geometry Details (WKT Format)',
+    statements: [geometryLinkStmt.id, wktStmt.id],
+    collapsible: true
+  }];
+}
+```
+
+**Auto-fill rules** - Automatically derives geometry ID from location
+```javascript
+getAutofillRules() {
+  return [{
+    trigger: 'location',
+    target: 'geometry-id',
+    transform: (value) => value.toLowerCase().replace(/\s+/g, '-')
+  }];
+}
+```
+
+**Field hints** - Provides helpful examples for WKT format
+```javascript
+customizeField(field, placeholder) {
+  if (placeholder.id === 'wkt') {
+    const hint = document.createElement('div');
+    hint.innerHTML = 'WKT Format Example: POINT(2.3 48.9)';
+    field.parentElement?.appendChild(hint);
+  }
+}
+```
+
+## Project Structure
 
 ```
 nanopub-create/
@@ -142,20 +239,32 @@ nanopub-create/
 │   │   ├── nanopubBuilder.js      # Generates TriG from templates
 │   │   ├── templateParser.js      # Parses nanopub templates
 │   │   └── formGenerator.js       # Creates HTML forms
+│   ├── templates/
+│   │   ├── registry.js            # Template customization registry
+│   │   ├── base/
+│   │   │   └── baseTemplate.js    # Base customization class
+│   │   └── geographical/
+│   │       └── geographicalTemplate.js  # Example customization
+│   ├── components/
+│   │   └── ui/                    # Reusable UI components
+│   ├── styles/
+│   │   ├── tailwind.base.css      # Base Tailwind utilities
+│   │   ├── styles-index.css       # Main CSS entry point
+│   │   └── templates/
+│   │       └── geographical.css   # Template-specific styles
 │   ├── utils/
 │   │   └── labelFetcher.js        # Fetches URI labels
-│   ├── styles/
-│   │   └── creator.css            # UI styling
 │   └── index.js                   # Main entry point
 ├── demo/
 │   └── index.html                 # Demo page
 ├── package.json
 ├── vite.config.js
+├── CONTRIBUTING.md                # Template customization guide
 ├── LICENSE
 └── README.md
 ```
 
-## 🔧 How It Works
+## How It Works
 
 ### 1. Template Parsing
 ```javascript
@@ -201,7 +310,7 @@ const signed = await nanopubSign.sign(trig, privateKey);
 const uri = await nanopubSign.publish(signed);
 ```
 
-## 📝 Template Support
+## Template Support
 
 Supports all standard nanopub template types:
 
@@ -217,8 +326,8 @@ Supports all standard nanopub template types:
 
 ### Special Placeholders
 
-- `nt:ASSERTION` → Replaced with `sub:assertion`
-- `nt:CREATOR` → Replaced with user's ORCID
+- `nt:ASSERTION` - Replaced with `sub:assertion`
+- `nt:CREATOR` - Replaced with user's ORCID
 
 ### Label Patterns
 
@@ -232,36 +341,26 @@ Automatically extracts values and generates:
 rdfs:label "Citations for: 10.1145/3460210.3493546"
 ```
 
-## 🎯 Example Templates
+## Profile Management
 
-### Citation Template
-```
-https://w3id.org/np/RAX_4tWTyjFpO6nz63s14ucuejd64t2mK3IBlkwZ7jjLo
-```
-Declare citations with CiTO - create citation relationships between papers.
-
-### Comment Template
-```
-https://w3id.org/np/RAVEpTdLrX5XrhNl_gnvTaBcjRRSDu_hhZix8gu2HO7jI
-```
-Comment on or evaluate papers - add quotes and commentary.
-
-### More Templates
-Browse available templates at [Nanodash](https://nanodash.knowledgepixels.com/)
-
-## 🔒 Profile Management
-
-### Generate Keys
+### Generate Keys and Setup Profile
 ```javascript
+await creator.initWasm();
 await creator.setupProfile('Your Name', 'https://orcid.org/0000-0002-1234-5678');
 ```
 
 Keys are stored in browser `localStorage` and never leave your machine.
 
+### Check Profile Status
+```javascript
+const hasProfile = creator.hasProfile();
+const profile = creator.getProfile(); // Returns { name, orcid }
+```
+
 ### Export Profile
 ```javascript
 const keys = creator.exportKeys();
-// Download as JSON for backup
+// Save as JSON for backup
 ```
 
 ### Import Profile
@@ -270,7 +369,13 @@ creator.importKeys(profileData);
 // Restore from backup
 ```
 
-## 🛠️ Development
+### Clear Credentials
+```javascript
+creator.clearCredentials();
+// Removes stored profile and keys
+```
+
+## Development
 
 ### Prerequisites
 - Node.js 18+
@@ -311,7 +416,7 @@ export default defineConfig({
 });
 ```
 
-## 📦 Dependencies
+## Dependencies
 
 ### Runtime
 - `@nanopub/sign` - WASM library for signing/publishing
@@ -321,17 +426,14 @@ export default defineConfig({
 - `vite-plugin-wasm` - WASM support
 - `vite-plugin-top-level-await` - Top-level await support
 
-## 🤝 Contributing
+## Contributing
 
-Contributions welcome! Please:
+Contributions welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- How to create custom template styles
+- Code style guidelines
+- Pull request process
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Hash URIs vs Slash URIs
 
@@ -355,17 +457,6 @@ GRAPH <https://w3id.org/np/RA...#/Head> {
 **Note on slash URIs:**
 While slash-based URIs (`/`) are more RESTful and HTTP dereferenceable, converting hash URIs to slash URIs after signing breaks the trusty hash validation, preventing publication to the nanopub network. The WASM library would need to be modified to generate slash URIs natively for this to work.
 
-**Publishing nanopubs:**
-Nanopubs generated by nanopub-create can be published directly to the network using the hash URI format:
-
-```bash
-curl -X POST https://np.knowledgepixels.com/ \
-  -H "Content-Type: application/trig" \
-  --data-binary @nanopub-signed-YYYY-MM-DD.trig
-```
-
-This will return a `201 Created` response with the published nanopub URI.
-
 ### WASM Not Loading
 ```bash
 # Clear cache and restart
@@ -386,56 +477,29 @@ Verify pattern is being parsed:
 const patternMatch = this.content.match(/nt:hasNanopubLabelPattern/);
 ```
 
-### Correct Prefix Format
-
-The `sub:` prefix uses a trailing hash `#` as generated by the WASM library:
-```javascript
-`@prefix sub: <${baseUri}#> .`
-```
-
-**Why hash URIs?**
-- Required for trusty URI cryptographic validation
-- WASM library generates hash URIs natively
-- Changing to slash URIs breaks trusty hash verification
-- Hash URIs are valid and fully functional nanopublications
-
-**Example:**
-```turtle
-@prefix sub: <https://w3id.org/np/RA...#> .
-
-sub:Head { }           # Expands to: https://w3id.org/np/RA...#Head
-sub:assertion { }      # Expands to: https://w3id.org/np/RA...#assertion
-```
-
-**Note:** While slash URIs (`/`) would be more RESTful and HTTP dereferenceable, they require modifying the underlying nanopub-rs library to generate them before trusty hash calculation.
-
-## 📚 Resources
+## Resources
 
 - [Nanopub Documentation](https://nanopub.net/)
 - [Knowledge Pixels](https://knowledgepixels.com/)
 - [nanopub-rs WASM](https://github.com/vemonet/nanopub-rs)
-- [Nanodash](https://nanodash.knowledgepixels.com/)
+- [nanopub-view](https://github.com/ScienceLiveHub/nanopub-view) - Companion library for viewing nanopublications
 - [CiTO Ontology](https://sparontologies.github.io/cito/current/cito.html)
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](LICENSE) file for details
 
-## 👥 Authors
+## Authors
 
 **ScienceLive Hub**
 - GitHub: [@ScienceLiveHub](https://github.com/ScienceLiveHub)
 - Website: [sciencelive4all.org](https://sciencelive4all.org)
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Built on [nanopub-rs](https://github.com/vemonet/nanopub-rs) by [@vemonet](https://github.com/vemonet)
 - Template system from [Knowledge Pixels](https://knowledgepixels.com/)
-- Compatible with [Nanodash](https://nanodash.knowledgepixels.com/)
-
-## 🌟 Star History
-
-If you find this project useful, please consider giving it a star! ⭐
+- Part of the ScienceLive ecosystem with companion library [nanopub-view](https://github.com/ScienceLiveHub/nanopub-view)
 
 ---
 

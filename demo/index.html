@@ -4,10 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nanopub Creator - Demo</title>
-  <link rel="stylesheet" href="../src/styles/styles-index.css">
+  
+  <!-- IMPORTANT: Point to the built Tailwind CSS -->
+  <link rel="stylesheet" href="../dist/nanopub-creator.css">
 
   <style>
-    /* All your existing dark mode styles - keeping them exactly as is */
     :root {
       color-scheme: light dark;
     }
@@ -188,6 +189,7 @@
       text-transform: uppercase;
     }
     .badge-wasm { background: #6f42c1; }
+    .badge-tailwind { background: #38bdf8; }
     .loading {
       text-align: center;
       color: var(--demo-text-muted);
@@ -210,11 +212,14 @@
   </style>
 </head>
 <body>
-  <button id="dark-mode-toggle" onclick="document.body.classList.toggle('dark-mode')" title="Toggle dark mode">
+  <button id="dark-mode-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">
     🌓
   </button>
 
-  <h1>Nanopub Creator <span class="badge badge-wasm">WASM</span> <span class="badge">Demo</span></h1>
+  <h1>Nanopub Creator 
+    <span class="badge badge-wasm">WASM</span> 
+    <span class="badge">Demo</span>
+  </h1>
   <p class="subtitle">Create and sign nanopublications using nanopub-rs WASM</p>
 
   <div class="demo-notice">
@@ -272,7 +277,7 @@
     </div>
   </div>
 
-  <!-- Form Section -->
+  <!-- Form Section (This will use Tailwind v4 styles) -->
   <div class="section">
     <h2>✏️ Create Nanopublication</h2>
     <div id="template-container">
@@ -284,6 +289,14 @@
     import NanopubCreator from '../src/index.js';
     
     let creator = null;
+
+    // Dark mode toggle with propagation to form
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      const container = document.getElementById('template-container');
+      container.classList.toggle('dark');
+    }
+    window.toggleDarkMode = toggleDarkMode;
 
     // Initialize creator
     async function initCreator() {
@@ -353,9 +366,13 @@
       try {
         const container = document.getElementById('template-container');
         container.innerHTML = '<div class="loading">Loading template...</div>';
+        
+        // Add dark class if body has dark mode enabled
+        if (document.body.classList.contains('dark-mode')) {
+          container.classList.add('dark');
+        }
+        
         await creator.renderFromTemplateUri(uri, container);
-        document.getElementById('template-message').innerHTML = 
-          '<div style="color: #155724; background: #d4edda; padding: 10px; border-radius: 4px; margin-top: 10px;">Template loaded!</div>';
       } catch (error) {
         document.getElementById('template-container').innerHTML = 
           '<div style="color: #721c24; background: #f8d7da; padding: 15px; border-radius: 4px;">Error: ' + error.message + '</div>';

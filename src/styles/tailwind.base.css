@@ -1,0 +1,554 @@
+@import "tailwindcss";
+
+/* ============================================
+   THEME CONFIGURATION
+   ============================================ */
+
+@theme {
+  /* Brand colors */
+  --color-nanopub-primary: #BE2E78;
+  --color-nanopub-primary-hover: #a02660;
+  --color-nanopub-secondary: #101E43;
+  
+  /* Pink palette */
+  --color-nanopub-pink-50: #fef0f7;
+  --color-nanopub-pink-100: #fce7f0;
+  --color-nanopub-pink-500: #BE2E78;
+  --color-nanopub-pink-600: #a02660;
+  --color-nanopub-pink-900: #3d2432;
+  --color-nanopub-pink-950: #2a1a23;
+  
+  /* Semantic colors */
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
+}
+
+/* ============================================
+   BASE FORM COMPONENTS
+   ============================================ */
+
+/* Form container */
+@utility form-container {
+  max-width: 56rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1.5rem;
+  background-color: white;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  .dark & {
+    background-color: rgb(17 24 39);
+  }
+}
+
+/* Field container */
+@utility field-container {
+  margin-bottom: 1.25rem;
+}
+
+/* Field label */
+@utility field-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: rgb(55 65 81);
+  margin-bottom: 0.5rem;
+  
+  .dark & {
+    color: rgb(229 231 235);
+  }
+}
+
+/* Text input */
+@utility field-input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border-width: 2px;
+  border-color: rgb(209 213 219);
+  border-radius: 6px;
+  background-color: white;
+  color: rgb(17 24 39);
+  font-size: 0.95rem;
+  transition-property: border-color, box-shadow;
+  transition-duration: 200ms;
+  
+  &::placeholder {
+    color: rgb(156 163 175);
+  }
+  
+  &:focus {
+    outline: none;
+    border-color: var(--color-nanopub-primary);
+    box-shadow: 0 0 0 3px rgba(190, 46, 120, 0.15);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .dark & {
+    border-color: rgb(75 85 99);
+    background-color: rgb(31 41 55);
+    color: rgb(229 231 235);
+    
+    &::placeholder {
+      color: rgb(107 114 128);
+    }
+    
+    &:focus {
+      box-shadow: 0 0 0 3px rgba(255, 61, 143, 0.25);
+    }
+  }
+}
+
+/* Textarea */
+@utility field-textarea {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border-width: 2px;
+  border-color: rgb(209 213 219);
+  border-radius: 6px;
+  background-color: white;
+  color: rgb(17 24 39);
+  min-height: 100px;
+  resize: vertical;
+  font-size: 0.95rem;
+  transition-property: border-color, box-shadow;
+  transition-duration: 200ms;
+  
+  &:focus {
+    outline: none;
+    border-color: var(--color-nanopub-primary);
+    box-shadow: 0 0 0 3px rgba(190, 46, 120, 0.15);
+  }
+  
+  .dark & {
+    border-color: rgb(75 85 99);
+    background-color: rgb(31 41 55);
+    color: rgb(229 231 235);
+    
+    &:focus {
+      box-shadow: 0 0 0 3px rgba(255, 61, 143, 0.25);
+    }
+  }
+}
+
+/* Select dropdown */
+@utility field-select {
+  width: 100%;
+  padding: 0.625rem 2.5rem 0.625rem 0.875rem;
+  border-width: 2px;
+  border-color: rgb(209 213 219);
+  border-radius: 6px;
+  background-color: white;
+  color: rgb(17 24 39);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 12px;
+  transition-property: border-color, box-shadow;
+  transition-duration: 200ms;
+  
+  &:hover {
+    border-color: var(--color-nanopub-primary);
+  }
+  
+  &:focus {
+    outline: none;
+    border-color: var(--color-nanopub-primary);
+    box-shadow: 0 0 0 3px rgba(190, 46, 120, 0.15);
+  }
+  
+  .dark & {
+    border-color: rgb(75 85 99);
+    background-color: rgb(31 41 55);
+    color: rgb(229 231 235);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a0a0a0' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    
+    &:focus {
+      box-shadow: 0 0 0 3px rgba(255, 61, 143, 0.25);
+    }
+  }
+}
+
+/* Field help text */
+@utility field-help {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  color: rgb(107 114 128);
+  font-style: italic;
+  
+  .dark & {
+    color: rgb(156 163 175);
+  }
+}
+
+/* Optional badge */
+@utility optional-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background-color: rgb(219 234 254);
+  color: rgb(30 64 175);
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 0.25rem;
+  text-transform: uppercase;
+  
+  .dark & {
+    background-color: rgb(30 58 138);
+    color: rgb(191 219 254);
+  }
+}
+
+/* Default assertion/subject boxes */
+@utility assertion-box {
+  background-color: var(--color-nanopub-pink-50);
+  border-width: 2px;
+  border-color: var(--color-nanopub-primary);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  box-shadow: 0 1px 3px rgba(190, 46, 120, 0.1);
+  
+  .dark & {
+    background-color: var(--color-nanopub-pink-950);
+  }
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+/* Primary submit button */
+@utility submit-button {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--color-nanopub-primary);
+  color: white;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  border: none;
+  font-size: 0.95rem;
+  transition-property: all;
+  transition-duration: 200ms;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  
+  &:hover:not(:disabled) {
+    background-color: var(--color-nanopub-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(190, 46, 120, 0.3);
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(190, 46, 120, 0.3);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .dark &:hover:not(:disabled) {
+    box-shadow: 0 4px 12px rgba(255, 61, 143, 0.4);
+  }
+}
+
+/* Secondary button */
+@utility button-secondary {
+  padding: 0.75rem 1.5rem;
+  background-color: rgb(43 52 86);
+  color: white;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  border: none;
+  transition-property: all;
+  transition-duration: 200ms;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  &:hover:not(:disabled) {
+    background-color: rgb(19 29 67);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(43, 52, 86, 0.3);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .dark & {
+    background-color: rgb(123 155 212);
+    
+    &:hover:not(:disabled) {
+      background-color: rgb(90 123 184);
+    }
+  }
+}
+
+/* Add button (repeatable fields) */
+@utility button-add {
+  padding: 0.625rem 1.125rem;
+  background-color: rgb(43 52 86);
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  border: none;
+  margin-top: 0.75rem;
+  transition-property: all;
+  transition-duration: 200ms;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  
+  &:hover:not(:disabled) {
+    background-color: rgb(19 29 67);
+    transform: translateY(-1px);
+  }
+}
+
+/* Remove button */
+@utility button-remove {
+  padding: 0.375rem 0.75rem;
+  background-color: rgb(220 38 38);
+  color: white;
+  font-weight: 600;
+  font-size: 0.8rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  border: none;
+  transition-property: all;
+  transition-duration: 200ms;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  
+  &:hover:not(:disabled) {
+    background-color: rgb(185 28 28);
+    transform: translateY(-1px);
+  }
+  
+  .dark & {
+    background-color: rgb(239 68 68);
+    
+    &:hover:not(:disabled) {
+      background-color: rgb(220 38 38);
+    }
+  }
+}
+
+/* Button container */
+@utility form-controls {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.875rem;
+  padding-top: 1.25rem;
+  border-top-width: 2px;
+  border-color: rgb(243 244 246);
+  
+  .dark & {
+    border-color: rgb(64 64 64);
+  }
+}
+
+/* ============================================
+   COLLAPSIBLE SECTIONS
+   ============================================ */
+
+@utility collapsible-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.75rem;
+  background-color: rgb(248 249 250);
+  border-width: 2px;
+  border-color: rgb(229 231 235);
+  border-radius: 0.5rem;
+  user-select: none;
+  transition-property: all;
+  transition-duration: 200ms;
+  
+  &:hover {
+    background-color: rgb(233 236 239);
+  }
+  
+  .dark & {
+    background-color: rgb(58 58 58);
+    border-color: rgb(82 82 82);
+    
+    &:hover {
+      background-color: rgb(55 65 81);
+    }
+  }
+}
+
+@utility collapsible-title {
+  font-weight: 500;
+  color: rgb(73 80 87);
+  flex: 1;
+  
+  .dark & {
+    color: rgb(229 231 235);
+  }
+}
+
+@utility collapsible-icon {
+  transition: transform 0.2s;
+  font-size: 0.8rem;
+  color: rgb(102 102 102);
+  min-width: 12px;
+  
+  .dark & {
+    color: rgb(160 160 160);
+  }
+}
+
+@utility collapsible-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+  padding: 0;
+}
+
+/* ============================================
+   STATES & ANIMATIONS
+   ============================================ */
+
+/* Loading state */
+@utility loading-state {
+  text-align: center;
+  padding: 2.5rem 1.25rem;
+  color: rgb(107 114 128);
+  
+  .dark & {
+    color: rgb(160 160 160);
+  }
+}
+
+/* Error state */
+@utility error-state {
+  text-align: center;
+  padding: 2.5rem 1.25rem;
+  color: rgb(220 38 38);
+  background-color: rgb(254 242 242);
+  border-width: 1px;
+  border-color: rgb(254 202 202);
+  border-radius: 0.5rem;
+  
+  .dark & {
+    color: rgb(252 165 165);
+    background-color: rgb(61 26 26);
+    border-color: rgb(124 45 45);
+  }
+}
+
+/* Validation success */
+@utility field-valid {
+  border-color: var(--color-success) !important;
+  background-color: rgb(240 253 244) !important;
+  
+  .dark & {
+    background-color: rgb(6 78 59) !important;
+    border-color: rgb(52 211 153) !important;
+  }
+}
+
+/* Validation error */
+@utility field-invalid {
+  border-color: var(--color-error) !important;
+  background-color: rgb(254 242 242) !important;
+  
+  .dark & {
+    background-color: rgb(69 10 10) !important;
+    border-color: rgb(248 113 113) !important;
+  }
+}
+
+/* ============================================
+   COMPATIBILITY LAYER
+   ============================================ */
+
+/* Map old class names to new Tailwind utilities */
+.form-input {
+  @apply field-input;
+}
+
+.form-textarea {
+  @apply field-textarea;
+}
+
+.form-select {
+  @apply field-select;
+}
+
+.form-field {
+  @apply field-container;
+}
+
+.btn-primary {
+  @apply submit-button;
+}
+
+.btn-add-field {
+  @apply button-add;
+}
+
+.btn-remove-field {
+  @apply button-remove;
+}
+
+.subject-group {
+  @apply assertion-box;
+}
+
+.readonly-field {
+  @apply field-container opacity-70;
+}
+
+.repeatable-controls {
+  @apply flex gap-2 mt-3;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Expanded state for collapsibles */
+.expanded .collapsible-icon {
+  transform: rotate(90deg);
+}
+
+.expanded .collapsible-content {
+  max-height: 2000px;
+  padding-top: 0.9375rem;
+  overflow: visible;
+}
+
+/* Hidden state */
+.hidden {
+  display: none;
+}
+
+/* Collapsed state */
+.collapsed .collapsible-content {
+  max-height: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
