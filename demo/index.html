@@ -209,7 +209,7 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
   </style>
-  <script type="module" crossorigin src="/nanopub-create/assets/index-C1hE_zBN.js"></script>
+  <script type="module" crossorigin src="/nanopub-create/assets/index-uEZV4MsG.js"></script>
   <link rel="stylesheet" crossorigin href="/nanopub-create/assets/index-FyycbczH.css">
 </head>
 <body>
@@ -284,6 +284,18 @@
     <div id="template-container">
       <div class="loading">Load a template to get started...</div>
     </div>
+  </div>
+
+  <!-- Preview Section -->
+  <div class="section" id="nanopub-preview" style="display: none;">
+    <h2>📋 Nanopublication Preview</h2>
+    <p style="color: var(--demo-text-muted); font-size: 0.9em;">Review your unsigned nanopublication:</p>
+    <pre id="preview-content" style="background: var(--demo-preview-bg); padding: 15px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; border: 1px solid var(--demo-border);"></pre>
+    <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+      <button id="sign-download-btn" class="btn btn-primary">🔐 Sign & Download</button>
+      <button id="copy-btn" class="btn btn-primary" style="background: #17a2b8;">📋 Copy</button>
+    </div>
+    <div id="result-message" style="margin-top: 15px;"></div>
   </div>
 
 </body>

@@ -19,7 +19,7 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
     fetch(r.href, i);
   }
 })();
-class te {
+class ne {
   constructor(e = null) {
     e ? this.storage = e : typeof localStorage < "u" ? this.storage = localStorage : this.storage = this.createInMemoryStorage();
   }
@@ -41,8 +41,8 @@ class te {
     this.storage.removeItem(e);
   }
 }
-new te();
-class J {
+new ne();
+class X {
   constructor(e = "") {
     this.content = e, this.template = { uri: null, label: null, description: null, labelPattern: null, tags: [], types: [], prefixes: {}, placeholders: [], statements: [], labels: {}, repeatablePlaceholderIds: [], groupedStatements: [] };
   }
@@ -199,8 +199,8 @@ class J {
     if (!o || !l || !d) return console.warn(`Incomplete statement ${e}:`, { subjMatch: !!o, predMatch: !!l, objMatch: !!d }), null;
     let a;
     d[1] ? a = d[1] : d[2] ? a = d[2] : d[3] && (a = d[3]);
-    const p = r[0].match(/a\s+([^;.]+)/), c = p ? p[1].split(",").map((T) => T.trim()) : [], f = this.cleanUri(o[1]), h = this.cleanUri(l[1]), y = this.cleanUri(a), _ = o[1] === "nt:CREATOR", x = a === "nt:CREATOR", j = !_ && this.isPlaceholder(f), S = this.isPlaceholder(h), E = !x && this.isPlaceholder(y) && !d[3], $ = _ ? "nt:CREATOR" : j ? null : this.expandUri(o[1]), oe = this.expandUri(l[1]), ae = x ? "nt:CREATOR" : E || d[3] ? null : this.expandUri(a);
-    return { id: this.cleanUri(e), subject: f, predicate: h, object: y, subjectIsPlaceholder: j, predicateIsPlaceholder: S, objectIsPlaceholder: E, subjectUri: $, predicateUri: oe, objectUri: ae, isLiteralObject: !!d[3], repeatable: c.some((T) => T.includes("RepeatableStatement")), optional: c.some((T) => T.includes("OptionalStatement")), grouped: c.some((T) => T.includes("GroupedStatement")), types: c };
+    const p = r[0].match(/a\s+([^;.]+)/), c = p ? p[1].split(",").map((N) => N.trim()) : [], f = this.cleanUri(o[1]), h = this.cleanUri(l[1]), y = this.cleanUri(a), _ = o[1] === "nt:CREATOR", x = a === "nt:CREATOR", j = !_ && this.isPlaceholder(f), S = this.isPlaceholder(h), E = !x && this.isPlaceholder(y) && !d[3], $ = _ ? "nt:CREATOR" : j ? null : this.expandUri(o[1]), ae = this.expandUri(l[1]), le = x ? "nt:CREATOR" : E || d[3] ? null : this.expandUri(a);
+    return { id: this.cleanUri(e), subject: f, predicate: h, object: y, subjectIsPlaceholder: j, predicateIsPlaceholder: S, objectIsPlaceholder: E, subjectUri: $, predicateUri: ae, objectUri: le, isLiteralObject: !!d[3], repeatable: c.some((N) => N.includes("RepeatableStatement")), optional: c.some((N) => N.includes("OptionalStatement")), grouped: c.some((N) => N.includes("GroupedStatement")), types: c };
   }
   cleanUri(e) {
     return e && e.replace(/^<|>$/g, "").replace(/^"|"$/g, "").replace(/^sub:/, "").trim();
@@ -251,16 +251,16 @@ class J {
     const n = await fetch(t);
     if (!n.ok) throw new Error(`HTTP ${n.status}: ${n.statusText}`);
     const r = await n.text();
-    return await new J(r).parse();
+    return await new X(r).parse();
   }
 }
-function D(...s) {
+function W(...s) {
   return s.filter(Boolean).join(" ");
 }
-const X = { primary: "submit-button", secondary: "button-secondary", add: "button-add", remove: "button-remove", outline: "px-3 py-2 border-2 border-nanopub-primary text-nanopub-primary hover:bg-nanopub-primary hover:text-white rounded-lg transition-all font-semibold", ghost: "px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all", link: "text-nanopub-primary hover:underline" }, le = { sm: "text-sm px-3 py-1.5", default: "px-4 py-2", lg: "text-lg px-6 py-3", icon: "p-2" };
+const Y = { primary: "submit-button", secondary: "button-secondary", add: "button-add", remove: "button-remove", outline: "px-3 py-2 border-2 border-nanopub-primary text-nanopub-primary hover:bg-nanopub-primary hover:text-white rounded-lg transition-all font-semibold", ghost: "px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all", link: "text-nanopub-primary hover:underline" }, ce = { sm: "text-sm px-3 py-1.5", default: "px-4 py-2", lg: "text-lg px-6 py-3", icon: "p-2" };
 function q(s = {}) {
   const { variant: e = "primary", size: t = "default", label: n = "", type: r = "button", disabled: i = false, onClick: o, className: l, icon: d, iconPosition: a = "left", attrs: b = {} } = s, p = document.createElement("button");
-  if (p.type = r, p.className = D(X[e] || X.primary, le[t], l), d) {
+  if (p.type = r, p.className = W(Y[e] || Y.primary, ce[t], l), d) {
     const c = document.createElement("span");
     c.innerHTML = d, c.className = a === "left" ? "mr-2" : "ml-2", a === "left" && p.appendChild(c);
   }
@@ -278,13 +278,13 @@ function q(s = {}) {
 }
 function P(s = {}) {
   const { type: e = "text", name: t, id: n, value: r, placeholder: i, required: o = false, disabled: l = false, readonly: d = false, className: a, onChange: b, onInput: p, onBlur: c, onFocus: f, validationState: h = null, attrs: y = {} } = s, _ = document.createElement("input");
-  return _.type = e, _.className = D("field-input", h === "valid" && "field-valid", h === "invalid" && "field-invalid", a), t && (_.name = t), n && (_.id = n), r !== void 0 && (_.value = r), i && (_.placeholder = i), o && (_.required = true), l && (_.disabled = true), d && (_.readOnly = true), b && _.addEventListener("change", b), p && _.addEventListener("input", p), c && _.addEventListener("blur", c), f && _.addEventListener("focus", f), Object.entries(y).forEach(([x, j]) => {
+  return _.type = e, _.className = W("field-input", h === "valid" && "field-valid", h === "invalid" && "field-invalid", a), t && (_.name = t), n && (_.id = n), r !== void 0 && (_.value = r), i && (_.placeholder = i), o && (_.required = true), l && (_.disabled = true), d && (_.readOnly = true), b && _.addEventListener("change", b), p && _.addEventListener("input", p), c && _.addEventListener("blur", c), f && _.addEventListener("focus", f), Object.entries(y).forEach(([x, j]) => {
     _.setAttribute(x, j);
   }), _;
 }
-function B(s = {}) {
+function G(s = {}) {
   const { label: e, inputOptions: t = {}, helpText: n, errorText: r, optional: i = false, className: o } = s, l = document.createElement("div");
-  if (l.className = D("field-container", o), e) {
+  if (l.className = W("field-container", o), e) {
     const a = document.createElement("label");
     if (a.className = "field-label", a.textContent = e, i) {
       const b = document.createElement("span");
@@ -303,9 +303,9 @@ function B(s = {}) {
   }
   return l;
 }
-function ce(s = {}) {
+function de(s = {}) {
   const { name: e, id: t, value: n, placeholder: r, rows: i = 4, required: o = false, disabled: l = false, readonly: d = false, autoResize: a = false, className: b, onChange: p, onInput: c, validationState: f = null, attrs: h = {} } = s, y = document.createElement("textarea");
-  if (y.className = D("field-textarea", f === "valid" && "field-valid", f === "invalid" && "field-invalid", b), e && (y.name = e), t && (y.id = t), n !== void 0 && (y.value = n), r && (y.placeholder = r), y.rows = i, o && (y.required = true), l && (y.disabled = true), d && (y.readOnly = true), a) {
+  if (y.className = W("field-textarea", f === "valid" && "field-valid", f === "invalid" && "field-invalid", b), e && (y.name = e), t && (y.id = t), n !== void 0 && (y.value = n), r && (y.placeholder = r), y.rows = i, o && (y.required = true), l && (y.disabled = true), d && (y.readOnly = true), a) {
     const _ = () => {
       y.style.height = "auto", y.style.height = y.scrollHeight + "px";
     };
@@ -315,9 +315,9 @@ function ce(s = {}) {
     y.setAttribute(_, x);
   }), y;
 }
-function de(s = {}) {
+function ue(s = {}) {
   const { name: e, id: t, value: n, items: r = [], placeholder: i, required: o = false, disabled: l = false, className: d, onChange: a, validationState: b = null, attrs: p = {} } = s, c = document.createElement("select");
-  if (c.className = D("field-select", b === "valid" && "field-valid", b === "invalid" && "field-invalid", d), e && (c.name = e), t && (c.id = t), o && (c.required = true), l && (c.disabled = true), i) {
+  if (c.className = W("field-select", b === "valid" && "field-valid", b === "invalid" && "field-invalid", d), e && (c.name = e), t && (c.id = t), o && (c.required = true), l && (c.disabled = true), i) {
     const f = document.createElement("option");
     f.value = "", f.textContent = i, f.disabled = true, f.selected = !n, c.appendChild(f);
   }
@@ -328,7 +328,7 @@ function de(s = {}) {
     c.setAttribute(f, h);
   }), c;
 }
-class ne {
+class re {
   constructor(e) {
     this.template = e;
   }
@@ -357,7 +357,7 @@ class ne {
     return this.template.statements.filter((e) => !e.optional);
   }
 }
-class ue extends ne {
+class pe extends re {
   constructor(e) {
     super(e), this.tailwindCustomization = { customCSS: this.getCustomCSS(), containerClass: "template-geographical", fieldClasses: { wkt: "wkt-field field-textarea", location: "location-field field-input", paper: "doi-field field-input", quote: "field-textarea" }, groupClasses: { "geometry-group": "geometry-group", "paper-citation": "paper-citation" }, theme: { primary: "#059669", accent: "#fbbf24", background: "#f0fdf4" } };
   }
@@ -465,28 +465,28 @@ class ue extends ne {
     return { title: "\u{1F30D} Geographical Coverage", description: "Document the geographical area or region covered by this research", submitButtonText: "Publish Geographical Coverage", containerClass: "template-geographical" };
   }
 }
-class pe {
+class fe {
   static getCustomization(e) {
-    const t = e.split("/").pop(), n = this.templates[t] || ne;
+    const t = e.split("/").pop(), n = this.templates[t] || re;
     return console.log(`[TemplateRegistry] Using ${n.name} for template ${t}`), n;
   }
   static register(e, t) {
     this.templates[e] = t, console.log(`[TemplateRegistry] Registered ${t.name} for ${e}`);
   }
 }
-__publicField(pe, "templates", { "RAsPVd3bNOPg5vxQGc1Tqn69v3dSY-ASrAhEFioutCXao": ue });
-const fe = { LiteralPlaceholder: (s) => {
+__publicField(fe, "templates", { "RAsPVd3bNOPg5vxQGc1Tqn69v3dSY-ASrAhEFioutCXao": pe });
+const he = { LiteralPlaceholder: (s) => {
   var _a;
   return P({ type: "text", placeholder: s.label || "", attrs: ((_a = s.validation) == null ? void 0 : _a.regex) ? { pattern: s.validation.regex } : {} });
-}, LongLiteralPlaceholder: (s) => ce({ rows: 5, placeholder: s.label || "" }), ExternalUriPlaceholder: (s) => P({ type: "url", placeholder: s.label || "https://..." }), UriPlaceholder: (s) => P({ type: "url", placeholder: s.label || "https://..." }), TrustyUriPlaceholder: (s) => P({ type: "url", placeholder: s.label || "https://..." }), RestrictedChoicePlaceholder: (s) => {
+}, LongLiteralPlaceholder: (s) => de({ rows: 5, placeholder: s.label || "" }), ExternalUriPlaceholder: (s) => P({ type: "url", placeholder: s.label || "https://..." }), UriPlaceholder: (s) => P({ type: "url", placeholder: s.label || "https://..." }), TrustyUriPlaceholder: (s) => P({ type: "url", placeholder: s.label || "https://..." }), RestrictedChoicePlaceholder: (s) => {
   var _a;
   console.log(`[RestrictedChoice] Rendering ${s.id} with ${((_a = s.options) == null ? void 0 : _a.length) || 0} options`);
   const e = [];
   return s.options && Array.isArray(s.options) ? s.options.forEach((t) => {
     e.push({ value: t.value || t, label: t.label || t.value || t });
-  }) : console.warn(`[RestrictedChoice] No options found for ${s.id}`), de({ items: e, placeholder: e.length > 1 ? "Select..." : void 0, value: e.length === 1 ? e[0].value : void 0 });
+  }) : console.warn(`[RestrictedChoice] No options found for ${s.id}`), ue({ items: e, placeholder: e.length > 1 ? "Select..." : void 0, value: e.length === 1 ? e[0].value : void 0 });
 }, GuidedChoicePlaceholder: (s) => P({ type: "text", placeholder: s.label || "Type to search...", attrs: { "data-guided-choice": "true" } }), IntroducedResource: (s) => P({ type: "text", placeholder: s.label || "Enter identifier" }), LocalResource: (s) => P({ type: "text", placeholder: s.label || "Enter identifier" }), ValuePlaceholder: (s) => P({ type: "text", placeholder: s.label || "Enter value" }), AutoEscapeUriPlaceholder: (s) => P({ type: "text", placeholder: s.label || "" }), AgentPlaceholder: (s) => P({ type: "url", placeholder: s.label || "https://orcid.org/..." }) };
-function Y(s, e) {
+function Z(s, e) {
   s.classList.add("optional-collapsible");
   const t = document.createElement("div");
   t.className = "optional-toggle", t.innerHTML = `
@@ -550,7 +550,7 @@ function Y(s, e) {
     s.classList.contains("collapsed") && t.click();
   }, true);
 }
-function he(s, e) {
+function be(s, e) {
   s.classList.add("optional-collapsible", "collapsed");
   const t = document.createElement("div");
   t.className = "optional-toggle", t.innerHTML = `
@@ -620,7 +620,7 @@ function he(s, e) {
     s.classList.contains("collapsed") && t.click();
   }, true);
 }
-class be {
+class me {
   constructor() {
     this.rules = [];
   }
@@ -655,10 +655,10 @@ class be {
     }, 3e3);
   }
 }
-class me {
+class ge {
   constructor(e, t = {}) {
-    this.template = e, this.options = { validateOnChange: true, showHelp: true, ...t }, this.labels = t.labels || e.labels || {}, this.formData = {}, this.eventListeners = { change: [], submit: [], preview: [] }, this.formElement = null, this.autofillManager = new be();
-    const n = pe.getCustomization(e.uri);
+    this.template = e, this.options = { validateOnChange: true, showHelp: true, ...t }, this.labels = t.labels || e.labels || {}, this.formData = {}, this.eventListeners = { change: [], submit: [], preview: [] }, this.formElement = null, this.autofillManager = new me();
+    const n = fe.getCustomization(e.uri);
     this.customization = new n(e), console.log(`[FormGenerator] Using customization: ${this.customization.constructor.name}`), this.tailwindCustomization = e.customization || {}, this.tailwindCustomization.fieldClasses && console.log("[FormGenerator] Template has Tailwind customization");
   }
   getFieldClasses(e, t) {
@@ -854,7 +854,7 @@ class me {
     console.log("  \u2192 INPUT path");
     const b = document.createElement("div");
     b.className = "form-field", t.optional && (b.classList.add("optional"), r || setTimeout(() => {
-      Y(b, a);
+      Z(b, a);
     }, 0));
     const p = document.createElement("label");
     if (p.className = "field-label", p.textContent = a, b.appendChild(p), l) {
@@ -893,7 +893,7 @@ class me {
     const c = document.createElement("div");
     if (c.className = "form-field", t.repeatable && c.classList.add("repeatable"), t.optional && (c.classList.add("optional"), r || setTimeout(() => {
       const f = o && o.label || d;
-      Y(c, f);
+      Z(c, f);
     }, 0)), a) {
       const f = document.createElement("label");
       f.className = "field-label", f.textContent = i.label || this.getLabel(t.subject), c.appendChild(f);
@@ -940,7 +940,7 @@ class me {
   renderInput(e) {
     const t = e.type.split(",").map((n) => n.trim().replace(/^nt:/, ""));
     for (const n of t) {
-      const r = fe[n];
+      const r = he[n];
       if (r) return console.log(`Using component ${n} for placeholder ${e.id}`), r(e, this.options);
     }
     return console.warn(`No component for types: ${e.type}`), P({ type: "text", placeholder: e.label || "", className: this.getFieldClasses(e.id, "text") });
@@ -966,15 +966,15 @@ class me {
       d = b.length === 1, console.log`[buildRepeatableField] Subject ${e.subject}:`, b.length;
     }
     if (i && d) {
-      const b = B({ label: i.label || this.getLabel(e.subject), inputOptions: { ...this.getInputOptions(i), name: `${e.id}_subject_${n}`, id: `field_${e.id}_subject_${n}` }, className: "repeatable-field" });
+      const b = G({ label: i.label || this.getLabel(e.subject), inputOptions: { ...this.getInputOptions(i), name: `${e.id}_subject_${n}`, id: `field_${e.id}_subject_${n}` }, className: "repeatable-field" });
       r.appendChild(b);
     }
     if (o) {
-      const b = B({ label: o.label || this.getLabel(e.predicate), inputOptions: { ...this.getInputOptions(o), name: `${e.id}_predicate_${n}`, id: `field_${e.id}_predicate_${n}` }, className: "repeatable-field" });
+      const b = G({ label: o.label || this.getLabel(e.predicate), inputOptions: { ...this.getInputOptions(o), name: `${e.id}_predicate_${n}`, id: `field_${e.id}_predicate_${n}` }, className: "repeatable-field" });
       r.appendChild(b);
     }
     if (l) {
-      const b = B({ label: o ? void 0 : this.getLabel(e.predicate), inputOptions: { ...this.getInputOptions(l), name: `${e.id}_object_${n}`, id: `field_${e.id}_object_${n}` }, helpText: l.label, className: "repeatable-field" });
+      const b = G({ label: o ? void 0 : this.getLabel(e.predicate), inputOptions: { ...this.getInputOptions(l), name: `${e.id}_object_${n}`, id: `field_${e.id}_object_${n}` }, helpText: l.label, className: "repeatable-field" });
       r.appendChild(b);
     }
     const a = q({ variant: "remove", type: "button", label: "\xD7 Remove", onClick: () => {
@@ -1053,11 +1053,11 @@ class me {
       const o = this.template.statements.find((l) => l.id === i);
       o && this.renderStatement(r, o, n, true);
     }), t.collapsible && setTimeout(() => {
-      he(r, t.label);
+      be(r, t.label);
     }, 0), e.appendChild(r);
   }
 }
-class ge {
+class _e {
   constructor(e) {
     var _a, _b;
     this.template = e, console.log("NanopubBuilder initialized with:", { uri: e.uri, labelPattern: e.labelPattern, types: ((_a = e.types) == null ? void 0 : _a.length) || 0, statements: ((_b = e.statements) == null ? void 0 : _b.length) || 0 });
@@ -1240,51 +1240,51 @@ ${i.join(`
   }
 }
 let u;
-const re = typeof TextDecoder < "u" ? new TextDecoder("utf-8", { ignoreBOM: true, fatal: true }) : { decode: () => {
+const se = typeof TextDecoder < "u" ? new TextDecoder("utf-8", { ignoreBOM: true, fatal: true }) : { decode: () => {
   throw Error("TextDecoder not available");
 } };
-typeof TextDecoder < "u" && re.decode();
-let A = null;
-function W() {
-  return (A === null || A.byteLength === 0) && (A = new Uint8Array(u.memory.buffer)), A;
+typeof TextDecoder < "u" && se.decode();
+let O = null;
+function B() {
+  return (O === null || O.byteLength === 0) && (O = new Uint8Array(u.memory.buffer)), O;
 }
-function N(s, e) {
-  return s = s >>> 0, re.decode(W().subarray(s, s + e));
+function R(s, e) {
+  return s = s >>> 0, se.decode(B().subarray(s, s + e));
 }
-const I = new Array(128).fill(void 0);
-I.push(void 0, null, true, false);
-let z = I.length;
+const k = new Array(128).fill(void 0);
+k.push(void 0, null, true, false);
+let z = k.length;
 function g(s) {
-  z === I.length && I.push(I.length + 1);
+  z === k.length && k.push(k.length + 1);
   const e = z;
-  return z = I[e], I[e] = s, e;
+  return z = k[e], k[e] = s, e;
 }
 function m(s) {
-  return I[s];
+  return k[s];
 }
-function _e(s) {
-  s < 132 || (I[s] = z, z = s);
+function we(s) {
+  s < 132 || (k[s] = z, z = s);
 }
 function C(s) {
   const e = m(s);
-  return _e(s), e;
+  return we(s), e;
 }
-let L = 0;
+let I = 0;
 const V = typeof TextEncoder < "u" ? new TextEncoder("utf-8") : { encode: () => {
   throw Error("TextEncoder not available");
-} }, we = typeof V.encodeInto == "function" ? function(s, e) {
+} }, ye = typeof V.encodeInto == "function" ? function(s, e) {
   return V.encodeInto(s, e);
 } : function(s, e) {
   const t = V.encode(s);
   return e.set(t), { read: s.length, written: t.length };
 };
-function R(s, e, t) {
+function T(s, e, t) {
   if (t === void 0) {
     const l = V.encode(s), d = e(l.length, 1) >>> 0;
-    return W().subarray(d, d + l.length).set(l), L = l.length, d;
+    return B().subarray(d, d + l.length).set(l), I = l.length, d;
   }
   let n = s.length, r = e(n, 1) >>> 0;
-  const i = W();
+  const i = B();
   let o = 0;
   for (; o < n; o++) {
     const l = s.charCodeAt(o);
@@ -1293,23 +1293,23 @@ function R(s, e, t) {
   }
   if (o !== n) {
     o !== 0 && (s = s.slice(o)), r = t(r, n, n = o + s.length * 3, 1) >>> 0;
-    const l = W().subarray(r + o, r + n), d = we(s, l);
+    const l = B().subarray(r + o, r + n), d = ye(s, l);
     o += d.written, r = t(r, n, o, 1) >>> 0;
   }
-  return L = o, r;
+  return I = o, r;
 }
 function F(s) {
   return s == null;
 }
-let O = null;
+let A = null;
 function w() {
-  return (O === null || O.byteLength === 0) && (O = new Int32Array(u.memory.buffer)), O;
+  return (A === null || A.byteLength === 0) && (A = new Int32Array(u.memory.buffer)), A;
 }
 let M = null;
-function ye() {
+function xe() {
   return (M === null || M.byteLength === 0) && (M = new Float64Array(u.memory.buffer)), M;
 }
-function G(s) {
+function K(s) {
   const e = typeof s;
   if (e == "number" || e == "boolean" || s == null) return `${s}`;
   if (e == "string") return `"${s}"`;
@@ -1324,8 +1324,8 @@ function G(s) {
   if (Array.isArray(s)) {
     const r = s.length;
     let i = "[";
-    r > 0 && (i += G(s[0]));
-    for (let o = 1; o < r; o++) i += ", " + G(s[o]);
+    r > 0 && (i += K(s[0]));
+    for (let o = 1; o < r; o++) i += ", " + K(s[o]);
     return i += "]", i;
   }
   const t = /\[object ([^\]]+)\]/.exec(toString.call(s));
@@ -1340,12 +1340,12 @@ function G(s) {
   return s instanceof Error ? `${s.name}: ${s.message}
 ${s.stack}` : n;
 }
-const Z = typeof FinalizationRegistry > "u" ? { register: () => {
+const Q = typeof FinalizationRegistry > "u" ? { register: () => {
 }, unregister: () => {
 } } : new FinalizationRegistry((s) => {
   u.__wbindgen_export_2.get(s.dtor)(s.a, s.b);
 });
-function xe(s, e, t, n) {
+function ve(s, e, t, n) {
   const r = { a: s, b: e, cnt: 1, dtor: t }, i = (...o) => {
     r.cnt++;
     const l = r.a;
@@ -1353,12 +1353,12 @@ function xe(s, e, t, n) {
     try {
       return n(l, r.b, ...o);
     } finally {
-      --r.cnt === 0 ? (u.__wbindgen_export_2.get(r.dtor)(l, r.b), Z.unregister(r)) : r.a = l;
+      --r.cnt === 0 ? (u.__wbindgen_export_2.get(r.dtor)(l, r.b), Q.unregister(r)) : r.a = l;
     }
   };
-  return i.original = r, Z.register(i, r, r), i;
+  return i.original = r, Q.register(i, r, r), i;
 }
-function ve(s, e, t) {
+function Ce(s, e, t) {
   u._dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__h15d348a8f539de58(s, e, g(t));
 }
 function v(s, e) {
@@ -1368,25 +1368,25 @@ function v(s, e) {
     u.__wbindgen_exn_store(g(t));
   }
 }
-function Ce(s, e, t, n) {
+function Ee(s, e, t, n) {
   u.wasm_bindgen__convert__closures__invoke2_mut__h2c289313db95095e(s, e, g(t), g(n));
 }
-function Q(s, e) {
+function ee(s, e) {
   if (!(s instanceof e)) throw new Error(`expected instance of ${e.name}`);
   return s.ptr;
 }
 let H = 128;
-function Ee(s) {
+function je(s) {
   if (H == 1) throw new Error("out of js stack");
-  return I[--H] = s, H;
+  return k[--H] = s, H;
 }
-const je = typeof FinalizationRegistry > "u" ? { register: () => {
+const $e = typeof FinalizationRegistry > "u" ? { register: () => {
 }, unregister: () => {
 } } : new FinalizationRegistry((s) => u.__wbg_keypair_free(s >>> 0));
-class $e {
+class Se {
   __destroy_into_raw() {
     const e = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, je.unregister(this), e;
+    return this.__wbg_ptr = 0, $e.unregister(this), e;
   }
   free() {
     const e = this.__destroy_into_raw();
@@ -1415,18 +1415,18 @@ class $e {
     }
   }
 }
-const ee = typeof FinalizationRegistry > "u" ? { register: () => {
+const te = typeof FinalizationRegistry > "u" ? { register: () => {
 }, unregister: () => {
 } } : new FinalizationRegistry((s) => u.__wbg_nanopub_free(s >>> 0));
 class U {
   static __wrap(e) {
     e = e >>> 0;
     const t = Object.create(U.prototype);
-    return t.__wbg_ptr = e, ee.register(t, t.__wbg_ptr, t), t;
+    return t.__wbg_ptr = e, te.register(t, t.__wbg_ptr, t), t;
   }
   __destroy_into_raw() {
     const e = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, ee.unregister(this), e;
+    return this.__wbg_ptr = 0, te.unregister(this), e;
   }
   free() {
     const e = this.__destroy_into_raw();
@@ -1457,7 +1457,7 @@ class U {
   sign(e) {
     try {
       const i = this.__destroy_into_raw(), o = u.__wbindgen_add_to_stack_pointer(-16);
-      Q(e, K), u.nanopub_sign(o, i, e.__wbg_ptr);
+      ee(e, J), u.nanopub_sign(o, i, e.__wbg_ptr);
       var t = w()[o / 4 + 0], n = w()[o / 4 + 1], r = w()[o / 4 + 2];
       if (r) throw C(n);
       return U.__wrap(t);
@@ -1468,20 +1468,20 @@ class U {
   publish(e, t) {
     try {
       const i = this.__destroy_into_raw();
-      var n = F(t) ? 0 : R(t, u.__wbindgen_malloc, u.__wbindgen_realloc), r = L;
-      const o = u.nanopub_publish(i, Ee(e), n, r);
+      var n = F(t) ? 0 : T(t, u.__wbindgen_malloc, u.__wbindgen_realloc), r = I;
+      const o = u.nanopub_publish(i, je(e), n, r);
       return C(o);
     } finally {
-      I[H++] = void 0;
+      k[H++] = void 0;
     }
   }
   static fetch(e) {
-    const t = R(e, u.__wbindgen_malloc, u.__wbindgen_realloc), n = L, r = u.nanopub_fetch(t, n);
+    const t = T(e, u.__wbindgen_malloc, u.__wbindgen_realloc), n = I, r = u.nanopub_fetch(t, n);
     return C(r);
   }
   static publish_intro(e, t) {
-    Q(e, K);
-    const n = R(t, u.__wbindgen_malloc, u.__wbindgen_realloc), r = L, i = u.nanopub_publish_intro(e.__wbg_ptr, n, r);
+    ee(e, J);
+    const n = T(t, u.__wbindgen_malloc, u.__wbindgen_realloc), r = I, i = u.nanopub_publish_intro(e.__wbg_ptr, n, r);
     return C(i);
   }
   rdf() {
@@ -1491,7 +1491,7 @@ class U {
       u.nanopub_rdf(a, this.__wbg_ptr);
       var n = w()[a / 4 + 0], r = w()[a / 4 + 1], i = w()[a / 4 + 2], o = w()[a / 4 + 3], l = n, d = r;
       if (o) throw l = 0, d = 0, C(i);
-      return e = l, t = d, N(l, d);
+      return e = l, t = d, R(l, d);
     } finally {
       u.__wbindgen_add_to_stack_pointer(16), u.__wbindgen_free(e, t, 1);
     }
@@ -1513,19 +1513,19 @@ class U {
       const i = u.__wbindgen_add_to_stack_pointer(-16);
       u.nanopub_toString(i, this.__wbg_ptr);
       var n = w()[i / 4 + 0], r = w()[i / 4 + 1];
-      return e = n, t = r, N(n, r);
+      return e = n, t = r, R(n, r);
     } finally {
       u.__wbindgen_add_to_stack_pointer(16), u.__wbindgen_free(e, t, 1);
     }
   }
 }
-const Se = typeof FinalizationRegistry > "u" ? { register: () => {
+const Le = typeof FinalizationRegistry > "u" ? { register: () => {
 }, unregister: () => {
 } } : new FinalizationRegistry((s) => u.__wbg_npprofile_free(s >>> 0));
-class K {
+class J {
   __destroy_into_raw() {
     const e = this.__wbg_ptr;
-    return this.__wbg_ptr = 0, Se.unregister(this), e;
+    return this.__wbg_ptr = 0, Le.unregister(this), e;
   }
   free() {
     const e = this.__destroy_into_raw();
@@ -1537,15 +1537,15 @@ class K {
       const i = u.__wbindgen_add_to_stack_pointer(-16);
       u.npprofile___getClassname(i, this.__wbg_ptr);
       var n = w()[i / 4 + 0], r = w()[i / 4 + 1];
-      return e = n, t = r, N(n, r);
+      return e = n, t = r, R(n, r);
     } finally {
       u.__wbindgen_add_to_stack_pointer(16), u.__wbindgen_free(e, t, 1);
     }
   }
   constructor(e, t, n, r) {
     try {
-      const h = u.__wbindgen_add_to_stack_pointer(-16), y = R(e, u.__wbindgen_malloc, u.__wbindgen_realloc), _ = L;
-      var i = F(t) ? 0 : R(t, u.__wbindgen_malloc, u.__wbindgen_realloc), o = L, l = F(n) ? 0 : R(n, u.__wbindgen_malloc, u.__wbindgen_realloc), d = L, a = F(r) ? 0 : R(r, u.__wbindgen_malloc, u.__wbindgen_realloc), b = L;
+      const h = u.__wbindgen_add_to_stack_pointer(-16), y = T(e, u.__wbindgen_malloc, u.__wbindgen_realloc), _ = I;
+      var i = F(t) ? 0 : T(t, u.__wbindgen_malloc, u.__wbindgen_realloc), o = I, l = F(n) ? 0 : T(n, u.__wbindgen_malloc, u.__wbindgen_realloc), d = I, a = F(r) ? 0 : T(r, u.__wbindgen_malloc, u.__wbindgen_realloc), b = I;
       u.npprofile_new(h, y, _, i, o, l, d, a, b);
       var p = w()[h / 4 + 0], c = w()[h / 4 + 1], f = w()[h / 4 + 2];
       if (f) throw C(c);
@@ -1560,7 +1560,7 @@ class K {
       const i = u.__wbindgen_add_to_stack_pointer(-16);
       u.npprofile_toString(i, this.__wbg_ptr);
       var n = w()[i / 4 + 0], r = w()[i / 4 + 1];
-      return e = n, t = r, N(n, r);
+      return e = n, t = r, R(n, r);
     } finally {
       u.__wbindgen_add_to_stack_pointer(16), u.__wbindgen_free(e, t, 1);
     }
@@ -1592,13 +1592,13 @@ async function Pe(s, e) {
     return t instanceof WebAssembly.Instance ? { instance: t, module: s } : t;
   }
 }
-function Le() {
+function Ie() {
   const s = {};
   return s.wbg = {}, s.wbg.__wbg_nanopub_new = function(e) {
     const t = U.__wrap(e);
     return g(t);
   }, s.wbg.__wbindgen_string_new = function(e, t) {
-    const n = N(e, t);
+    const n = R(e, t);
     return g(n);
   }, s.wbg.__wbg_call_b3ca7c6051f9bec1 = function() {
     return v(function(e, t, n) {
@@ -1634,7 +1634,7 @@ function Le() {
     return g(t);
   }, s.wbg.__wbg_append_7bfcb4937d1d5e29 = function() {
     return v(function(e, t, n, r, i) {
-      m(e).append(N(t, n), N(r, i));
+      m(e).append(R(t, n), R(r, i));
     }, arguments);
   }, s.wbg.__wbg_instanceof_Response_849eb93e75734b6e = function(e) {
     let t;
@@ -1647,7 +1647,7 @@ function Le() {
   }, s.wbg.__wbg_status_61a01141acd3cf74 = function(e) {
     return m(e).status;
   }, s.wbg.__wbg_url_5f6dc4009ac5f99d = function(e, t) {
-    const n = m(t).url, r = R(n, u.__wbindgen_malloc, u.__wbindgen_realloc), i = L;
+    const n = m(t).url, r = T(n, u.__wbindgen_malloc, u.__wbindgen_realloc), i = I;
     w()[e / 4 + 1] = i, w()[e / 4 + 0] = r;
   }, s.wbg.__wbg_headers_9620bfada380764a = function(e) {
     const t = m(e).headers;
@@ -1689,7 +1689,7 @@ function Le() {
     }, arguments);
   }, s.wbg.__wbindgen_string_get = function(e, t) {
     const n = m(t), r = typeof n == "string" ? n : void 0;
-    var i = F(r) ? 0 : R(r, u.__wbindgen_malloc, u.__wbindgen_realloc), o = L;
+    var i = F(r) ? 0 : T(r, u.__wbindgen_malloc, u.__wbindgen_realloc), o = I;
     w()[e / 4 + 1] = o, w()[e / 4 + 0] = i;
   }, s.wbg.__wbg_text_450a059667fd91fd = function() {
     return v(function(e) {
@@ -1773,7 +1773,7 @@ function Le() {
   }, s.wbg.__wbindgen_is_undefined = function(e) {
     return m(e) === void 0;
   }, s.wbg.__wbg_newnoargs_e258087cd0daa0ea = function(e, t) {
-    const n = new Function(N(e, t));
+    const n = new Function(R(e, t));
     return g(n);
   }, s.wbg.__wbg_new_16b304a2cfa7ff4a = function() {
     const e = new Array();
@@ -1785,14 +1785,14 @@ function Le() {
     }, arguments);
   }, s.wbg.__wbindgen_number_get = function(e, t) {
     const n = m(t), r = typeof n == "number" ? n : void 0;
-    ye()[e / 8 + 1] = F(r) ? 0 : r, w()[e / 4 + 0] = !F(r);
+    xe()[e / 8 + 1] = F(r) ? 0 : r, w()[e / 4 + 0] = !F(r);
   }, s.wbg.__wbg_new_81740750da40724f = function(e, t) {
     try {
       var n = { a: e, b: t }, r = (o, l) => {
         const d = n.a;
         n.a = 0;
         try {
-          return Ce(d, n.b, o, l);
+          return Ee(d, n.b, o, l);
         } finally {
           n.a = d;
         }
@@ -1818,10 +1818,10 @@ function Le() {
     const n = m(e).fetch(m(t));
     return g(n);
   }, s.wbg.__wbindgen_debug_string = function(e, t) {
-    const n = G(m(t)), r = R(n, u.__wbindgen_malloc, u.__wbindgen_realloc), i = L;
+    const n = K(m(t)), r = T(n, u.__wbindgen_malloc, u.__wbindgen_realloc), i = I;
     w()[e / 4 + 1] = i, w()[e / 4 + 0] = r;
   }, s.wbg.__wbindgen_throw = function(e, t) {
-    throw new Error(N(e, t));
+    throw new Error(R(e, t));
   }, s.wbg.__wbg_then_0c86a60e8fcfe9f6 = function(e, t) {
     const n = m(e).then(m(t));
     return g(n);
@@ -1838,32 +1838,32 @@ function Le() {
     return g(t);
   }, s.wbg.__wbg_newwithstrandinit_3fd6fba4083ff2d0 = function() {
     return v(function(e, t, n) {
-      const r = new Request(N(e, t), m(n));
+      const r = new Request(R(e, t), m(n));
       return g(r);
     }, arguments);
   }, s.wbg.__wbindgen_closure_wrapper3118 = function(e, t, n) {
-    const r = xe(e, t, 173, ve);
+    const r = ve(e, t, 173, Ce);
     return g(r);
   }, s;
 }
-function Ie(s, e) {
-  return u = s.exports, se.__wbindgen_wasm_module = e, M = null, O = null, A = null, u.__wbindgen_start(), u;
+function ke(s, e) {
+  return u = s.exports, ie.__wbindgen_wasm_module = e, M = null, A = null, O = null, u.__wbindgen_start(), u;
 }
-async function se(s) {
+async function ie(s) {
   if (u !== void 0) return u;
   typeof s > "u" && (s = new URL("/nanopub-create/assets/web_bg-CaMmR8bt.wasm", import.meta.url));
-  const e = Le();
+  const e = Ie();
   (typeof s == "string" || typeof Request == "function" && s instanceof Request || typeof URL == "function" && s instanceof URL) && (s = fetch(s));
   const { instance: t, module: n } = await Pe(await s, e);
-  return Ie(t, n);
+  return ke(t, n);
 }
-class Ne {
+class Re {
   constructor(e = {}) {
-    this.options = { publishServer: e.publishServer || "https://np.petapico.org", theme: e.theme || "default", validateOnChange: e.validateOnChange !== false, showHelp: e.showHelp !== false, ...e }, this.storage = new te(e.storage), this.template = null, this.formGenerator = null, this.builder = null, this.formData = {}, this.container = null, this.wasmInitialized = false, this.profile = null, this.credentials = null, this.listeners = { change: [], submit: [], error: [], publish: [], profileNeeded: [] }, this.initWasm(), this.loadCredentials();
+    this.options = { publishServer: e.publishServer || "https://np.petapico.org", theme: e.theme || "default", validateOnChange: e.validateOnChange !== false, showHelp: e.showHelp !== false, ...e }, this.storage = new ne(e.storage), this.template = null, this.formGenerator = null, this.builder = null, this.formData = {}, this.container = null, this.wasmInitialized = false, this.profile = null, this.credentials = null, this.listeners = { change: [], submit: [], error: [], publish: [], profileNeeded: [] }, this.initWasm(), this.loadCredentials();
   }
   async initWasm() {
     if (!this.wasmInitialized) try {
-      await se(), this.wasmInitialized = true, console.log("\u2713 WASM initialized successfully");
+      await ie(), this.wasmInitialized = true, console.log("\u2713 WASM initialized successfully");
     } catch (e) {
       throw console.error("Failed to initialize WASM:", e), new Error("WASM initialization failed");
     }
@@ -1874,7 +1874,7 @@ class Ne {
   async generateKeys() {
     await this.ensureWasm();
     try {
-      const t = new $e().toJs();
+      const t = new Se().toJs();
       return { privateKey: t.private, publicKey: t.public };
     } catch (e) {
       throw console.error("Key generation failed:", e), new Error("Failed to generate RSA keys");
@@ -1938,7 +1938,7 @@ class Ne {
   async renderFromTemplateUri(e, t) {
     this.container = t;
     try {
-      this.template = await J.fetchAndParse(e), this.template.uri = this.template.uri || e, this.formGenerator = new me(this.template, { validateOnChange: this.options.validateOnChange, showHelp: this.options.showHelp, labels: this.template.labels }), this.formGenerator.on("change", (n) => {
+      this.template = await X.fetchAndParse(e), this.template.uri = this.template.uri || e, this.formGenerator = new ge(this.template, { validateOnChange: this.options.validateOnChange, showHelp: this.options.showHelp, labels: this.template.labels }), this.formGenerator.on("change", (n) => {
         this.formData = n, this.emit("change", n);
       }), this.formGenerator.on("submit", async (n) => {
         if (this.formData = n.formData || n, !this.hasProfile()) {
@@ -1951,7 +1951,7 @@ class Ne {
         } catch (r) {
           this.emit("error", { type: "generation", error: r });
         }
-      }), this.formGenerator.renderForm(t), this.builder = new ge(this.template);
+      }), this.formGenerator.renderForm(t), this.builder = new _e(this.template);
     } catch (n) {
       throw this.emit("error", { type: "template", error: n }), n;
     }
@@ -1967,7 +1967,7 @@ class Ne {
       const t = this.credentials.orcid || this.profile.orcid, n = this.credentials.name || this.profile.name;
       if (!t || !t.startsWith("https://orcid.org/")) throw new Error(`Invalid ORCID format: ${t}. Must start with https://orcid.org/`);
       console.log("\u{1F510} Creating profile and signing..."), console.log("  ORCID:", t), console.log("  Name:", n);
-      const r = new K(this.credentials.privateKey, t, n);
+      const r = new J(this.credentials.privateKey, t, n);
       console.log("\u2705 Profile created"), console.log("\u{1F4DD} Signing nanopub...");
       const o = new U(e).sign(r);
       console.log("\u2705 Signed successfully"), console.log("  Signed type:", typeof o);
@@ -1989,21 +1989,33 @@ class Ne {
     this.listeners[e] && this.listeners[e].forEach((n) => n(t));
   }
 }
-let k = null;
-function Re() {
+let L = null, D = null;
+function Te() {
   document.body.classList.toggle("dark-mode"), document.getElementById("template-container").classList.toggle("dark");
 }
-window.toggleDarkMode = Re;
-async function ke() {
+window.toggleDarkMode = Te;
+async function Ne() {
   try {
-    k = new Ne({ publishServer: null }), console.log("\u2713 Creator initialized successfully"), ie();
+    L = new Re({ publishServer: null }), console.log("\u2713 Creator initialized successfully"), Fe(), oe();
   } catch (s) {
     console.error("Failed to initialize creator:", s), alert("Failed to initialize creator: " + s.message);
   }
 }
-function ie() {
-  const s = k && k.profile, e = document.getElementById("profile-status"), t = document.getElementById("profile-setup"), n = document.getElementById("profile-info");
-  s ? (e.textContent = "Configured", e.className = "status success", t.classList.add("hidden"), n.classList.remove("hidden"), document.getElementById("profile-name").textContent = k.profile.name, document.getElementById("profile-orcid").textContent = k.profile.orcid || "N/A", document.getElementById("profile-orcid").href = k.profile.orcid || "#") : (e.textContent = "Not configured", e.className = "status warning", t.classList.remove("hidden"), n.classList.add("hidden"));
+function Fe() {
+  L.on("submit", ({ trigContent: s }) => {
+    D = s, document.getElementById("preview-content").textContent = s, document.getElementById("nanopub-preview").style.display = "block", document.getElementById("nanopub-preview").scrollIntoView({ behavior: "smooth" }), document.getElementById("result-message").innerHTML = "";
+  }), L.on("publish", ({ signedContent: s }) => {
+    const e = new Blob([s], { type: "application/trig" }), t = URL.createObjectURL(e), n = document.createElement("a");
+    n.href = t, n.download = `nanopub-signed-${(/* @__PURE__ */ new Date()).toISOString()}.trig`, document.body.appendChild(n), n.click(), document.body.removeChild(n), URL.revokeObjectURL(t), document.getElementById("result-message").innerHTML = '<div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 4px; border: 1px solid #c3e6cb;">\u2705 Signed and downloaded!</div>';
+  }), L.on("error", ({ error: s }) => {
+    document.getElementById("result-message").innerHTML = `<div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 4px; border: 1px solid #f5c6cb;">\u274C Error: ${s.message}</div>`;
+  }), L.on("profileNeeded", () => {
+    alert("Please set up your profile first!");
+  });
+}
+function oe() {
+  const s = L && L.profile, e = document.getElementById("profile-status"), t = document.getElementById("profile-setup"), n = document.getElementById("profile-info");
+  s ? (e.textContent = "Configured", e.className = "status success", t.classList.add("hidden"), n.classList.remove("hidden"), document.getElementById("profile-name").textContent = L.profile.name, document.getElementById("profile-orcid").textContent = L.profile.orcid || "N/A", document.getElementById("profile-orcid").href = L.profile.orcid || "#") : (e.textContent = "Not configured", e.className = "status warning", t.classList.remove("hidden"), n.classList.add("hidden"));
 }
 document.getElementById("setup-btn").addEventListener("click", async () => {
   const s = document.getElementById("name-input").value.trim(), e = document.getElementById("orcid-input").value.trim();
@@ -2012,7 +2024,7 @@ document.getElementById("setup-btn").addEventListener("click", async () => {
     return;
   }
   try {
-    await k.setupProfile({ name: s, orcid: e }), ie(), document.getElementById("setup-message").innerHTML = '<div style="color: #155724; background: #d4edda; padding: 10px; border-radius: 4px; margin-top: 10px;">Profile created successfully!</div>';
+    await L.setupProfile({ name: s, orcid: e }), oe(), document.getElementById("setup-message").innerHTML = '<div style="color: #155724; background: #d4edda; padding: 10px; border-radius: 4px; margin-top: 10px;">Profile created successfully!</div>';
   } catch (t) {
     alert("Failed to setup profile: " + t.message);
   }
@@ -2025,9 +2037,22 @@ document.getElementById("load-template-btn").addEventListener("click", async () 
   }
   try {
     const e = document.getElementById("template-container");
-    e.innerHTML = '<div class="loading">Loading template...</div>', document.body.classList.contains("dark-mode") && e.classList.add("dark"), await k.renderFromTemplateUri(s, e);
+    e.innerHTML = '<div class="loading">Loading template...</div>', document.body.classList.contains("dark-mode") && e.classList.add("dark"), await L.renderFromTemplateUri(s, e), document.getElementById("nanopub-preview").style.display = "none";
   } catch (e) {
     document.getElementById("template-container").innerHTML = '<div style="color: #721c24; background: #f8d7da; padding: 15px; border-radius: 4px;">Error: ' + e.message + "</div>";
   }
 });
-ke();
+document.getElementById("sign-download-btn").addEventListener("click", async () => {
+  if (D) try {
+    document.getElementById("sign-download-btn").disabled = true, document.getElementById("sign-download-btn").textContent = "\u{1F510} Signing...", await L.publish(D), document.getElementById("sign-download-btn").disabled = false, document.getElementById("sign-download-btn").textContent = "\u{1F510} Sign & Download";
+  } catch {
+    document.getElementById("sign-download-btn").disabled = false, document.getElementById("sign-download-btn").textContent = "\u{1F510} Sign & Download";
+  }
+});
+document.getElementById("copy-btn").addEventListener("click", () => {
+  D && navigator.clipboard.writeText(D).then(() => {
+    const s = document.getElementById("copy-btn");
+    s.textContent = "\u2713 Copied!", setTimeout(() => s.textContent = "\u{1F4CB} Copy", 2e3);
+  });
+});
+Ne();
