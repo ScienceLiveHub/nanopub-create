@@ -285,10 +285,23 @@
     </div>
   </div>
 
+  <!-- Preview Section -->
+  <div class="section" id="nanopub-preview" style="display: none;">
+    <h2>📋 Nanopublication Preview</h2>
+    <p style="color: var(--demo-text-muted); font-size: 0.9em;">Review your unsigned nanopublication:</p>
+    <pre id="preview-content" style="background: var(--demo-preview-bg); padding: 15px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 12px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; border: 1px solid var(--demo-border);"></pre>
+    <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+      <button id="sign-download-btn" class="btn btn-primary">🔐 Sign & Download</button>
+      <button id="copy-btn" class="btn btn-primary" style="background: #17a2b8;">📋 Copy</button>
+    </div>
+    <div id="result-message" style="margin-top: 15px;"></div>
+  </div>
+
   <script type="module">
     import NanopubCreator from '../src/index.js';
     
     let creator = null;
+    let currentNanopub = null;
 
     // Dark mode toggle with propagation to form
     function toggleDarkMode() {
@@ -306,11 +319,43 @@
         });
 
         console.log('✓ Creator initialized successfully');
+        setupEventListeners();
         updateProfileStatus();
       } catch (error) {
         console.error('Failed to initialize creator:', error);
         alert('Failed to initialize creator: ' + error.message);
       }
+    }
+
+    function setupEventListeners() {
+      creator.on('submit', ({ trigContent }) => {
+        currentNanopub = trigContent;
+        document.getElementById('preview-content').textContent = trigContent;
+        document.getElementById('nanopub-preview').style.display = 'block';
+        document.getElementById('nanopub-preview').scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('result-message').innerHTML = '';
+      });
+
+      creator.on('publish', ({ signedContent }) => {
+        const blob = new Blob([signedContent], { type: 'application/trig' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `nanopub-signed-${new Date().toISOString()}.trig`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        document.getElementById('result-message').innerHTML = '<div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 4px; border: 1px solid #c3e6cb;">✅ Signed and downloaded!</div>';
+      });
+
+      creator.on('error', ({ error }) => {
+        document.getElementById('result-message').innerHTML = `<div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 4px; border: 1px solid #f5c6cb;">❌ Error: ${error.message}</div>`;
+      });
+
+      creator.on('profileNeeded', () => {
+        alert('Please set up your profile first!');
+      });
     }
 
     function updateProfileStatus() {
@@ -373,10 +418,36 @@
         }
         
         await creator.renderFromTemplateUri(uri, container);
+        document.getElementById('nanopub-preview').style.display = 'none';
       } catch (error) {
         document.getElementById('template-container').innerHTML = 
           '<div style="color: #721c24; background: #f8d7da; padding: 15px; border-radius: 4px;">Error: ' + error.message + '</div>';
       }
+    });
+
+    // Sign & Download button
+    document.getElementById('sign-download-btn').addEventListener('click', async () => {
+      if (!currentNanopub) return;
+      try {
+        document.getElementById('sign-download-btn').disabled = true;
+        document.getElementById('sign-download-btn').textContent = '🔐 Signing...';
+        await creator.publish(currentNanopub);
+        document.getElementById('sign-download-btn').disabled = false;
+        document.getElementById('sign-download-btn').textContent = '🔐 Sign & Download';
+      } catch (error) {
+        document.getElementById('sign-download-btn').disabled = false;
+        document.getElementById('sign-download-btn').textContent = '🔐 Sign & Download';
+      }
+    });
+
+    // Copy button
+    document.getElementById('copy-btn').addEventListener('click', () => {
+      if (!currentNanopub) return;
+      navigator.clipboard.writeText(currentNanopub).then(() => {
+        const btn = document.getElementById('copy-btn');
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => btn.textContent = '📋 Copy', 2000);
+      });
     });
 
     // Initialize on load
