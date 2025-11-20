@@ -26,8 +26,7 @@
     "dev": "npm run prebuild && vite",
     "build": "npm run prebuild && vite build --config vite.lib.config.js",
     "build:demo": "npm run prebuild && vite build --mode demo",
-    "preview": "vite preview",
-    "postinstall": "npm run build"
+    "preview": "vite preview"
   },
   "keywords": [
     "nanopublication",
