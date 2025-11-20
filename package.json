@@ -16,6 +16,9 @@
   "files": [
     "dist",
     "src",
+    "scripts",
+    "README.md",
+    "LICENSE",
     "vite.lib.config.js"
   ],
   "scripts": {
