@@ -1,4 +1,4 @@
-/**
+ ;/**
  * NanopubBuilder - Builds nanopubs from complete template structure
  * properly handles empty instances and optional fields
  * Handles nt:CREATOR placeholder
@@ -373,16 +373,16 @@ ${triples.join('\n')}
     const lines = [
       `  ${creatorRef} foaf:name "${creatorName}" .`,
       '',
-      `  this: dct:created "${timestamp}"^^xsd:dateTime;`,
-      `    dct:creator ${creatorRef};`,
-      `    dct:license <https://creativecommons.org/licenses/by/4.0/>`
+      `  this: dct:created "${timestamp}"^^xsd:dateTime ;`,
+      `    dct:creator ${creatorRef} ;`,
+      `    dct:license <https://creativecommons.org/licenses/by/4.0/> ;`
     ];
     
     // Add types
     if (this.template.types?.length > 0) {
       const typesFormatted = this.template.types.map(t => `<${t}>`).join(', ');
-      lines.push(`;
-    npx:hasNanopubType ${typesFormatted}`);
+      lines.push(`
+    npx:hasNanopubType ${typesFormatted} ;`);
     }
     
     // Add npx:introduces for introduced resources
@@ -398,20 +398,20 @@ ${triples.join('\n')}
     }
     
     if (introducedUris.length > 0) {
-      lines.push(`;
-    npx:introduces ${introducedUris.join(', ')}`);
+      lines.push(`
+    npx:introduces ${introducedUris.join(', ')} ;`);
     }
     
     // Add label
     if (this.template.labelPattern) {
       const label = this.generateLabel();
-      lines.push(`;
-    rdfs:label "${label}"`);
+      lines.push(`
+    rdfs:label "${label}" ;`);
     }
     
     // Add template URI
     if (this.template.uri) {
-      lines.push(`;
+      lines.push(`
     nt:wasCreatedFromTemplate <${this.template.uri}>`);
     }
     

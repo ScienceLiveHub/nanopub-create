@@ -257,6 +257,15 @@
         <p><strong>ORCID:</strong> <a id="profile-orcid" href="#" target="_blank"></a></p>
       </div>
     </div>
+<button onclick="clearProfile()">Clear Profile</button>
+
+<script>
+function clearProfile() {
+  localStorage.removeItem('nanopub_profile');
+  alert('Profile cleared! Refresh the page.');
+  location.reload();
+}
+</script>
   </div>
 
   <!-- Template Section -->

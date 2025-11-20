@@ -1,6 +1,7 @@
 /**
  * NanopubCreator with WASM Integration
  * Main entry point with profile management and signing
+ * FIXED: Uses embedded WASM to avoid esbuild bundling issues
  */
 
 import './styles/styles-index.css';
@@ -9,6 +10,7 @@ import { StorageAdapter } from './core/storage-adapter.js';
 import { TemplateParser } from './core/templateParser.js';
 import FormGenerator from './core/formGenerator.js';
 import { NanopubBuilder } from './core/nanopubBuilder.js';
+
 // Components
 export { FieldComponents } from './components/fieldComponents.js';
 export { makeOptionalCollapsible, makeOptionalGroupCollapsible } from './components/collapsible.js';
@@ -19,7 +21,8 @@ export { BaseTemplate } from './templates/base/baseTemplate.js';
 export { GeographicalTemplate } from './templates/geographical/geographicalTemplate.js';
 export { TemplateRegistry } from './templates/registry.js';
 
-import init, { Nanopub, NpProfile, KeyPair } from '@nanopub/sign';
+// FIXED: Import from our WASM wrapper instead of directly from @nanopub/sign
+import { initializeNanopub, Nanopub, NpProfile, KeyPair } from './core/nanopubWasm.js';
 
 /**
  * Convenience function to create a form from a template URI
@@ -37,24 +40,6 @@ export async function createFormFromTemplate(templateUri, containerElement) {
   
   return generator;
 }
-
-// Dynamic WASM import that works in different environments
-let nanopubSign;
-
-async function initWasm() {
-  if (nanopubSign) return nanopubSign;
-  
-  try {
-    // Try to import the WASM module
-    const module = await import('@nanopub/sign');
-    nanopubSign = module;
-    return nanopubSign;
-  } catch (error) {
-    console.error('Failed to load @nanopub/sign WASM module:', error);
-    throw new Error('Could not initialize nanopub signing library');
-  }
-}
-
 
 /**
  * Main NanopubCreator class with WASM support
@@ -99,14 +84,15 @@ class NanopubCreator {
 
   /**
    * Initialize WASM module
+   * FIXED: Uses our embedded WASM initialization
    */
   async initWasm() {
     if (this.wasmInitialized) return;
     
     try {
-      await init();
+      await initializeNanopub();
       this.wasmInitialized = true;
-      console.log('✓ WASM initialized successfully');
+      console.log('✅ WASM initialized successfully');
     } catch (error) {
       console.error('Failed to initialize WASM:', error);
       throw new Error('WASM initialization failed');
@@ -145,12 +131,24 @@ class NanopubCreator {
 
   /**
    * Setup user profile with key generation
+   * @param {string|object} name - User name or profile object {name, orcid}
+   * @param {string} orcid - ORCID (optional if name is an object)
    */
   async setupProfile(name, orcid) {
     await this.ensureWasm();
 
+    // Handle both (name, orcid) and ({name, orcid}) call patterns
+    let userName, userOrcid;
+    if (typeof name === 'object' && name !== null) {
+      userName = name.name;
+      userOrcid = name.orcid;
+    } else {
+      userName = name;
+      userOrcid = orcid;
+    }
+
     // Normalize ORCID
-    const normalizedOrcid = this.normalizeOrcid(orcid);
+    const normalizedOrcid = this.normalizeOrcid(userOrcid);
 
     try {
       // Generate keys
@@ -158,7 +156,7 @@ class NanopubCreator {
       
       // Store profile with ORCID
       this.profile = {
-        name,
+        name: userName,
         orcid: normalizedOrcid
       };
       
@@ -166,15 +164,15 @@ class NanopubCreator {
       this.credentials = {
         ...keys,
         orcid: normalizedOrcid,  // Store ORCID here too!
-        name: name               // And name for convenience
+        name: userName           // And name for convenience
       };
       
       // Save to localStorage
       this.saveCredentials();
       
-      console.log('✓ Profile setup complete');
+      console.log('✅ Profile setup complete');
+      console.log('  Name:', userName);
       console.log('  ORCID:', normalizedOrcid);
-      console.log('  Name:', name);
       return this.profile;
     } catch (error) {
       console.error('Profile setup failed:', error);
@@ -260,7 +258,7 @@ class NanopubCreator {
         savedAt: new Date().toISOString()
       };
       this.storage.setItem('nanopub_profile', JSON.stringify(data));
-      console.log('✓ Profile saved to storage');
+      console.log('✅ Profile saved to storage');
     } catch (error) {
       console.error('Failed to save credentials:', error);
       throw error;
@@ -277,7 +275,7 @@ class NanopubCreator {
         const data = JSON.parse(stored);
         this.profile = data.profile;
         this.credentials = data.credentials;
-        console.log('✓ Profile loaded from storage');
+        console.log('✅ Profile loaded from storage');
         return true;
       }
     } catch (error) {
@@ -294,7 +292,7 @@ class NanopubCreator {
     this.credentials = null;
     try {
       this.storage.removeItem('nanopub_profile');
-      console.log('✓ Profile cleared');
+      console.log('✅ Profile cleared');
     } catch (error) {
       console.error('Failed to clear credentials:', error);
     }

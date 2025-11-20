@@ -1,14 +1,10 @@
 import { defineConfig } from 'vite';
 import path from 'path';
-import wasm from 'vite-plugin-wasm';
-import topLevelAwait from 'vite-plugin-top-level-await';
 import tailwindcss from '@tailwindcss/postcss';
 import autoprefixer from 'autoprefixer';
 
 export default defineConfig({
   plugins: [
-    wasm(),
-    topLevelAwait()
   ],
   css: {
     postcss: {
@@ -17,6 +13,21 @@ export default defineConfig({
         autoprefixer,
       ],
     },
+  },
+  // CRITICAL: Exclude @nanopub/sign from Vite's optimization
+  // This prevents vite-plugin-wasm from interfering with our manual WASM embedding
+  optimizeDeps: {
+    exclude: [
+      '@nanopub/sign',
+      '@nanopub/sign/web.js'
+    ]
+  },
+  // CRITICAL: Prevent Vite from trying to resolve the WASM file
+  // We handle WASM loading manually through embedded base64
+  resolve: {
+    alias: {
+      '@nanopub/sign/web_bg.wasm': false
+    }
   },
   build: {
     lib: {
